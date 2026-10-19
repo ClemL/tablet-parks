@@ -1,0 +1,1 @@
+2026-10-19T12:34Z - First table: the tablet deals, each player joins by QR code, and every game provisions its own Upstash Redis database

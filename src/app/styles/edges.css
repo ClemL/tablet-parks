@@ -1,0 +1,138 @@
+/*
+ * Name tags on the edges of a tablet lying flat, each turned to face whoever
+ * sits on that edge. A rotated box keeps its unrotated footprint in layout, so
+ * each tag sits in a slot already sized for it after turning: on the left and
+ * right edges the slot's width is the tag's height.
+ */
+.edge-frame {
+  --pad: 6px;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'left top right'
+    'left center right'
+    'left bottom right';
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow: hidden;
+}
+
+.edge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.edge:empty {
+  display: none;
+}
+
+.edge--top {
+  grid-area: top;
+  padding-top: var(--pad);
+}
+
+.edge--bottom {
+  grid-area: bottom;
+  padding-bottom: var(--pad);
+}
+
+.edge--left {
+  grid-area: left;
+  flex-direction: column;
+  padding-left: var(--pad);
+}
+
+.edge--right {
+  grid-area: right;
+  flex-direction: column;
+  padding-right: var(--pad);
+}
+
+.edge-center {
+  grid-area: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.edge__slot {
+  position: relative;
+  width: var(--tw);
+  height: var(--th);
+  flex: none;
+}
+
+.edge--left .edge__slot,
+.edge--right .edge__slot {
+  width: var(--th);
+  height: var(--tw);
+}
+
+.edge__tag {
+  --turn: 0deg;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--tw);
+  height: var(--th);
+  transform: translate(-50%, -50%) rotate(var(--turn));
+}
+
+/* Facing the person on each edge: up for them points into the screen. */
+.edge--top .edge__tag {
+  --turn: 180deg;
+}
+
+.edge--left .edge__tag {
+  --turn: 90deg;
+}
+
+.edge--right .edge__tag {
+  --turn: -90deg;
+}
+
+.edge-frame--upright .edge__tag {
+  --turn: 0deg;
+}
+
+.edge-frame--upright .edge--left .edge__slot,
+.edge-frame--upright .edge--right .edge__slot {
+  width: var(--tw);
+  height: var(--th);
+}
+
+/* A phone-sized screen has no edges to share: every tag goes on top, upright. */
+@media (max-width: 720px) {
+  .edge-frame {
+    height: auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .edge {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    padding: var(--pad);
+  }
+
+  .edge__slot,
+  .edge--left .edge__slot,
+  .edge--right .edge__slot {
+    width: var(--tw);
+    height: var(--th);
+  }
+
+  .edge__tag {
+    --turn: 0deg !important;
+  }
+
+  .edge-center {
+    order: 9;
+    overflow: visible;
+  }
+}

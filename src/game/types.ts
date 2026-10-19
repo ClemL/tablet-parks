@@ -1,0 +1,376 @@
+/** Trail resources. Wild stands in for any other resource when paying a cost.
+ *  Sun is spent on gear and photos and is discarded between seasons. */
+export type Resource = 'sun' | 'water' | 'forest' | 'mountain' | 'wild';
+
+export const RESOURCES: Resource[] = ['sun', 'water', 'forest', 'mountain', 'wild'];
+
+/** The four resources a park card can actually ask for. */
+export const COST_RESOURCES: Resource[] = ['sun', 'water', 'forest', 'mountain'];
+
+/** A bag of resources. Missing keys count as zero. */
+export type ResourceBag = Partial<Record<Resource, number>>;
+
+/** Every kind of trail site a season can contain. */
+export type SiteKind =
+  | 'trailhead'
+  | 'trail-end'
+  /* basic sites: one of each is on the trail every season */
+  | 'forest'
+  | 'mountain'
+  | 'valley'
+  | 'basin'
+  | 'waterfall'
+  | 'camera'
+  /* advanced sites: one more joins the trail each season */
+  | 'adv-wildcard'
+  | 'adv-swap'
+  | 'adv-park'
+  | 'adv-copy'
+  /* advanced sites from the Wildlife expansion */
+  | 'adv-memory'
+  | 'adv-bison'
+  | 'adv-lookout'
+  | 'adv-talk';
+
+export interface SiteDef {
+  kind: SiteKind;
+  name: string;
+  icon: string;
+  /** Short rules text shown on the tile. */
+  text: string;
+  /** Resources handed out on arrival. */
+  gain?: ResourceBag;
+  /** True when arrival opens a decision. */
+  choice?: DecisionKind;
+  tier?: 'basic' | 'advanced';
+  /** Number of hikers that may stand here at once (trailhead and end are open). */
+  capacity?: number;
+}
+
+/** The season token that sits on a trail site until the first hiker takes it. */
+export type SiteToken = 'sun' | 'water' | null;
+
+export type ParkTag =
+  | 'mountain'
+  | 'forest'
+  | 'water'
+  | 'desert'
+  | 'canyon'
+  | 'wildlife'
+  | 'volcanic'
+  | 'coastal';
+
+export interface ParkCard {
+  id: string;
+  name: string;
+  state: string;
+  /** Region used by the "Coast to Coast" bonus card. */
+  region: 'West' | 'Southwest' | 'Rockies' | 'Midwest' | 'East' | 'Pacific' | 'Alaska';
+  cost: ResourceBag;
+  vp: number;
+  tags: ParkTag[];
+  /** English Wikipedia article title, used to resolve public-domain/CC art at runtime. */
+  wikiTitle: string;
+  /** Palette seed for the generated fallback artwork. */
+  palette: [string, string, string];
+}
+
+export interface GearCard {
+  id: string;
+  name: string;
+  icon: string;
+  /** Cost in sun, before the season's first-buyer discount. */
+  cost: number;
+  text: string;
+  effect: GearEffect;
+}
+
+export type GearEffect =
+  /** Extra copy of `resource` whenever a site pays out that resource. */
+  | { kind: 'bonus-on-gain'; resource: Resource }
+  /** Gain resources at the start of every season. */
+  | { kind: 'season-income'; gain: ResourceBag }
+  /** An extra campfire token at the start of every season. */
+  | { kind: 'season-campfire' }
+  /** Photos always cost the discounted price, camera or not. */
+  | { kind: 'cheap-photos' }
+  /** Each photo scores this many VP instead of 1. */
+  | { kind: 'photo-value'; vp: number }
+  /** Hikers may share sites without spending a campfire. */
+  | { kind: 'ignore-occupancy' }
+  /** An extra bottle card at the start of every season. */
+  | { kind: 'extra-bottle'; bottle: BottleKind }
+  /** Park cards cost this many fewer resources. */
+  | { kind: 'park-discount'; amount: number };
+
+/** A bottle converts one water into something else, once per season. */
+export type BottleKind = 'sun-flask' | 'stone-flask' | 'pine-flask';
+
+export interface BottleDef {
+  kind: BottleKind;
+  name: string;
+  icon: string;
+  /** Always one water in these rules, kept explicit for the UI. */
+  cost: ResourceBag;
+  gain: ResourceBag;
+}
+
+export interface Bottle {
+  id: string;
+  kind: BottleKind;
+  used: boolean;
+}
+
+export interface BonusCard {
+  id: string;
+  name: string;
+  text: string;
+  score: (p: PlayerScoringView) => number;
+}
+
+/** Everything a bonus card is allowed to look at. */
+export interface PlayerScoringView {
+  parks: ParkCard[];
+  photos: number;
+  gear: GearCard[];
+  resources: ResourceBag;
+  campfires: number;
+  bottles: Bottle[];
+  reserved: ParkCard[];
+  hasCamera: boolean;
+  claimedInSeason: number[];
+}
+
+export interface Hiker {
+  id: string;
+  owner: number;
+  /** Index into `GameState.trail`. */
+  position: number;
+  /** A hiker that has reached the trail end is done for the season. */
+  finished: boolean;
+}
+
+export interface Player {
+  index: number;
+  name: string;
+  isHuman: boolean;
+  /** AI weighting profile; undefined for the human player. */
+  personality?: AiPersonality;
+  color: string;
+  resources: ResourceBag;
+  /**
+   * Water drawn at this player's latest stop. A flask may only be filled from
+   * water just collected, never from the pack, so the counter is cleared the
+   * moment one of their hikers walks on again.
+   */
+  waterThisTurn: number;
+  bottles: Bottle[];
+  campfires: number;
+  /** True once this season's first hiker came home and re-lit the campfire. */
+  campfireRelit: boolean;
+  photos: number;
+  hikers: Hiker[];
+  parks: ParkCard[];
+  claimedInSeason: number[];
+  gear: GearCard[];
+  bonusCards: string[];
+  /** Parks reserved from the row; only this player may claim them. */
+  reserved: ParkCard[];
+}
+
+export type AiPersonality = 'collector' | 'photographer' | 'blazer';
+
+export type DecisionKind =
+  | 'camera'
+  | 'trail-end'
+  | 'wild-swap'
+  | 'token-swap'
+  | 'park-or-gear'
+  | 'copy-site'
+  /* Nightfall: a tent site offers its own action or a campsite */
+  | 'tent'
+  /* Wildlife: the bison trade when you visit its park */
+  | 'bison'
+  /* Over the token limit at the end of a turn: choose what goes back */
+  | 'discard'
+  /* The season is over: whoever holds the camera may take one last photo */
+  | 'season-photo';
+
+export interface PendingDecision {
+  player: number;
+  hikerId: string;
+  siteIndex: number;
+  kind: DecisionKind;
+  /** 'take-photo' follows picking up the camera; swaps run give then get. */
+  stage?: 'take-photo' | 'give' | 'get';
+  /** Trades left at a Trading Post. */
+  swapsLeft?: number;
+  /** The resource handed over, waiting on what it becomes. */
+  give?: Resource;
+  /** True while resolving a site copied from an Overlook. */
+  copied?: boolean;
+  /** Decision to return to once this one resolves (the bison interrupts a stop). */
+  resume?: PendingDecision | null;
+}
+
+/** Nightfall campsites: powerful alternates reached by pitching a tent. */
+export interface CampsiteDef {
+  id: string;
+  name: string;
+  icon: string;
+  text: string;
+  /** What camping here does. */
+  effect: CampsiteEffect;
+}
+
+export type CampsiteEffect =
+  | { kind: 'gain'; gain: ResourceBag }
+  /** Hand over `give` to receive `gain`. */
+  | { kind: 'trade'; give: ResourceBag; gain: ResourceBag }
+  /** Trade any single resource for the gain. */
+  | { kind: 'trade-any'; gain: ResourceBag }
+  /** Take a bottle card, and resources alongside it. */
+  | { kind: 'bottle'; count: number; gain?: ResourceBag }
+  /** Pay, refresh the gear row, then take one gear card for free. */
+  | { kind: 'outfitter'; cost: ResourceBag };
+
+export interface Campsite {
+  id: string;
+  /** Player indexes camped here this season; capacity depends on player count. */
+  tents: number[];
+}
+
+/** Season cards are revealed one per season and run for that whole season. */
+export interface SeasonCardDef {
+  id: string;
+  name: string;
+  /** Which season deck it belongs to. */
+  season: 1 | 2 | 3 | 4;
+  text: string;
+  /** Set on cards that only exist with an expansion. */
+  expansion?: Expansion;
+  effect: SeasonEffect;
+}
+
+export type SeasonEffect =
+  /** Gaining `when` at a site also pays `gain`. */
+  | { kind: 'weather'; when: Resource; gain: ResourceBag }
+  /** Photos cost this much less this season. */
+  | { kind: 'cheap-photos'; amount: number }
+  /** Park costs drop by this much this season. */
+  | { kind: 'park-discount'; amount: number }
+  /** Gear costs this much less this season. */
+  | { kind: 'cheap-gear'; amount: number }
+  /** Wildlife: a park action may take the unseen top card of the park deck. */
+  | { kind: 'chance' };
+
+export type Expansion = 'nightfall' | 'wildlife';
+
+export interface ExpansionFlags {
+  nightfall: boolean;
+  wildlife: boolean;
+}
+
+/** Optional rules, chosen before a game starts. */
+export interface HouseRules {
+  /** A reserve may take the unseen top card of the park deck instead of a face-up park. */
+  blindReserve: boolean;
+  /** Season 1's advanced site is always the Ranger Station rather than a random draw. */
+  rangerFirst: boolean;
+}
+
+export interface LogEntry {
+  season: number;
+  player: number;
+  text: string;
+}
+
+export type GamePhase = 'playing' | 'season-end' | 'game-over';
+
+export interface GameState {
+  rng: number;
+  expansions: ExpansionFlags;
+  houseRules: HouseRules;
+  season: number;
+  /** The season card in play, and the decks still to be revealed. */
+  seasonCard: SeasonCardDef | null;
+  seasonDeck: SeasonCardDef[];
+  /** The order advanced sites join the trail, one more each season. */
+  advancedOrder: SiteKind[];
+  trail: SiteKind[];
+  /** Season bonus token still sitting on each trail site, by index. */
+  siteTokens: SiteToken[];
+  players: Player[];
+  current: number;
+  /** Holder of the first player token: sets turn order and scores 1 VP. */
+  firstPlayer: number;
+  /** The camera token's holder, or null while it is on the trail. */
+  cameraHolder: number | null;
+  /** Cleared each season: gear discounts and the first player token are prizes. */
+  gearDiscountsLeft: number;
+  /** Nightfall: trail indexes carrying a tent, and the three campsites in play. */
+  tentSites: number[];
+  campsites: Campsite[];
+  /** Wildlife: which park in the row the bison is standing on. */
+  bison: number | null;
+  firstPlayerTokenClaimed: boolean;
+  /** Set once the camera holder has been offered this season's closing photo. */
+  seasonPhotoOffered: boolean;
+  parkRow: ParkCard[];
+  parkDeck: ParkCard[];
+  gearRow: GearCard[];
+  gearDeck: GearCard[];
+  bottleDeck: BottleKind[];
+  pending: PendingDecision | null;
+  phase: GamePhase;
+  log: LogEntry[];
+  finalScores?: FinalScore[];
+}
+
+export interface FinalScore {
+  player: number;
+  parkVp: number;
+  photoVp: number;
+  bonusVp: number;
+  firstPlayerVp: number;
+  leftoverVp: number;
+  total: number;
+  bonusBreakdown: { name: string; vp: number }[];
+}
+
+export type GameAction =
+  | { type: 'move'; hikerId: string; to: number; useCampfire?: boolean }
+  /** Nightfall: take the trail site's action, or pitch a tent at a campsite. */
+  | { type: 'tent'; option: 'site' | 'camp'; campsiteId?: string }
+  /** Wildlife: the bison's optional trade. */
+  | { type: 'bison'; give?: Resource }
+  | { type: 'use-bottle'; bottleId: string }
+  /** Camera site: take the camera, or decline it for a bottle card. */
+  | { type: 'camera'; option: 'take-camera' | 'take-bottle' }
+  /** `pay` names the tokens spent; left out, the cheapest mix is chosen. */
+  | { type: 'camera-photo'; take: boolean; pay?: ResourceBag }
+  /** The camera holder's photo when the season ends. */
+  | { type: 'season-photo'; take: boolean; pay?: ResourceBag }
+  /** Tokens handed back to get down to the limit at the end of a turn. */
+  | { type: 'discard'; resources: ResourceBag }
+  /** Wildlife Hide and Trading Post trades. */
+  | { type: 'swap-give'; resource: Resource }
+  | { type: 'swap-get'; resource: Resource }
+  | { type: 'swap-done' }
+  /** Overlook: copy the action of an occupied site. */
+  | { type: 'copy-site'; siteIndex: number }
+  | { type: 'copy-skip' }
+  /** Ranger Station: the park actions without walking to the end. */
+  | {
+      type: 'park-or-gear';
+      option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'chance-park' | 'skip';
+      parkId?: string;
+      gearId?: string;
+    }
+  | {
+      type: 'trail-end';
+      option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'buy-gear' | 'chance-park' | 'skip';
+      parkId?: string;
+      gearId?: string;
+    }
+  | { type: 'end-season' };

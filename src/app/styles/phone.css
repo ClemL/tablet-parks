@@ -1,0 +1,296 @@
+.phone {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: max(1rem, env(safe-area-inset-top)) 0.9rem max(1.2rem, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 0.9rem;
+}
+
+.phone--empty,
+.phone--join {
+  min-height: 100dvh;
+  align-content: center;
+  text-align: center;
+  justify-items: center;
+}
+
+.join__seat {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 2rem;
+}
+
+.join__form {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 360px;
+  text-align: left;
+}
+
+.join__form label {
+  font-weight: 700;
+}
+
+.join__form .btn {
+  width: 100%;
+}
+
+.phone__head {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  border-bottom: 4px solid var(--seat);
+  padding-bottom: 0.6rem;
+}
+
+.phone__head h1 {
+  font-size: 1.5rem;
+}
+
+.phone__head p {
+  font-size: 0.85rem;
+}
+
+.phone__turn {
+  border-radius: 14px;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.phone__turn--you {
+  background: color-mix(in srgb, var(--seat) 30%, var(--surface));
+  border-color: var(--seat);
+  font-size: 1.1rem;
+  animation: your-turn 1.6s ease-in-out 2;
+}
+
+@keyframes your-turn {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--seat) 45%, transparent);
+  }
+}
+
+.phone__waiting {
+  display: grid;
+  gap: 0.8rem;
+  justify-items: start;
+}
+
+.phone__seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.phone__scores {
+  display: grid;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.phone__foot {
+  display: flex;
+  justify-content: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.tab {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  min-height: 44px;
+  padding: 0.3rem 0.8rem 0.3rem 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab.is-on {
+  background: var(--surface-3);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.tab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------- the sheet */
+
+.sheet-view {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.sheet-view--locked {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.sheet-view__block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sheet-view__block h3 {
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sheet-view__block h3 .muted {
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin-right: auto;
+}
+
+.res-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.res {
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 0.4rem 0.2rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+}
+
+.res--none {
+  opacity: 0.5;
+}
+
+.res__icon {
+  font-size: 1.3rem;
+}
+
+.res__count {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.res__label {
+  font-size: 0.7rem;
+  color: var(--card-muted);
+}
+
+.meter {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.kit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.94rem;
+}
+
+.kit--on {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.kit--used {
+  opacity: 0.6;
+}
+
+.objectives {
+  border-color: var(--gold);
+}
+
+.objectives__toggle {
+  margin-left: auto;
+}
+
+.objective-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.objective {
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.objective__now {
+  font-size: 0.8rem;
+  color: #2f6b45;
+  font-weight: 700;
+}
+
+.mini-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mini-col {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mini-col .gear {
+  width: 100%;
+}
+
+.sheet-view__score {
+  color: var(--muted);
+  font-size: 0.9rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}

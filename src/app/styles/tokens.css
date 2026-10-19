@@ -1,0 +1,50 @@
+:root {
+  color-scheme: dark;
+  --display: 'Zilla Slab', 'Rockwell', 'Roboto Slab', Georgia, serif;
+  --body: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --radius: 12px;
+
+  /* grounds */
+  --bg: #1b241f;
+  --bg-glow: #2b3a2f;
+  --surface: #232f28;
+  --surface-2: #1d2720;
+  --surface-3: #2a382f;
+  --line: #3c5145;
+  --line-soft: #2c3b32;
+
+  /* text — every pair here measured at WCAG AA or better on its ground */
+  --text: #e8efe6;
+  --muted: #a8bbac;
+  --dim: #8fa494;
+
+  /* accents */
+  --accent: #7fb685;
+  --on-accent: #12251a;
+  --gold: #e0b654;
+  --on-gold: #2a2206;
+  --danger: #e58a76;
+  --focus: #f2d27a;
+
+  /* card faces: the parchment parks and sites are printed on */
+  --card: #f6f0e0;
+  --card-2: #e4dac2;
+  --card-line: #cbbf9f;
+  --card-adv: #efe6cf;
+  --ink: #22271f;
+  --card-muted: #5f5947;
+  --token-sun: #f5c542;
+  --token-water: #6fb3e0;
+
+  /* seats: the pawns carry letters too, so no seat rests on its colour alone */
+  --p0: #e07a5f;
+  --p1: #3d8361;
+  --p2: #3f6fa8;
+  --p3: #b07bac;
+  --p4: #c9a227;
+  --on-pawn: #fff;
+
+  --scrim: rgba(10, 14, 11, 0.72);
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  --shadow-big: 0 20px 50px rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,280 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  animation: fade-in 160ms ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet {
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow-big);
+  padding: 1rem 1.2rem 1.2rem;
+  display: grid;
+  gap: 0.8rem;
+  animation: sheet-in 220ms ease-out;
+}
+
+.sheet--wide {
+  width: min(980px, 100%);
+}
+
+.sheet--center {
+  text-align: center;
+  justify-items: center;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+/*
+ * A decision turns to face the person making it. Turned a quarter, the sheet's
+ * width runs along the screen's height, so it is bounded by that instead.
+ */
+.sheet--top {
+  rotate: 180deg;
+}
+
+.sheet--left,
+.sheet--right {
+  width: min(600px, calc(100dvh - 24px));
+  max-height: calc(100vw - 24px);
+}
+
+.sheet--left {
+  rotate: 90deg;
+}
+
+.sheet--right {
+  rotate: -90deg;
+}
+
+@media (max-width: 720px) {
+  .sheet--top,
+  .sheet--left,
+  .sheet--right {
+    rotate: none;
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+.sheet__head {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.sheet__head > div {
+  flex: 1;
+}
+
+.sheet__head h2 {
+  font-size: 1.4rem;
+}
+
+.sheet__note {
+  color: var(--muted);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem;
+}
+
+.choice {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  min-height: 64px;
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  gap: 0.15rem;
+  justify-items: start;
+  text-align: left;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choice:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.choice--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  justify-items: center;
+  text-align: center;
+}
+
+.choice--camp {
+  background: #2a3550;
+  border-color: #5c6f8a;
+}
+
+.choice__icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.choice__sub {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.picker li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.picker__step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.picker__step output {
+  min-width: 1.6em;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.picker__step .btn {
+  min-width: 44px;
+  font-size: 1.2rem;
+}
+
+/* ------------------------------------------------------------------ scores */
+
+.scores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.scores th,
+.scores td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: right;
+  vertical-align: top;
+}
+
+.scores th:first-child {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.scores thead th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.scores__total {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.scores__bonus {
+  display: grid;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.scores .is-winner th {
+  color: var(--gold);
+}
+
+.scores__crown {
+  font-size: 0.8rem;
+}
+
+.scores .is-you {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* -------------------------------------------------------------------- menu */
+
+.menu__group {
+  display: grid;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 0.8rem;
+}
+
+.menu__group h3 {
+  font-size: 1rem;
+}
+
+.menu__seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.menu__seats li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.menu__seatname {
+  flex: 1;
+  min-width: 160px;
+}
+
+.menu__danger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.menu__code {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  text-align: center;
+}

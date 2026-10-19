@@ -1,0 +1,299 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(1200px 700px at 50% 30%, var(--bg-glow), var(--bg));
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Taps fire at once instead of waiting to see if a double-tap zoom was meant. */
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--display);
+  margin: 0;
+  line-height: 1.15;
+}
+
+p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.eyebrow {
+  color: var(--gold);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.code {
+  font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+  letter-spacing: 0.06em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  min-height: 44px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--ghost {
+  background: transparent;
+}
+
+.btn--danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
+}
+
+.btn--sm {
+  min-height: 34px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.86rem;
+}
+
+.btn--big {
+  min-height: 56px;
+  padding: 0.8rem 1.8rem;
+  font-size: 1.1rem;
+}
+
+.btn--icon {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.btn--link {
+  background: none;
+  border: none;
+  min-height: 0;
+  padding: 0 0.2rem;
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:not(:disabled):hover {
+    filter: brightness(1.12);
+  }
+}
+
+/* -------------------------------------------------------------- form pieces */
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmented button {
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  min-height: 44px;
+  min-width: 48px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+}
+
+.segmented button:last-child {
+  border-right: none;
+}
+
+.segmented button.is-on {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.toggle {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  min-height: 40px;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 22px;
+  height: 22px;
+  margin-top: 0.1rem;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.toggle--small {
+  font-size: 0.88rem;
+  min-height: 0;
+}
+
+input[type='text'],
+input:not([type]),
+.seat-tag__input {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  min-height: 44px;
+  width: 100%;
+}
+
+.notice {
+  background: color-mix(in srgb, var(--gold) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: var(--radius);
+  padding: 0.7rem 1rem;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2rem;
+  transform: translateX(-50%);
+  background: var(--surface-3);
+  border: 1px solid var(--danger);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  box-shadow: var(--shadow);
+  z-index: 40;
+}
+
+.loading {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* --------------------------------------------------------------------- pawns */
+
+.pawn {
+  --size: 28px;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: var(--on-pawn);
+  font-weight: 800;
+  font-size: calc(var(--size) * 0.42);
+  letter-spacing: -0.02em;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  vertical-align: middle;
+}
+
+.pawn--sm {
+  --size: 24px;
+}
+
+.pawn--lg {
+  --size: 40px;
+}
+
+.pawn--ring {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------------- footer */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  justify-content: center;
+  color: var(--dim);
+  font-size: 0.8rem;
+  padding: 1.5rem 1rem 1rem;
+}
+
+.footer__latest {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
