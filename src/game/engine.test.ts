@@ -17,6 +17,7 @@ import {
   openCampsites,
   photoCost,
   planPayment,
+  previewMove,
   wildCoverage,
   reservableParks,
   SEASONS,
@@ -26,7 +27,7 @@ import {
   validPhotoPayment,
 } from './engine';
 import { aiAction } from './ai';
-import { scoreGame } from './scoring';
+import { scoreGame, scorePlayer } from './scoring';
 import {
   ADVANCED_SITES,
   basicSitesFor,
@@ -38,6 +39,9 @@ import {
   PHOTO_COST_DISCOUNTED,
   TOKEN_LIMIT,
 } from './data/sites';
+import { GEAR } from './data/gear';
+import { SEASON_CARDS } from './data/seasons';
+import { viewFor } from './view';
 import type { GameState } from './types';
 
 function allCpu(seed: number): GameState {
@@ -1220,5 +1224,103 @@ describe('published rules restored', () => {
     next = applyAction(next, aiAction(next)!);
     expect(next.pending).toBeNull();
     expect(tokenCount(next.players[0])).toBe(TOKEN_LIMIT);
+  });
+});
+
+describe('move preview', () => {
+  const walk = (to: number, hikerId = 'p0h0', useCampfire = false) => ({ hikerId, to, useCampfire });
+
+  it('reports what a plain site pays without touching the game', () => {
+    const state = baseGame(201);
+    const index = putSite(state, 'valley');
+    state.current = 0;
+    state.players[0].resources = { sun: 1, water: 1, forest: 0, mountain: 0, wild: 0 };
+    const before = JSON.stringify(state);
+    const preview = previewMove(state, walk(index));
+    expect(preview).toEqual({
+      gain: { sun: 0, water: 2, forest: 0, mountain: 0, wild: 0 },
+      tokens: 4,
+      over: 0,
+      decision: null,
+      tent: false,
+    });
+    expect(JSON.stringify(state)).toBe(before);
+  });
+
+  it('counts the season token, the season weather and gear, the way the move would', () => {
+    const state = baseGame(202);
+    const index = putSite(state, 'mountain', 2);
+    state.siteTokens[index] = 'sun';
+    state.seasonCard = SEASON_CARDS.find((c) => c.id === 'summer-heat')!;
+    state.players[0].gear = [GEAR.find((g) => g.id === 'poles')!];
+    state.current = 0;
+    const preview = previewMove(state, walk(index))!;
+    const played = applyAction(state, { type: 'move', ...walk(index) }).players[0].resources;
+    // Ridge 1 and poles 1; the sun token brings the Season of Heat's mountain, which the poles double too.
+    expect(preview.gain).toEqual({ sun: 1, water: 0, forest: 0, mountain: 4, wild: 0 });
+    for (const r of ['sun', 'mountain'] as const) expect(preview.gain[r]).toBe(played[r] ?? 0);
+  });
+
+  it('names the decision a stop opens instead of guessing at its outcome', () => {
+    const state = baseGame(203);
+    const camera = putSite(state, 'camera');
+    state.current = 0;
+    expect(previewMove(state, walk(camera))).toMatchObject({ decision: 'camera', gain: { sun: 0, water: 0 } });
+    expect(previewMove(state, walk(state.trail.length - 1))?.decision).toBe('trail-end');
+  });
+
+  it('says how many tokens would go back over the limit', () => {
+    const state = baseGame(204);
+    const index = putSite(state, 'valley');
+    state.current = 0;
+    state.players[0].resources = { sun: 5, water: 3, forest: 3, mountain: 0, wild: 0 };
+    expect(previewMove(state, walk(index))).toMatchObject({ tokens: 13, over: 1, decision: null });
+  });
+
+  it("previews a tent site's own action and flags the campsite on offer", () => {
+    const state = createGame({ seed: 205, expansions: { nightfall: true, wildlife: false } });
+    const index = putSite(state, 'forest', 2);
+    state.tentSites = [index];
+    state.current = 0;
+    state.players[0].resources = { sun: 2, water: 2, forest: 2, mountain: 2, wild: 0 };
+    const preview = previewMove(state, walk(index))!;
+    expect(preview.tent).toBe(true);
+    expect(preview.gain.forest).toBe(1);
+    expect(preview.decision).toBeNull();
+  });
+
+  it('refuses a move the player cannot make', () => {
+    const state = baseGame(206);
+    state.current = 0;
+    expect(previewMove(state, walk(1, 'p1h0'))).toBeNull();
+    expect(previewMove(state, walk(0))).toBeNull();
+  });
+
+  it("gives a phone's redacted view the same answer as the full game", () => {
+    const state = createGame({ seed: 207, players: 4 });
+    state.current = 2;
+    const view = viewFor(state, 2, { hideSheets: [0, 1, 3] });
+    for (const option of legalMoves(state)) {
+      expect(previewMove(view, option)).toEqual(previewMove(state, option));
+    }
+  });
+});
+
+describe('score so far', () => {
+  it('counts a player now the way the final scoring will', () => {
+    const state = playOut(301);
+    for (const score of scoreGame(state)) {
+      expect(scorePlayer(state, state.players[score.player])).toEqual(score);
+    }
+  });
+
+  it("leaves out the objectives a phone's view cannot read", () => {
+    const state = createGame({ seed: 302, players: 3 });
+    state.players[1].photos = 2;
+    const view = viewFor(state, 0);
+    const other = scorePlayer(view, view.players[1]);
+    expect(other.bonusBreakdown).toEqual([]);
+    expect(other.photoVp).toBe(2);
+    expect(scorePlayer(view, view.players[0]).bonusBreakdown).toHaveLength(2);
   });
 });

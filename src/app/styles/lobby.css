@@ -1,110 +1,70 @@
-.lobby .edge-center {
-  display: grid;
-  place-items: center;
-  padding: 10px;
-}
-
-.lobby__center {
-  width: min(100%, 860px);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  box-shadow: var(--shadow);
-  padding: 1rem 1.3rem;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.6rem 1.6rem;
-  max-height: 100%;
-  overflow: auto;
-}
-
-.lobby__head {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.lobby__title {
-  font-size: 1.8rem;
-}
-
-.lobby__title .code {
-  color: var(--gold);
-}
-
-.lobby__steps {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: grid;
-  gap: 0.3rem;
-  align-content: start;
-  color: var(--muted);
-  font-size: 0.92rem;
-}
-
-.lobby__settings {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 0.8rem;
-}
-
-.lobby__summary {
-  font-size: 0.88rem;
-}
-
-.lobby__actions {
-  display: grid;
-  gap: 0.45rem;
-  align-content: start;
-  justify-items: start;
-}
-
-.db-line {
-  font-size: 0.86rem;
-}
-
-.db-line--warn {
-  color: var(--gold);
-}
-
-@media (max-width: 1000px) {
-  .lobby__center {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* ---------------------------------------------------------------- seat tags */
 
 .seat-tag {
   height: 100%;
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px 10px 10px;
   background: var(--card);
   color: var(--ink);
   border-radius: 14px;
-  border-top: 8px solid var(--seat);
+  border-top: 6px solid var(--seat);
   box-shadow: var(--shadow);
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: stretch;
+  overflow: hidden;
 }
 
 .seat-tag--here {
   outline: 3px solid var(--seat);
 }
 
+.seat-tag__qr {
+  width: 116px;
+  height: 116px;
+  flex: none;
+  line-height: 0;
+  border-radius: 8px;
+}
+
+.seat-tag__qr--waiting {
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--card-line);
+  color: var(--card-muted);
+}
+
+/* No code to show: a narrower square leaves the seat's two buttons room for one row. */
+.seat-tag__qr--joined {
+  width: 80px;
+  display: grid;
+  place-items: center;
+  background: var(--seat);
+  color: var(--on-seat);
+  border-radius: 12px;
+}
+
+.seat-tag__qr--joined .ic {
+  stroke-width: 2.6;
+}
+
+.seat-tag__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
 .seat-tag__head {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .seat-tag__name {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -124,58 +84,43 @@
   font-weight: 400;
 }
 
-.seat-tag__meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: var(--card-muted);
-}
-
-.seat-tag__meta .btn--icon {
-  color: var(--ink);
-  border-color: var(--card-line);
-  min-height: 30px;
-  min-width: 30px;
-}
-
 .seat-tag__state {
+  font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.25;
+  color: var(--card-muted);
 }
 
 .seat-tag--here .seat-tag__state {
   color: #2f6b45;
 }
 
-.seat-tag__qr {
-  align-self: center;
-  line-height: 0;
-}
-
-.seat-tag__hidden {
-  flex: 1;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  gap: 6px;
-  font-size: 0.78rem;
-}
-
-.seat-tag__hidden .muted,
-.seat-tag .muted {
-  color: var(--card-muted);
-}
-
-.seat-tag .btn {
-  color: var(--ink);
-  border-color: var(--card-line);
-}
-
-.seat-tag__foot {
+.seat-tag__tools {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: auto;
+}
+
+.tag-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--card-line);
+  background: var(--card-2);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.tag-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .qr {

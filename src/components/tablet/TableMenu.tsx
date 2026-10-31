@@ -121,7 +121,7 @@ export function TableMenu({
             <section className="menu__group">
               <label className="toggle">
                 <input type="checkbox" checked={!upright} onChange={(e) => onUpright(!e.target.checked)} />
-                <span>Turn name tags and decisions toward each seat</span>
+                <span>Turn each seat’s rail and decisions toward that seat (off for a tablet on a stand)</span>
               </label>
               <DbLine db={view.db} />
             </section>

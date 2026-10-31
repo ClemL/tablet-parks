@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import type { Resource, ResourceBag } from '@/game/types';
 import { RESOURCES } from '@/game/types';
-import { RESOURCE_ICON, RESOURCE_LABEL } from './bits';
+import { RESOURCE_LABEL } from './bits';
+import { Token } from './Token';
 
 /**
  * Choose some of your tokens: for a photo's price, or what goes back to get
@@ -38,7 +39,7 @@ export function TokenPicker({
         {kinds.map((r) => (
           <li key={r}>
             <span className="picker__kind">
-              <span aria-hidden="true">{RESOURCE_ICON[r]}</span> {RESOURCE_LABEL[r]}
+              <Token r={r} size="md" decorative /> {RESOURCE_LABEL[r]}
               <span className="muted"> · holding {held[r]}</span>
             </span>
             <span className="picker__step">

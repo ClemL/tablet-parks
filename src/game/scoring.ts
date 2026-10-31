@@ -22,31 +22,38 @@ export function scoringView(player: Player, hasCamera: boolean): PlayerScoringVi
   };
 }
 
-export function scoreGame(state: GameState): FinalScore[] {
-  const scores = state.players.map((player) => {
-    const view = scoringView(player, state.cameraHolder === player.index);
-    const parkVp = player.parks.reduce((sum, p) => sum + p.vp, 0);
-    const photoVp = player.photos * photoVpPer(player);
-    const bonusBreakdown = player.bonusCards.map((id) => {
-      const card = BONUS_CARDS.find((b) => b.id === id)!;
-      return { name: card.name, vp: card.score(view) };
-    });
-    const bonusVp = bonusBreakdown.reduce((sum, b) => sum + b.vp, 0);
-    const firstPlayerVp = state.firstPlayer === player.index ? FIRST_PLAYER_VP : 0;
-    // Leftover resources are worth 1 VP per 3 (house rule, see the rules panel).
-    const leftover = RESOURCES.reduce((sum, r) => sum + (player.resources[r] ?? 0), 0);
-    const leftoverVp = Math.floor(leftover / 3);
-    return {
-      player: player.index,
-      parkVp,
-      photoVp,
-      bonusVp,
-      firstPlayerVp,
-      leftoverVp,
-      total: parkVp + photoVp + bonusVp + firstPlayerVp + leftoverVp,
-      bonusBreakdown,
-    };
+/**
+ * One player's score as the final scoring would count it right now. Run on a
+ * redacted view it leaves out the objectives that view cannot read, so a phone
+ * can show its own running total without knowing anyone else's cards.
+ */
+export function scorePlayer(state: GameState, player: Player): FinalScore {
+  const view = scoringView(player, state.cameraHolder === player.index);
+  const parkVp = player.parks.reduce((sum, p) => sum + p.vp, 0);
+  const photoVp = player.photos * photoVpPer(player);
+  const bonusBreakdown = player.bonusCards.flatMap((id) => {
+    const card = BONUS_CARDS.find((b) => b.id === id);
+    return card ? [{ name: card.name, vp: card.score(view) }] : [];
   });
+  const bonusVp = bonusBreakdown.reduce((sum, b) => sum + b.vp, 0);
+  const firstPlayerVp = state.firstPlayer === player.index ? FIRST_PLAYER_VP : 0;
+  // Leftover resources are worth 1 VP per 3 (house rule, see the rules panel).
+  const leftover = RESOURCES.reduce((sum, r) => sum + (player.resources[r] ?? 0), 0);
+  const leftoverVp = Math.floor(leftover / 3);
+  return {
+    player: player.index,
+    parkVp,
+    photoVp,
+    bonusVp,
+    firstPlayerVp,
+    leftoverVp,
+    total: parkVp + photoVp + bonusVp + firstPlayerVp + leftoverVp,
+    bonusBreakdown,
+  };
+}
+
+export function scoreGame(state: GameState): FinalScore[] {
+  const scores = state.players.map((player) => scorePlayer(state, player));
 
   return scores.sort((a, b) => {
     if (b.total !== a.total) return b.total - a.total;

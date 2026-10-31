@@ -2,16 +2,43 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { legalMoves, siteDef, type MoveOption } from '@/game/engine';
-import type { GameState, Hiker } from '@/game/types';
+import type { GameState, Hiker, SiteKind } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
-import { Pawn, RESOURCE_ICON } from '../bits';
+import { Pawn, RESOURCE_LABEL } from '../bits';
+import { Icon } from '../Icon';
+import { Token, TokenRow } from '../Token';
 
 /**
- * The season's trail, start to end. While a person is on the clock their
- * hikers are the only things lit: tap one (the rear hiker is picked to begin
- * with), then tap any highlighted site to walk there. A site that needs a
- * campfire to share says so and asks first.
+ * What a site does, short enough for a tile a dozen of which share one row.
+ * Sites that simply pay out show their tokens instead; the full rules text
+ * stays in each tile's label and tooltip.
+ */
+const SHORT: Partial<Record<SiteKind, string>> = {
+  trailhead: 'Start here · no limit',
+  'trail-end': 'Visit, reserve or buy gear',
+  camera: 'Camera, or a bottle',
+  'adv-wildcard': 'Swap 1 for a wild',
+  'adv-swap': 'Swap a token, twice',
+  'adv-park': 'Visit or reserve a park',
+  'adv-copy': 'Copy a site for 1 water',
+  'adv-memory': 'A photo for 1 of each',
+  'adv-bison': 'Swap 1 for a wild; bison moves',
+  'adv-lookout': '1 sun per hiker ahead',
+  'adv-talk': 'Reserve the top park',
+};
+
+/** Hikers standing on a site: those still walking, and at the end, those home. */
+function hikersAt(state: GameState, index: number): Hiker[] {
+  const end = state.trail.length - 1;
+  return state.players.flatMap((p) => p.hikers.filter((h) => h.position === index && (!h.finished || index === end)));
+}
+
+/**
+ * The season's trail, start to end, in one row. While a person is on the clock
+ * the sites they can reach light up: tap one to walk there (the rear hiker is
+ * picked to begin with; tap the other hiker to switch). A site that needs a
+ * campfire to share says so on the tile and asks first.
  */
 export function Trail({
   state,
@@ -43,19 +70,20 @@ export function Trail({
   const selected = mine.find((h) => h.id === chosen) ?? rear ?? null;
   const targets = new Map(moves.filter((m) => m.hikerId === selected?.id).map((m) => [m.to, m]));
 
-  const seatOf = (hiker: Hiker) => seats[hiker.owner];
-
   return (
     <section className="trail" aria-label="The trail">
-      <ol className="trail__sites">
+      <ol className="trail__sites" style={{ '--sites': state.trail.length } as React.CSSProperties}>
         {state.trail.map((kind, index) => {
           const def = siteDef(kind);
           const token = state.siteTokens[index];
           const tent = state.tentSites.includes(index);
-          const here = state.players.flatMap((p) => p.hikers.filter((h) => h.position === index && (h.finished ? index === state.trail.length - 1 : true)));
+          const here = hikersAt(state, index);
           const target = targets.get(index);
+          const from = selected?.position === index && canMove !== null;
           const end = index === 0 || index === state.trail.length - 1;
-          const label = `${def.name}${token ? `, ${token} token waiting` : ''}${tent ? ', tent site' : ''}${target ? target.useCampfire ? ', reachable with a campfire' : ', reachable' : ''}`;
+          const label = `${def.name}: ${def.text}${token ? ` ${RESOURCE_LABEL[token]} token waiting.` : ''}${tent ? ' Tent site.' : ''}${
+            target ? (target.useCampfire ? ' Reachable by spending your campfire.' : ' Reachable.') : ''
+          }`;
           return (
             <li
               key={`${state.season}-${index}`}
@@ -63,8 +91,7 @@ export function Trail({
                 'site',
                 end ? 'site--end' : '',
                 def.tier === 'advanced' ? 'site--advanced' : '',
-                target ? 'site--target' : '',
-                target?.useCampfire ? 'site--campfire' : '',
+                target ? (target.useCampfire ? 'site--campfire' : 'site--target') : '',
                 arrived.has(index) ? 'site--arrived' : '',
               ]
                 .filter(Boolean)
@@ -75,53 +102,59 @@ export function Trail({
                 className="site__face"
                 disabled={!target || busy}
                 aria-label={target ? `Walk to ${label}` : label}
+                title={def.text}
                 onClick={() => {
                   if (!target) return;
                   if (target.useCampfire) setConfirm(target);
                   else onMove(target);
                 }}
               >
-                <SiteArt id={kind} />
-                <span className="site__icon" aria-hidden="true">
-                  {def.icon}
-                </span>
+                <SiteArt id={kind} className="site__art" />
                 <span className="site__name">{def.name}</span>
-                <span className="site__text">{def.text}</span>
-                <span className="site__marks">
-                  {token ? (
-                    <span className={`site__token site__token--${token}`} title={`First hiker here takes 1 ${token}`}>
-                      {RESOURCE_ICON[token]}
-                    </span>
-                  ) : null}
-                  {tent ? (
-                    <span className="site__tent" title="Tent site: camp here instead of taking the action">
-                      ⛺
-                    </span>
-                  ) : null}
-                  {target?.useCampfire ? (
-                    <span className="site__fire" title="Sharing costs your campfire">
-                      🔥
-                    </span>
-                  ) : null}
-                </span>
+                <span className="site__does">{def.gain ? <TokenRow bag={def.gain} size="md" /> : SHORT[kind] ?? def.text}</span>
+                {target ? (
+                  <span className="site__foot">
+                    {target.useCampfire ? (
+                      <>
+                        <Icon name="fire" size={15} />
+                        Campfire
+                      </>
+                    ) : (
+                      'Walk here'
+                    )}
+                  </span>
+                ) : from ? (
+                  <span className="site__foot site__foot--from">Moving from here</span>
+                ) : null}
               </button>
+              {token ? (
+                <span className="site__token" title={`First hiker here takes 1 ${RESOURCE_LABEL[token].toLowerCase()}`}>
+                  <Token r={token} size="lg" decorative />
+                </span>
+              ) : null}
+              {tent ? (
+                <span className="site__tent" title="Tent site: camp here instead of taking the action">
+                  <Icon name="tent" size={14} />
+                </span>
+              ) : null}
               <span className="site__hikers">
                 {here.map((hiker) => {
-                  const pickable = mine.some((h) => h.id === hiker.id);
-                  const pawn = <Pawn seat={seatOf(hiker)} size="sm" ring={selected?.id === hiker.id} />;
-                  return pickable && mine.length > 1 ? (
+                  const seat = seats[hiker.owner];
+                  const pickable = mine.length > 1 && mine.some((h) => h.id === hiker.id);
+                  const pawn = <Pawn seat={seat} size={here.length > 3 ? 'sm' : 'md'} ring={selected?.id === hiker.id} />;
+                  return pickable ? (
                     <button
-                      key={`${hiker.id}-${hiker.position}`}
+                      key={hiker.id}
                       type="button"
                       className={`hiker hiker--pick${selected?.id === hiker.id ? ' is-on' : ''}`}
                       aria-pressed={selected?.id === hiker.id}
-                      aria-label={`Move this hiker of ${seatOf(hiker).name}`}
+                      aria-label={`Move this hiker of ${seat.name}`}
                       onClick={() => setChosen(hiker.id)}
                     >
                       {pawn}
                     </button>
                   ) : (
-                    <span key={`${hiker.id}-${hiker.position}`} className={`hiker${pickable ? ' hiker--mine' : ''}`}>
+                    <span key={hiker.id} className="hiker">
                       {pawn}
                     </span>
                   );
@@ -133,8 +166,9 @@ export function Trail({
       </ol>
       {confirm ? (
         <div className="trail__confirm" role="alertdialog" aria-label="Spend a campfire?">
+          <Icon name="fire" size={22} />
           <span>
-            🔥 <b>{siteDef(state.trail[confirm.to]).name}</b> is occupied. Spend your campfire to share it?
+            <b>{siteDef(state.trail[confirm.to]).name}</b> is occupied. Spend your campfire to share it?
           </span>
           <button type="button" className="btn btn--primary" disabled={busy} onClick={() => onMove(confirm)}>
             Spend the campfire
@@ -145,6 +179,25 @@ export function Trail({
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** The trail as a strip of thumbnails, for when the cards take the middle of the table. */
+export function TrailStrip({ state, seats, at }: { state: GameState; seats: PublicSeat[]; at: number | null }) {
+  return (
+    <ol className="trail-strip" aria-label="The trail" style={{ '--sites': state.trail.length } as React.CSSProperties}>
+      {state.trail.map((kind, index) => (
+        <li key={`${state.season}-${index}`} className={`strip-site${at === index ? ' strip-site--here' : ''}`}>
+          <SiteArt id={kind} className="strip-site__art" />
+          <span className="strip-site__name">{siteDef(kind).name}</span>
+          <span className="strip-site__hikers">
+            {hikersAt(state, index).map((hiker) => (
+              <Pawn key={hiker.id} seat={seats[hiker.owner]} size="xs" />
+            ))}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
