@@ -8,6 +8,7 @@ import { SiteArt } from '@/art/siteArt';
 import { Pawn, RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token, TokenRow } from '../Token';
+import { useLongPress } from '@/client/useLongPress';
 
 /**
  * What a site does, short enough for a tile a dozen of which share one row.
@@ -38,7 +39,8 @@ function hikersAt(state: GameState, index: number): Hiker[] {
  * The season's trail, start to end, in one row. While a person is on the clock
  * the sites they can reach light up: tap one to walk there (the rear hiker is
  * picked to begin with; tap the other hiker to switch). A site that needs a
- * campfire to share says so on the tile and asks first.
+ * campfire to share says so on the tile and asks first. Tapping any other
+ * site, or holding any site, opens its full rules.
  */
 export function Trail({
   state,
@@ -46,6 +48,7 @@ export function Trail({
   canMove,
   busy,
   onMove,
+  onInfo,
 }: {
   state: GameState;
   seats: PublicSeat[];
@@ -53,7 +56,9 @@ export function Trail({
   canMove: number | null;
   busy: boolean;
   onMove: (move: MoveOption) => void;
+  onInfo: (index: number) => void;
 }) {
+  const hold = useLongPress();
   const moves = canMove !== null ? legalMoves(state) : [];
   const mine = canMove !== null ? state.players[canMove].hikers.filter((h) => !h.finished && moves.some((m) => m.hikerId === h.id)) : [];
   const [chosen, setChosen] = useState<string | null>(null);
@@ -100,11 +105,12 @@ export function Trail({
               <button
                 type="button"
                 className="site__face"
-                disabled={!target || busy}
-                aria-label={target ? `Walk to ${label}` : label}
+                aria-label={target ? `Walk to ${label}` : `Rules for ${label}`}
                 title={def.text}
+                {...hold(() => onInfo(index))}
                 onClick={() => {
-                  if (!target) return;
+                  if (!target) return onInfo(index);
+                  if (busy) return;
                   if (target.useCampfire) setConfirm(target);
                   else onMove(target);
                 }}

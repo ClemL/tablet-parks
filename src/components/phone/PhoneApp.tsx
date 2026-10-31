@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CPU_SEATS, SEASONS } from '@/game/engine';
+import { CPU_SEATS, SEASONS, nextPlayer } from '@/game/engine';
 import { scorePlayer } from '@/game/scoring';
 import type { Edge, SeatView } from '@/room/room';
 import type { SeatPreview } from '@/server/service';
@@ -275,6 +275,8 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
               : `${state.players[actor].name}’s turn.`
             : '';
   const shown = view.seats[tab] ?? me;
+  const coming = state.phase === 'playing' ? nextPlayer(state) : null;
+  const youNext = !yourTurn && coming === view.seat && coming !== actor;
 
   return (
     <main className="phone" style={seatStyle(me)}>
@@ -309,7 +311,10 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
 
       <p className={`phone__turn${yourTurn ? ' phone__turn--you' : ''}`} aria-live="polite">
         {actor !== null && !yourTurn ? <Pawn seat={view.seats[actor]} size="sm" /> : null}
-        <span>{turn}</span>
+        <span>
+          {turn}
+          {youNext ? <b className="phone__next"> You’re up next.</b> : null}
+        </span>
       </p>
       {offline ? (
         <p className="notice" role="status">

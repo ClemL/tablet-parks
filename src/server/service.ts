@@ -12,6 +12,7 @@ import {
   leaveSeat,
   newRoom,
   nextSeason,
+  undoLast,
   normalizeSettings,
   playFor,
   renameSeat,
@@ -271,7 +272,9 @@ export type TableCommand =
   | { type: 'edge'; seat: number }
   | { type: 'free'; seat: number }
   | { type: 'start' }
-  | { type: 'nextSeason' };
+  | { type: 'nextSeason' }
+  /** Takes back the latest action made on the tablet, within a few seconds of it. */
+  | { type: 'undo' };
 
 /** Everything else the tablet does. */
 export async function controlGame(token: string | null, command: TableCommand): Promise<TableView> {
@@ -295,6 +298,9 @@ export async function controlGame(token: string | null, command: TableCommand): 
         break;
       case 'nextSeason':
         nextSeason(r, at);
+        break;
+      case 'undo':
+        undoLast(r, at);
         break;
       default:
         throw new RoomError('Unknown command', 400);

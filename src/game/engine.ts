@@ -44,6 +44,7 @@ import {
   copyableSites,
   hasTent,
   legalMoves,
+  nextPlayer,
   reservableParks,
   tokensOverLimit,
   type MoveOption,
@@ -145,17 +146,68 @@ export function previewMove(state: GameState, option: MoveOption): MovePreview |
   const tent = next.pending?.kind === 'tent';
   if (tent) next = applyAction(next, { type: 'tent', option: 'site' });
 
-  const before = state.players[mover].resources;
   const after = next.players[mover];
-  const gain = bag({});
-  for (const r of RESOURCES) gain[r] = (after.resources[r] ?? 0) - (before[r] ?? 0);
   const pending = next.pending?.player === mover ? next.pending.kind : null;
   return {
-    gain,
+    gain: resourceChange(state.players[mover], after),
     tokens: tokenCount(after),
     over: tokensOverLimit(next, mover),
     decision: pending === 'discard' ? null : pending,
     tent,
+  };
+}
+
+function resourceChange(before: Player, after: Player): Required<ResourceBag> {
+  const gain = bag({});
+  for (const r of RESOURCES) gain[r] = (after.resources[r] ?? 0) - (before.resources[r] ?? 0);
+  return gain;
+}
+
+export interface ActionPreview {
+  /** What the deciding player's tokens change by. */
+  gain: Required<ResourceBag>;
+  /** Tokens held afterwards, and how many of those would go back at the end of the turn. */
+  tokens: number;
+  over: number;
+  /** Changes to the rest of their sheet. Bottles are counted, never named: a view has no bottle deck. */
+  photos: number;
+  bottles: number;
+  campfires: number;
+  parks: number;
+  gear: number;
+  reserved: number;
+  /** True when they hold the camera afterwards and did not before. */
+  camera: boolean;
+  /** A decision they still face afterwards, other than the token limit. */
+  next: DecisionKind | null;
+}
+
+/**
+ * What answering the pending decision this way would do to the player
+ * answering it, worked out by playing the answer on a copy. Draws from a
+ * face-down deck are unknown to a redacted view, so a preview run on one can
+ * count a bottle but not name it, and cannot see the gear an Outfitter deals.
+ * Null when the answer is not one the engine accepts.
+ */
+export function previewAction(state: GameState, action: GameAction): ActionPreview | null {
+  const seat = state.pending?.player ?? state.current;
+  const next = applyAction(state, action);
+  if (JSON.stringify(next) === JSON.stringify(state)) return null;
+  const before = state.players[seat];
+  const after = next.players[seat];
+  const pending = next.pending?.player === seat ? next.pending.kind : null;
+  return {
+    gain: resourceChange(before, after),
+    tokens: tokenCount(after),
+    over: tokensOverLimit(next, seat),
+    photos: after.photos - before.photos,
+    bottles: after.bottles.length - before.bottles.length,
+    campfires: after.campfires - before.campfires,
+    parks: after.parks.length - before.parks.length,
+    gear: after.gear.length - before.gear.length,
+    reserved: after.reserved.length - before.reserved.length,
+    camera: next.cameraHolder === seat && state.cameraHolder !== seat,
+    next: pending === 'discard' ? null : pending,
   };
 }
 
@@ -891,13 +943,8 @@ function endTurn(state: GameState): void {
     return;
   }
 
-  for (let step = 1; step <= state.players.length; step++) {
-    const candidate = (state.current + step) % state.players.length;
-    if (!playerDone(state.players[candidate])) {
-      state.current = candidate;
-      return;
-    }
-  }
+  const next = nextPlayer(state);
+  if (next !== null) state.current = next;
 }
 
 function startNextSeason(state: GameState): void {

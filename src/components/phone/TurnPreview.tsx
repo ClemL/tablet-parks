@@ -1,10 +1,11 @@
 'use client';
 
-import { claimableParks, legalMoves, pendingLabel, previewMove, siteDef, type MovePreview } from '@/game/engine';
+import { claimableParks, legalMoves, pendingLabel, previewAction, previewMove, siteDef, type MovePreview } from '@/game/engine';
 import { TOKEN_LIMIT } from '@/game/data/sites';
 import type { DecisionKind, GameState, Hiker } from '@/game/types';
 import { Icon } from '../Icon';
 import { TokenBag } from '../Token';
+import { Outcome as ChoiceOutcome, decisionChoices, decisionText } from '../decisions';
 
 /** What a stop asks of the player next, for sites whose worth is a choice rather than a payout. */
 const DECISION: Partial<Record<DecisionKind, string>> = {
@@ -26,19 +27,32 @@ export function TurnPreview({ state, seat }: { state: GameState; seat: number })
   if (state.current !== seat || state.phase !== 'playing') return null;
 
   if (state.pending) {
+    if (state.pending.player !== seat) return null;
     const shopping = state.pending.kind === 'trail-end' || state.pending.kind === 'park-or-gear';
     const parks = shopping ? claimableParks(state, seat) : [];
+    const choices = shopping ? null : decisionChoices(state);
     return (
       <section className="preview" aria-labelledby="preview-title">
         <h2 id="preview-title" className="preview__title">
-          Decide on the tablet: {pendingLabel(state)}
+          Decide on the tablet: {shopping ? pendingLabel(state) : decisionText(state).title}
         </h2>
         {shopping ? (
           <p className="preview__note">
             {parks.length > 0 ? `Your pack covers ${listOr(parks.map((p) => `${p.name} (${p.vp} VP)`))}.` : 'Your pack covers none of the parks on offer: reserve one, or pass.'}
           </p>
+        ) : choices ? (
+          <ul className="preview__list">
+            {choices.map((choice) => (
+              <li key={choice.key} className="reach">
+                <span className="reach__name">{choice.label}</span>
+                <span className="reach__what">
+                  <ChoiceOutcome preview={previewAction(state, choice.action)} action={choice.action} />
+                </span>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <p className="preview__note">The choices are on the sheet turned toward you.</p>
+          <p className="preview__note">Pick the tokens on the sheet turned toward you.</p>
         )}
       </section>
     );

@@ -20,6 +20,8 @@ import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token } from '../Token';
 import { parkPlace } from '../ParkCard';
+import { useLongPress } from '@/client/useLongPress';
+import type { InfoSubject } from './InfoSheet';
 
 type ShopKind = 'trail-end' | 'park-or-gear';
 type Option = Extract<GameAction, { type: 'trail-end' }>['option'];
@@ -36,13 +38,16 @@ export function Shop({
   kind,
   busy,
   onAction,
+  onInfo,
 }: {
   state: GameState;
   shopper: number;
   kind: ShopKind;
   busy: boolean;
   onAction: (action: GameAction) => void;
+  onInfo: (subject: InfoSubject) => void;
 }) {
+  const hold = useLongPress();
   const player = state.players[shopper];
   const claimable = new Set(claimableParks(state, shopper).map((p) => p.id));
   const reservable = new Set(reservableParks(state).map((p) => p.id));
@@ -66,6 +71,7 @@ export function Shop({
               player={player}
               state={state}
               mine
+              holdProps={hold(() => onInfo({ kind: 'park', id: park.id }))}
               canVisit={claimable.has(park.id)}
               busy={busy}
               onVisit={() => act('claim-park', { parkId: park.id })}
@@ -78,6 +84,7 @@ export function Shop({
               player={player}
               state={state}
               bison={park.id === bison}
+              holdProps={hold(() => onInfo({ kind: 'park', id: park.id }))}
               canVisit={claimable.has(park.id)}
               canReserve={reservable.has(park.id)}
               busy={busy}
@@ -125,7 +132,7 @@ export function Shop({
                   <span className="shop-gear__icon" aria-hidden="true">
                     {card.icon}
                   </span>
-                  <div className="shop-gear__text">
+                  <div className="shop-gear__text pressable" {...hold(() => onInfo({ kind: 'gear', id: card.id }))}>
                     <h3>{card.name}</h3>
                     <p>{card.text}</p>
                   </div>
@@ -173,6 +180,7 @@ function ShopPark({
   busy,
   onVisit,
   onReserve,
+  holdProps,
 }: {
   park: ParkCard;
   player: Player;
@@ -184,11 +192,13 @@ function ShopPark({
   busy: boolean;
   onVisit: () => void;
   onReserve?: () => void;
+  /** Holding the picture opens the park's rules. */
+  holdProps: React.HTMLAttributes<HTMLElement>;
 }) {
   const rows = costCheck(state, player, park);
   return (
     <article className={`shop-park${mine ? ' shop-park--mine' : ''}${canVisit ? ' shop-park--can' : ''}`} aria-label={`${park.name}, ${park.vp} points${mine ? ', your reservation' : ''}`}>
-      <div className="shop-park__art">
+      <div className="shop-park__art pressable" {...holdProps}>
         <IllustratedParkArt park={park} />
         <span className="shop-park__vp" aria-hidden="true">
           {park.vp}

@@ -10,13 +10,15 @@ import { Pawn } from '../bits';
 import { Icon } from '../Icon';
 import { GearCard } from '../GearCard';
 import { ParkCard, ParkDeck } from '../ParkCard';
+import type { InfoSubject } from './InfoSheet';
 
 /**
  * The cards on offer while hikers walk: the park row and deck, and the gear
  * shop. Nothing here is bought from — when a person stops at the Trail End or
- * a Ranger Station, the board turns into the shop (see Shop).
+ * a Ranger Station, the board turns into the shop (see Shop). Tapping a card
+ * opens its rules.
  */
-export function Market({ state, seats }: { state: GameState; seats: PublicSeat[] }) {
+export function Market({ state, seats, onInfo }: { state: GameState; seats: PublicSeat[]; onInfo: (subject: InfoSubject) => void }) {
   const bison = bisonPark(state)?.id;
   const holders = state.players.filter((p) => reservedCount(state, p.index) > 0);
   return (
@@ -38,7 +40,9 @@ export function Market({ state, seats }: { state: GameState; seats: PublicSeat[]
         </h3>
         <div className="market__row">
           {state.parkRow.map((park) => (
-            <ParkCard key={park.id} park={park} bison={park.id === bison} />
+            <button key={park.id} type="button" className="card-btn" aria-label={`Rules for ${park.name}`} onClick={() => onInfo({ kind: 'park', id: park.id })}>
+              <ParkCard park={park} bison={park.id === bison} />
+            </button>
           ))}
           <ParkDeck left={parkDeckLeft(state)} />
         </div>
@@ -55,7 +59,9 @@ export function Market({ state, seats }: { state: GameState; seats: PublicSeat[]
         </h3>
         <div className="market__row">
           {state.gearRow.map((card) => (
-            <GearCard key={card.id} card={card} price={gearCost(state, card)} />
+            <button key={card.id} type="button" className="card-btn" aria-label={`Rules for ${card.name}`} onClick={() => onInfo({ kind: 'gear', id: card.id })}>
+              <GearCard card={card} price={gearCost(state, card)} />
+            </button>
           ))}
         </div>
       </section>
@@ -64,7 +70,7 @@ export function Market({ state, seats }: { state: GameState; seats: PublicSeat[]
 }
 
 /** Nightfall's campsites in one strip: what each gives, and whose tents are pitched there. */
-export function Campsites({ state, seats }: { state: GameState; seats: PublicSeat[] }) {
+export function Campsites({ state, seats, onInfo }: { state: GameState; seats: PublicSeat[]; onInfo: (subject: InfoSubject) => void }) {
   if (state.campsites.length === 0) return null;
   const capacity = campsiteCapacity(state.players.length);
   return (
@@ -79,7 +85,14 @@ export function Campsites({ state, seats }: { state: GameState; seats: PublicSea
       {state.campsites.map((camp) => {
         const def = campsiteDef(camp.id);
         return (
-          <article key={camp.id} className="camp" aria-label={`${def.name}: ${def.text} ${camp.tents.length} of ${capacity} tents pitched.`} title={def.text}>
+          <button
+            key={camp.id}
+            type="button"
+            className="camp"
+            aria-label={`${def.name}: ${def.text} ${camp.tents.length} of ${capacity} tents pitched.`}
+            title={def.text}
+            onClick={() => onInfo({ kind: 'camp', id: camp.id })}
+          >
             <SiteArt id={camp.id} className="camp__art" />
             <span className="camp__text">
               <b>{def.name}</b>
@@ -91,7 +104,7 @@ export function Campsites({ state, seats }: { state: GameState; seats: PublicSea
                 return who === undefined ? <span key={i} className="camp__free" /> : <Pawn key={i} seat={seats[who]} size="xs" />;
               })}
             </span>
-          </article>
+          </button>
         );
       })}
     </section>

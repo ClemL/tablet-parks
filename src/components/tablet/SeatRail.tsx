@@ -16,18 +16,25 @@ import { Token } from '../Token';
  * them; on their turn it grows a colour and says what to do, with their pack —
  * the tablet may show it while they act — and the few controls that are not a
  * card or a site: emptying a flask, and passing at a park decision. A
- * computer's turn shows its latest move instead.
+ * computer's turn shows its latest move instead. The seat whose turn comes
+ * next is marked, and for a few seconds after a tap on the tablet the rail of
+ * whoever made it offers to take it back.
  */
 export function SeatRail({
   seat,
   view,
   busy,
   onAction,
+  next = false,
+  undo = null,
 }: {
   seat: PublicSeat;
   view: TableView;
   busy: boolean;
   onAction: (action: GameAction) => void;
+  /** This seat moves once the current turn is over. */
+  next?: boolean;
+  undo?: Undo | null;
 }) {
   const state = view.game!;
   const player = state.players[seat.seat];
@@ -46,10 +53,18 @@ export function SeatRail({
       <Pawn seat={seat} size={acting ? 'xl' : 'lg'} />
       <div className="rail__who">
         <span className="rail__name">{seat.name}</span>
-        {acting ? <span className="rail__chip">Your turn</span> : thinking ? <span className="rail__chip">Thinking</span> : <Kind seat={seat} />}
+        {acting ? (
+          <span className="rail__chip">Your turn</span>
+        ) : thinking ? (
+          <span className="rail__chip">Thinking</span>
+        ) : next ? (
+          <span className="rail__chip rail__chip--next">Up next</span>
+        ) : (
+          <Kind seat={seat} />
+        )}
       </div>
       {acting ? (
-        <Acting state={state} seat={seat} busy={busy} onAction={onAction} />
+        <Acting state={state} seat={seat} busy={busy} onAction={onAction} undo={undo} />
       ) : thinking ? (
         <p className="rail__say rail__say--muted">
           <span className="dots" aria-hidden="true" />
@@ -79,6 +94,11 @@ export function SeatRail({
           ) : null}
         </div>
       )}
+      {!acting && undo ? (
+        <div className="rail__actions">
+          <UndoButton undo={undo} busy={busy} />
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -101,7 +121,19 @@ function Kind({ seat }: { seat: PublicSeat }) {
 }
 
 /** What the person on the clock does next, their pack, and the controls that are not on a card or a site. */
-function Acting({ state, seat, busy, onAction }: { state: GameState; seat: PublicSeat; busy: boolean; onAction: (action: GameAction) => void }) {
+function Acting({
+  state,
+  seat,
+  busy,
+  onAction,
+  undo,
+}: {
+  state: GameState;
+  seat: PublicSeat;
+  busy: boolean;
+  onAction: (action: GameAction) => void;
+  undo: Undo | null;
+}) {
   const player = state.players[seat.seat];
   const pending = state.pending;
   const shopping = pending && (pending.kind === 'trail-end' || pending.kind === 'park-or-gear') ? pending.kind : null;
@@ -148,8 +180,9 @@ function Acting({ state, seat, busy, onAction }: { state: GameState; seat: Publi
           </span>
         </span>
       </div>
-      {bottles.length > 0 || shopping ? (
+      {bottles.length > 0 || shopping || undo ? (
         <div className="rail__actions">
+          {undo ? <UndoButton undo={undo} busy={busy} /> : null}
           {bottles.map((bottle) => {
             const def = bottleDef(bottle.kind);
             const gain = RESOURCES.filter((r) => def.gain[r]).map((r) => `${def.gain[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(', ');
@@ -182,4 +215,19 @@ function Acting({ state, seat, busy, onAction }: { state: GameState; seat: Publi
 export function lastMove(state: GameState): string {
   const last = [...state.log].reverse().find((entry) => entry.player >= 0) ?? state.log[state.log.length - 1];
   return last ? `${last.player >= 0 ? `${state.players[last.player].name} ` : ''}${last.text}` : '';
+}
+
+export interface Undo {
+  label: string;
+  seconds: number;
+  onUndo: () => void;
+}
+
+function UndoButton({ undo, busy }: { undo: Undo; busy: boolean }) {
+  return (
+    <button type="button" className="rail-btn rail-btn--undo" disabled={busy} onClick={undo.onUndo} aria-label={`Take back: ${undo.label}`} title={`Take back: ${undo.label}`}>
+      <Icon name="undo" size={17} />
+      Undo · {undo.seconds}
+    </button>
+  );
 }

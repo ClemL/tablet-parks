@@ -8,8 +8,9 @@ seat nobody scans into is played by the computer.
   offer, the gear shop and the campsites. Hikers are moved, and parks and gear bought, here.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
   gear, parks visited and reserved — and the two secret objectives, with a **Hide** button.
-  On your turn it also lists where your hikers can go and what each stop would hand you. A phone
-  can also open the computer players' sheets (or every sheet, if the table allows it).
+  On your turn it also lists where your hikers can go and what each stop would hand you, and at a
+  decision what each answer would do; each objective shows how far along it is. A phone can also
+  open the computer players' sheets (or every sheet, if the table allows it).
 - **Every game gets a fresh Upstash Redis database**, provisioned on the spot through Upstash's
   `start-redis` endpoint (no account, no API key), and used until the game is over or abandoned.
 
@@ -35,8 +36,16 @@ seat nobody scans into is played by the computer.
    asks before spending the campfire. Decisions — the camera, trades, tents, the bison, the token
    limit — open a sheet turned toward that player's edge. At the Trail End or a Ranger Station
    the cards take the middle of the board, each park checking its cost against the player's pack,
-   with **Visit / Reserve / Buy** right on them; **Pass** is on the player's rail. The phone of
-   whoever is up buzzes, and lists what each reachable site would pay them.
+   with **Visit / Reserve / Buy** right on them; **Pass** is on the player's rail. Each answer on a
+   decision sheet says what it would do to the player's sheet. The rail of whoever moves next is
+   marked **Up next**. The phone of whoever is up buzzes, and lists what each reachable site would
+   pay them.
+   - **Rules:** tap a site you cannot walk to, or hold any tile or card, for its full rules; **Rules**
+     in the header lists everything on the board. The sheet faces whoever is on the clock and turns
+     to any other seat.
+   - **Undo:** for eight seconds after a tap on the tablet, that player's rail offers to take it
+     back, along with any computer moves since — unless a card has come to light in the meantime
+     (a refilled park or gear row, a bottle, a new season).
 6. **Seasons and scoring.** The tablet turns the page between seasons. After winter, the final
    scores — with every objective revealed — show on the tablet and every phone.
 
