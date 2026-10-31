@@ -17,7 +17,8 @@ import { TOKEN_LIMIT } from '@/game/data/sites';
 import type { GameAction, GameState, Resource } from '@/game/types';
 import { COST_RESOURCES, RESOURCES } from '@/game/types';
 import type { Edge, PublicSeat } from '@/room/room';
-import { Pawn, RESOURCE_ICON, RESOURCE_LABEL, bagSize, tokensText } from '../bits';
+import { Pawn, RESOURCE_LABEL, bagSize, tokensText } from '../bits';
+import { Token } from '../Token';
 import { TokenPicker } from '../TokenPicker';
 
 /** The decisions a stop opens that are not about buying parks or gear (those are on the board). */
@@ -64,7 +65,7 @@ export function DecisionSheet({
       held={player.resources}
       initial={defaultPhotoPayment(state, player.index) ?? {}}
       valid={(pay) => validPhotoPayment(state, player.index, pay)}
-      confirmLabel={(pay) => `📸 Take the photo for ${tokensText(pay)}`}
+      confirmLabel={(pay) => `Take the photo for ${tokensText(pay)}`}
       onConfirm={(pay) => onAction({ type, take: true, pay })}
       busy={busy}
     >
@@ -159,13 +160,13 @@ export function DecisionSheet({
     );
   } else if (pending.kind === 'bison') {
     title = 'The bison is here';
-    note = 'Trade one resource for a wildcard 🐾, then the bison moves on to the next park.';
+    note = 'Trade one resource for a wildcard, then the bison moves on to the next park.';
     body = (
       <div className="choices">
         {held.map((r: Resource) => (
           <button key={r} type="button" className="choice" disabled={busy} onClick={() => onAction({ type: 'bison', give: r })}>
             <span className="choice__icon" aria-hidden="true">
-              {RESOURCE_ICON[r]}
+              <Token r={r} size="md" decorative />
             </span>
             Trade 1 {RESOURCE_LABEL[r]}
           </button>
@@ -180,13 +181,13 @@ export function DecisionSheet({
     );
   } else if (pending.kind === 'wild-swap') {
     title = 'Wildlife Hide';
-    note = 'Hand over one resource for a wildcard 🐾, which pays for any resource.';
+    note = 'Hand over one resource for a wildcard, which pays for any resource.';
     body = (
       <div className="choices">
         {held.map((r: Resource) => (
           <button key={r} type="button" className="choice" disabled={busy} onClick={() => onAction({ type: 'swap-give', resource: r })}>
             <span className="choice__icon" aria-hidden="true">
-              {RESOURCE_ICON[r]}
+              <Token r={r} size="md" decorative />
             </span>
             Trade 1 {RESOURCE_LABEL[r]}
             <span className="choice__sub">holding {player.resources[r]}</span>
@@ -213,7 +214,7 @@ export function DecisionSheet({
           ? COST_RESOURCES.filter((r) => r !== pending.give).map((r: Resource) => (
               <button key={r} type="button" className="choice" disabled={busy} onClick={() => onAction({ type: 'swap-get', resource: r })}>
                 <span className="choice__icon" aria-hidden="true">
-                  {RESOURCE_ICON[r]}
+                  <Token r={r} size="md" decorative />
                 </span>
                 Take 1 {RESOURCE_LABEL[r]}
               </button>
@@ -221,7 +222,7 @@ export function DecisionSheet({
           : held.map((r: Resource) => (
               <button key={r} type="button" className="choice" disabled={busy} onClick={() => onAction({ type: 'swap-give', resource: r })}>
                 <span className="choice__icon" aria-hidden="true">
-                  {RESOURCE_ICON[r]}
+                  <Token r={r} size="md" decorative />
                 </span>
                 Give 1 {RESOURCE_LABEL[r]}
                 <span className="choice__sub">holding {player.resources[r]}</span>

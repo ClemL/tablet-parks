@@ -1,15 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CPU_SEATS } from '@/game/engine';
-import type { SeatView } from '@/room/room';
+import { CPU_SEATS, SEASONS } from '@/game/engine';
+import { scorePlayer } from '@/game/scoring';
+import type { Edge, SeatView } from '@/room/room';
 import type { SeatPreview } from '@/server/service';
 import { ApiError, api } from '@/client/api';
 import { HIDE_OBJECTIVES_KEY, local, seatKey } from '@/client/storage';
 import { usePoll } from '@/client/usePoll';
-import { Pawn, seasonName } from '../bits';
+import { Pawn, seasonName, seatStyle } from '../bits';
+import { Icon } from '../Icon';
 import { Scoreboard } from '../Scoreboard';
 import { SeatSheet } from './SeatSheet';
+import { TurnPreview } from './TurnPreview';
 
 function ticketFromHash(): string | null {
   const match = /(?:^#|&)t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
@@ -99,6 +102,13 @@ export function PhoneApp() {
   );
 }
 
+const EDGE_WORDS: Record<Edge, string> = {
+  bottom: 'the tablet’s bottom edge',
+  left: 'the tablet’s left edge',
+  top: 'the tablet’s top edge',
+  right: 'the tablet’s right edge',
+};
+
 function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | null; onJoined: (handle: string, view: SeatView) => void }) {
   const [preview, setPreview] = useState<SeatPreview | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -128,14 +138,29 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
     }
   };
 
+  const seat = preview?.seat;
   return (
-    <main className="phone phone--join">
+    <main className="phone phone--join" style={seat ? seatStyle(seat) : undefined}>
       <p className="eyebrow">Trailside Seasons{preview ? ` · Table ${preview.table}` : ''}</p>
-      {preview ? (
+      {preview && seat ? (
         <>
-          <h1 className="join__seat">
-            <Pawn seat={preview.seat} size="lg" /> Seat {preview.seat.seat + 1}
-          </h1>
+          <section className="join__where" aria-label="Where you sit">
+            <div className={`join__table join__table--${seat.edge}`} aria-hidden="true">
+              <span className="join__screen" />
+              <span className="join__pawn">
+                <Pawn seat={seat} size="xl" />
+              </span>
+            </div>
+            <h1 className="join__seat">Seat {seat.seat + 1}</h1>
+            <p className="join__lead">
+              On {EDGE_WORDS[seat.edge]}.{' '}
+              {seat.kind === 'cpu'
+                ? 'The computer is playing this seat. Taking it over hands it to you — you make its moves on the tablet.'
+                : seat.phone
+                  ? 'Another phone is in this seat. Joining moves the seat to this phone.'
+                  : 'Open — the computer plays it if nobody takes it.'}
+            </p>
+          </section>
           {notice ? (
             <p className="notice" role="status">
               {notice}
@@ -152,24 +177,37 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
               }}
             >
               <label htmlFor="join-name">Your name</label>
-              <input
-                id="join-name"
-                value={name}
-                maxLength={16}
-                autoComplete="nickname"
-                placeholder={`Player ${preview.seat.seat + 1}`}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <p className="muted">
-                {preview.seat.kind === 'cpu'
-                  ? 'The computer is playing this seat. Taking it over hands it to you — you make its moves on the tablet.'
-                  : preview.seat.phone
-                    ? 'Another phone is in this seat. Joining moves the seat to this phone.'
-                    : 'Your resources, camera and secret objectives show here. Moves are made on the tablet.'}
-              </p>
-              <button type="submit" className="btn btn--primary btn--big" disabled={busy}>
-                {busy ? 'Taking the seat…' : 'Take this seat'}
+              <input id="join-name" value={name} maxLength={16} autoComplete="nickname" placeholder={`Player ${seat.seat + 1}`} onChange={(e) => setName(e.target.value)} />
+              <ul className="join__what">
+                <li>
+                  <Icon name="pack" />
+                  <span>
+                    <b>Your pack.</b> Resources, camera, photos, campfire, bottles and gear.
+                  </span>
+                </li>
+                <li>
+                  <Icon name="eyeoff" />
+                  <span>
+                    <b>Two secret objectives.</b> Hide them with one tap when someone leans over.
+                  </span>
+                </li>
+                <li>
+                  <Icon name="tablet" />
+                  <span>
+                    <b>Moves happen on the tablet.</b> This phone only reads — and on your turn, shows what each move would give you.
+                  </span>
+                </li>
+                <li>
+                  <Icon name="buzz" />
+                  <span>
+                    <b>It buzzes on your turn</b> while this page is open.
+                  </span>
+                </li>
+              </ul>
+              <button type="submit" className="btn btn--primary btn--big join__go" disabled={busy}>
+                {busy ? 'Taking the seat…' : `Take seat ${seat.seat + 1}`}
               </button>
+              <p className="join__fine">Scanning this code from another phone later moves the seat there.</p>
             </form>
           )}
         </>
@@ -196,11 +234,12 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
       return !h;
     });
   };
-  useTurnBuzz(view.actor === view.seat && !view.cpuThinking);
+  const yourTurn = view.actor === view.seat && !view.cpuThinking;
+  useTurnBuzz(yourTurn);
 
   if (view.phase === 'lobby' || !view.game) {
     return (
-      <main className="phone">
+      <main className="phone" style={seatStyle(me)}>
         <PhoneHead view={view} />
         <section className="phone__waiting">
           <h2>You’re in.</h2>
@@ -228,25 +267,57 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
       ? 'The game is over.'
       : state.phase === 'season-end'
         ? `${seasonName(state.season)} is over — the tablet starts the next season.`
-        : actor === view.seat && !view.cpuThinking
+        : yourTurn
           ? 'Your turn — make your move on the tablet.'
           : actor !== null
             ? view.cpuThinking
               ? `${state.players[actor].name} (computer) is thinking…`
               : `${state.players[actor].name}’s turn.`
             : '';
+  const shown = view.seats[tab] ?? me;
 
   return (
-    <main className="phone">
-      <PhoneHead view={view} />
-      <p className={`phone__turn${actor === view.seat && !view.cpuThinking ? ' phone__turn--you' : ''}`} aria-live="polite" style={{ '--seat': me.color } as React.CSSProperties}>
-        {turn}
+    <main className="phone" style={seatStyle(me)}>
+      <PhoneHead view={view} objectivesHidden={hidden} />
+
+      <nav className="seats-nav" aria-label="Whose sheet">
+        {view.seats.map((seat) => {
+          const locked = state.redacted.hiddenSheets[seat.seat];
+          const on = tab === seat.seat;
+          const you = seat.seat === view.seat;
+          return (
+            <button
+              key={seat.seat}
+              type="button"
+              className={`seat-pick${on ? ' is-on' : ''}${you ? ' seat-pick--you' : ''}`}
+              aria-pressed={on}
+              aria-label={you ? 'Your sheet' : locked ? `${seat.name}’s sheet stays on their phone` : `${seat.name}’s sheet`}
+              disabled={locked}
+              onClick={() => setTab(seat.seat)}
+            >
+              <Pawn seat={seat} size="md" />
+              {you ? <span>You</span> : on ? <span>{seat.name}</span> : null}
+              {locked ? (
+                <span className="seat-pick__lock">
+                  <Icon name="lock" size={12} />
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </nav>
+
+      <p className={`phone__turn${yourTurn ? ' phone__turn--you' : ''}`} aria-live="polite">
+        {actor !== null && !yourTurn ? <Pawn seat={view.seats[actor]} size="sm" /> : null}
+        <span>{turn}</span>
       </p>
       {offline ? (
         <p className="notice" role="status">
           {offline}
         </p>
       ) : null}
+
+      {yourTurn && tab === view.seat ? <TurnPreview state={state} seat={view.seat} /> : null}
 
       {state.phase === 'game-over' ? (
         <section className="phone__scores">
@@ -255,36 +326,10 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
         </section>
       ) : null}
 
-      <nav className="tabs" aria-label="Whose sheet">
-        {view.seats.map((seat) => {
-          const locked = state.redacted.hiddenSheets[seat.seat];
-          return (
-            <button
-              key={seat.seat}
-              type="button"
-              className={`tab${tab === seat.seat ? ' is-on' : ''}`}
-              aria-pressed={tab === seat.seat}
-              disabled={locked}
-              onClick={() => setTab(seat.seat)}
-              title={locked ? 'Kept on their own phone' : undefined}
-            >
-              <Pawn seat={seat} size="sm" />
-              <span>{seat.seat === view.seat ? 'You' : seat.name}</span>
-              {locked ? <span aria-label="private">🔒</span> : null}
-            </button>
-          );
-        })}
-      </nav>
-
-      <SeatSheet
-        state={state}
-        seat={view.seats[tab] ?? me}
-        mine={tab === view.seat}
-        objectivesHidden={hidden}
-        onToggleObjectives={toggle}
-      />
+      <SeatSheet state={state} seat={shown} mine={tab === view.seat} objectivesHidden={hidden} onToggleObjectives={toggle} />
 
       <footer className="phone__foot">
+        <span className="muted">Moves are made on the tablet.</span>
         <button type="button" className="btn btn--ghost btn--sm" onClick={onLeave}>
           Leave this seat
         </button>
@@ -293,18 +338,35 @@ function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | nu
   );
 }
 
-function PhoneHead({ view }: { view: SeatView }) {
+/**
+ * Who this phone is, and — on your own sheet — what you would score if the game
+ * ended now. Hidden objectives are left out of the total too, so the number
+ * cannot give them away over your shoulder.
+ */
+function PhoneHead({ view, objectivesHidden = false }: { view: SeatView; objectivesHidden?: boolean }) {
   const me = view.seats[view.seat];
+  const game = view.game;
+  const score = game ? scorePlayer(game, game.players[view.seat]) : null;
+  const total = score ? score.total - (objectivesHidden ? score.bonusVp : 0) : null;
   return (
-    <header className="phone__head" style={{ '--seat': me.color } as React.CSSProperties}>
+    <header className="phone__head">
       <Pawn seat={me} size="lg" />
-      <div>
+      <div className="phone__who">
         <h1>{me.name}</h1>
         <p className="muted">
           Seat {view.seat + 1} · Table {view.id}
-          {view.game ? ` · ${seasonName(view.game.season)}, season ${view.game.season} of 4` : ''}
+          {game ? ` · ${seasonName(game.season)}, ${game.season} of ${SEASONS}` : ''}
         </p>
       </div>
+      {score && total !== null ? (
+        <p
+          className="phone__score"
+          title={`Parks ${score.parkVp}, photos ${score.photoVp}${objectivesHidden ? '' : `, objectives ${score.bonusVp}`}, first player ${score.firstPlayerVp}, left over ${score.leftoverVp}`}
+        >
+          <b>{total}</b> VP
+          <span>{objectivesHidden ? 'without objectives' : 'if it ended now'}</span>
+        </p>
+      ) : null}
     </header>
   );
 }

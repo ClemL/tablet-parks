@@ -1,4 +1,5 @@
 import type { GearCard as Gear } from '@/game/types';
+import { Token } from './Token';
 
 export function GearCard({
   card,
@@ -20,10 +21,12 @@ export function GearCard({
           {card.icon}
         </span>
         <h4 className="gear__name">{card.name}</h4>
-        <span className="gear__cost">
-          {shown} ☀️{price !== undefined && price !== card.cost ? <s> {card.cost}</s> : null}
-        </span>
       </div>
+      <span className="gear__cost" aria-hidden="true">
+        {shown}
+        <Token r="sun" size="sm" decorative />
+        {price !== undefined && price !== card.cost ? <s>{card.cost}</s> : null}
+      </span>
       <p className="gear__text">{card.text}</p>
       {children ? <div className="gear__actions">{children}</div> : null}
     </article>

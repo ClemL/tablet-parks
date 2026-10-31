@@ -2,14 +2,6 @@ import type { Resource, ResourceBag, SeasonCardDef } from '@/game/types';
 import { RESOURCES } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 
-export const RESOURCE_ICON: Record<Resource, string> = {
-  sun: '☀️',
-  water: '💧',
-  forest: '🌲',
-  mountain: '⛰️',
-  wild: '🐾',
-};
-
 export const RESOURCE_LABEL: Record<Resource, string> = {
   sun: 'Sun',
   water: 'Water',
@@ -32,46 +24,37 @@ export function costLabel(cost: ResourceBag): string {
   );
 }
 
-/** "2 ☀️ 1 💧" */
+/** "2 sun, 1 water": words, so a button label reads the same on every device. */
 export function tokensText(bag: ResourceBag): string {
-  const parts = RESOURCES.filter((r) => (bag[r] ?? 0) > 0).map((r) => `${bag[r]} ${RESOURCE_ICON[r]}`);
-  return parts.length > 0 ? parts.join(' ') : 'nothing';
+  const parts = RESOURCES.filter((r) => (bag[r] ?? 0) > 0).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`);
+  return parts.length > 0 ? parts.join(', ') : 'nothing';
 }
 
 export function bagSize(bag: ResourceBag): number {
   return RESOURCES.reduce((sum, r) => sum + (bag[r] ?? 0), 0);
 }
 
-/** A cost as a row of resource icons, with the words for screen readers. */
-export function CostRow({ cost }: { cost: ResourceBag }) {
-  const icons: string[] = [];
-  for (const r of RESOURCES) for (let i = 0; i < (cost[r] ?? 0); i++) icons.push(RESOURCE_ICON[r]);
-  return (
-    <span className="cost-row" role="img" aria-label={costLabel(cost)}>
-      {icons.map((icon, i) => (
-        <span key={i} className="cost-pip" aria-hidden="true">
-          {icon}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 /**
  * A seat's pawn: its colour and its letters. The letters carry the identity,
- * so the table never depends on telling two colours apart.
+ * so the table never depends on telling two colours apart. Each seat has its
+ * own ink: white letters on the light seat colours fall below 4.5:1.
  */
-export function Pawn({ seat, size = 'md', ring }: { seat: PublicSeat; size?: 'sm' | 'md' | 'lg'; ring?: boolean }) {
+export function Pawn({ seat, size = 'md', ring }: { seat: PublicSeat; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; ring?: boolean }) {
   return (
     <span
       className={`pawn pawn--${size}${ring ? ' pawn--ring' : ''}`}
-      style={{ background: seat.color }}
+      style={seatStyle(seat)}
       aria-label={seat.name}
       role="img"
     >
       {seat.tag}
     </span>
   );
+}
+
+/** The custom properties every seat-coloured surface reads: `--seat` and the ink that sits on it. */
+export function seatStyle(seat: Pick<PublicSeat, 'seat'>): React.CSSProperties {
+  return { '--seat': `var(--p${seat.seat})`, '--on-seat': `var(--on-p${seat.seat})` } as React.CSSProperties;
 }
 
 export function SeasonCardLine({ card }: { card: SeasonCardDef | null }) {

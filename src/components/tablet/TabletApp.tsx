@@ -7,8 +7,7 @@ import type { TableCommand } from '@/server/service';
 import { ApiError, api } from '@/client/api';
 import { HOST_KEY, local } from '@/client/storage';
 import { usePoll } from '@/client/usePoll';
-import { SettingsScreen } from './SettingsScreen';
-import { Lobby } from './Lobby';
+import { DraftTable, Lobby } from './Lobby';
 import { Board } from './Board';
 
 const SETTINGS_KEY = 'tablet-parks.settings';
@@ -110,7 +109,7 @@ export function TabletApp() {
   };
 
   if (!ready) return null;
-  if (!token) return <SettingsScreen initial={initial} notice={notice} onOpen={open} />;
+  if (!token) return <DraftTable initial={initial} notice={notice} upright={upright} onUpright={setUpright} onOpen={open} />;
   if (!view) {
     return (
       <main className="loading" aria-busy="true">

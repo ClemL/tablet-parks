@@ -1,15 +1,16 @@
 /* ------------------------------------------------------------------- parks */
 
 .park {
-  width: 136px;
+  width: 132px;
+  flex: none;
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--card-line);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
   animation: card-deal 360ms ease-out;
 }
 
@@ -29,17 +30,17 @@
 }
 
 .park--compact {
-  width: 118px;
+  width: 112px;
 }
 
 .park__art {
   position: relative;
-  height: 68px;
+  height: 80px;
   background: #2c3c33;
 }
 
 .park--compact .park__art {
-  height: 50px;
+  height: 52px;
 }
 
 .park__art svg,
@@ -51,10 +52,10 @@
 
 .park__vp {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  min-width: 26px;
-  height: 26px;
+  top: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--gold);
   color: var(--on-gold);
@@ -62,6 +63,12 @@
   display: grid;
   place-items: center;
   border: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+.park--compact .park__vp {
+  width: 24px;
+  height: 24px;
+  font-size: 0.85rem;
 }
 
 .park__bison {
@@ -73,28 +80,40 @@
 }
 
 .park__body {
-  padding: 5px 7px 6px;
+  padding: 7px 9px 9px;
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 .park__name {
-  font-size: 0.84rem;
+  font-size: 0.98rem;
   line-height: 1.1;
 }
 
 .park__state,
 .park__note {
-  font-size: 0.7rem;
+  font-size: 0.74rem;
+  color: var(--card-muted);
+}
+
+.park__tags {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.25;
   color: var(--card-muted);
 }
 
 .park__back {
-  height: 68px;
+  height: 80px;
   display: grid;
   place-items: center;
   background: repeating-linear-gradient(45deg, #2f4a36 0 8px, #355440 8px 16px);
+  color: var(--card);
+  font-family: var(--display);
   font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .park--deck {
@@ -109,44 +128,20 @@
   margin-top: auto;
 }
 
-.park__actions .btn,
-.gear__actions .btn {
-  width: 100%;
-  min-height: 38px;
-  padding: 0.25rem 0.5rem;
-  color: var(--ink);
-  background: var(--card-2);
-  border-color: var(--card-line);
-  font-size: 0.8rem;
-  border-radius: 8px;
-}
-
-.park__actions .btn--primary,
-.gear__actions .btn--primary {
-  background: #2f6b45;
-  border-color: #2f6b45;
-  color: #fff;
-}
-
-.cost-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1px;
-  font-size: 0.82rem;
-  line-height: 1.2;
-}
-
 /* -------------------------------------------------------------------- gear */
 
 .gear {
-  width: 156px;
+  width: 164px;
+  flex: none;
   background: var(--card-adv);
   color: var(--ink);
   border: 1px solid #b99a5b;
-  border-radius: 10px;
+  border-radius: 12px;
+  padding: 9px 10px 10px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  gap: 5px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
   animation: card-deal 360ms ease-out;
 }
 
@@ -155,11 +150,9 @@
 }
 
 .gear__head {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 4px;
+  display: flex;
   align-items: center;
-  padding: 6px 7px 0;
+  gap: 6px;
 }
 
 .gear__icon {
@@ -167,72 +160,24 @@
 }
 
 .gear__name {
-  font-size: 0.84rem;
+  font-size: 0.98rem;
   line-height: 1.1;
 }
 
 .gear__cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-weight: 800;
-  font-size: 0.82rem;
-  white-space: nowrap;
 }
 
 .gear__cost s {
-  color: var(--card-muted);
   font-weight: 400;
+  color: var(--card-muted);
 }
 
 .gear__text {
-  font-size: 0.74rem;
-  color: var(--card-muted);
-  padding: 4px 7px 7px;
-}
-
-/* --------------------------------------------------------------- campsites */
-
-.market__row--camps {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-}
-
-.camp {
-  flex: 1 1 0;
-  min-width: 220px;
-  display: flex;
-  gap: 8px;
-  background: #2a3550;
-  border: 1px solid #5c6f8a;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.camp__art {
-  width: 72px;
-  flex: none;
-  display: block;
-}
-
-.camp__body {
-  padding: 6px 8px 6px 0;
-  display: grid;
-  gap: 2px;
-  font-size: 0.8rem;
-}
-
-.camp__body h4 {
-  font-size: 0.9rem;
-}
-
-.camp__body p {
-  color: #c9d3e6;
-}
-
-.camp__tents {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.camp__free {
-  opacity: 0.6;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: #4f4a3b;
 }

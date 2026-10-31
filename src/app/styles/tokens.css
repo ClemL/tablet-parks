@@ -1,7 +1,8 @@
 :root {
   color-scheme: dark;
-  --display: 'Zilla Slab', 'Rockwell', 'Roboto Slab', Georgia, serif;
-  --body: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  /* Loaded by next/font in layout.tsx; the names after it only cover a failed load. */
+  --display: var(--font-display, 'Zilla Slab'), 'Rockwell', 'Roboto Slab', Georgia, serif;
+  --body: var(--font-body, 'Source Sans 3'), 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
   --radius: 12px;
 
   /* grounds */
@@ -43,6 +44,27 @@
   --p3: #b07bac;
   --p4: #c9a227;
   --on-pawn: #fff;
+  /* The ink on each seat colour: white fails 4.5:1 on the coral, mauve and gold seats. */
+  --on-p0: #2b130b;
+  --on-p1: #ffffff;
+  --on-p2: #ffffff;
+  --on-p3: #2a0f28;
+  --on-p4: #2a2206;
+
+  /* resource tokens: fill and the glyph drawn on it */
+  --tok-sun: #f2c14e;
+  --tok-sun-ink: #4a3200;
+  --tok-water: #6fb3e0;
+  --tok-water-ink: #0d2f4d;
+  --tok-forest: #5fa36f;
+  --tok-forest-ink: #0f2a17;
+  --tok-mountain: #a89a88;
+  --tok-mountain-ink: #2b241c;
+  --tok-wild: #b58ad6;
+  --tok-wild-ink: #2a123d;
+
+  --fire: #f3a56f;
+  --rail: 68px;
 
   --scrim: rgba(10, 14, 11, 0.72);
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.35);

@@ -249,14 +249,19 @@ input:not([type]),
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  color: var(--on-pawn);
+  background: var(--seat);
+  color: var(--on-seat, var(--on-pawn));
   font-weight: 800;
   font-size: calc(var(--size) * 0.42);
   letter-spacing: -0.02em;
-  border: 2px solid rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
   vertical-align: middle;
+}
+
+.pawn--xs {
+  --size: 20px;
+  border-width: 1px;
 }
 
 .pawn--sm {
@@ -267,9 +272,107 @@ input:not([type]),
   --size: 40px;
 }
 
+.pawn--xl {
+  --size: 54px;
+}
+
 .pawn--ring {
   outline: 3px solid var(--focus);
   outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------- tokens and icons */
+
+.tok {
+  --s: 22px;
+  width: var(--s);
+  height: var(--s);
+  flex: none;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.28);
+}
+
+.tok svg {
+  width: 64%;
+  height: 64%;
+  fill: currentColor;
+}
+
+.tok--xs {
+  --s: 16px;
+}
+
+.tok--sm {
+  --s: 20px;
+}
+
+.tok--lg {
+  --s: 32px;
+}
+
+.tok--sun {
+  background: var(--tok-sun);
+  color: var(--tok-sun-ink);
+}
+
+.tok--water {
+  background: var(--tok-water);
+  color: var(--tok-water-ink);
+}
+
+.tok--forest {
+  background: var(--tok-forest);
+  color: var(--tok-forest-ink);
+}
+
+.tok--mountain {
+  background: var(--tok-mountain);
+  color: var(--tok-mountain-ink);
+}
+
+.tok--wild {
+  background: var(--tok-wild);
+  color: var(--tok-wild-ink);
+}
+
+.tok-bag {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  font-weight: 800;
+}
+
+.tok-bag__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tok-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.ic {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+
+.ic--solid {
+  fill: currentColor;
+  stroke: none;
 }
 
 /* ------------------------------------------------------------------- footer */

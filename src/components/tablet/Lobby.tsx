@@ -1,20 +1,114 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { PublicSeat, RoomSettings, TableView } from '@/room/room';
+import { defaultEdges, SEAT_COLORS, type PublicSeat, type RoomSettings, type TableView } from '@/room/room';
 import type { TableCommand } from '@/server/service';
-import { Pawn } from '../bits';
+import { api, type Health } from '@/client/api';
+import { Pawn, seatStyle } from '../bits';
+import { Icon } from '../Icon';
 import { QrCode } from '../QrCode';
+import { Footer } from '../Footer';
 import { EdgeFrame } from './EdgeFrame';
-import { SettingsForm } from './SettingsForm';
+import { SettingsTiles } from './SettingsTiles';
 import { DbLine } from './DbLine';
 
-/**
- * The gathering screen: one name tag and one QR code per seat, on the edge of
- * the tablet nearest whoever sits there. Scanning a code seats that phone;
- * nothing is dealt until the tablet says Start, and every seat still open then
- * is played by the computer.
+/*
+ * Setting the table: one screen from first tap to the deal. The settings sit
+ * in the middle and a tag for each seat sits on the edge nearest whoever will
+ * sit there, turned to face them. Opening the table provisions the game's
+ * database and puts a QR code on every tag; the settings stay editable, in
+ * the same place, until Start.
  */
+
+const TAG = { width: 300, height: 136, qr: 116 };
+
+/** Before the table is opened: the settings, with empty tags where the codes will appear. */
+export function DraftTable({
+  initial,
+  notice,
+  upright,
+  onUpright,
+  onOpen,
+}: {
+  initial: RoomSettings;
+  notice: string | null;
+  upright: boolean;
+  onUpright: (value: boolean) => void;
+  onOpen: (settings: RoomSettings) => Promise<void>;
+}) {
+  const [settings, setSettings] = useState(initial);
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [health, setHealth] = useState<Health | null>(null);
+  useEffect(() => {
+    api.health().then(setHealth, () => setHealth(null));
+  }, []);
+
+  const seats: PublicSeat[] = defaultEdges(settings.seats).map((edge, seat) => ({
+    seat,
+    name: `Player ${seat + 1}`,
+    kind: 'open',
+    edge,
+    tag: `P${seat + 1}`,
+    color: SEAT_COLORS[seat],
+    phone: false,
+  }));
+  const memory = health?.store === 'memory';
+
+  const open = async () => {
+    setOpening(true);
+    setError(null);
+    try {
+      await onOpen(settings);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open the table');
+      setOpening(false);
+    }
+  };
+
+  return (
+    <EdgeFrame seats={seats} width={TAG.width} height={TAG.height} upright={upright} className="lobby" tag={(seat) => <WaitingTag seat={seat} />}>
+      <section className="setup" aria-labelledby="setup-title">
+        <header className="setup__head">
+          <div>
+            <p className="eyebrow">A PARKS-style hiking game for one tablet and a phone each</p>
+            <h1 id="setup-title" className="setup__title">
+              Trailside Seasons
+            </h1>
+          </div>
+        </header>
+        {notice ? (
+          <p className="notice" role="status">
+            {notice}
+          </p>
+        ) : null}
+        <SettingsTiles value={settings} onChange={setSettings} seats={seats} joined={0} upright={upright} onUpright={onUpright} disabled={opening} />
+        <footer className="setup__go">
+          <button type="button" className="btn btn--primary btn--big setup__cta" disabled={opening} onClick={open}>
+            {opening ? 'Opening the table…' : 'Open the table'}
+          </button>
+          <p className="setup__status" aria-live="polite">
+            {opening
+              ? memory
+                ? 'Setting the table up in this server’s memory…'
+                : 'Provisioning a fresh Upstash Redis database for this game — a few seconds…'
+              : memory
+                ? 'Games are kept in this server’s memory (local runs only). The seat codes appear on the tags.'
+                : 'Each game gets its own Upstash Redis database. Then the seat codes appear on the tags.'}
+          </p>
+        </footer>
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Footer />
+      </section>
+    </EdgeFrame>
+  );
+}
+
+/** The table is open: the same screen, now with each seat's code, and Start where Open was. */
 export function Lobby({
   view,
   busy,
@@ -33,25 +127,15 @@ export function Lobby({
   // The seat links need this page's own origin, which only the browser knows.
   const [origin, setOrigin] = useState<string | null>(null);
   useEffect(() => setOrigin(window.location.origin), []);
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<RoomSettings>(view.settings);
-  useEffect(() => {
-    if (!editing) setDraft(view.settings);
-  }, [view.settings, editing]);
 
-  // A tablet 800px tall with a tag on every edge leaves little room between
-  // them, so the tags shrink on smaller screens rather than the instructions.
-  const roomy = useRoomy();
-  const tag = roomy ? { width: 212, height: 268, qr: 150 } : { width: 184, height: 234, qr: 124 };
-
-  const joined = view.seats.filter((s) => s.kind === 'human').length;
-  const open = view.seats.length - joined;
+  const joined = view.seats.filter((s) => s.kind === 'human');
+  const open = view.seats.filter((s) => s.kind !== 'human');
 
   return (
     <EdgeFrame
       seats={view.seats}
-      width={tag.width}
-      height={tag.height}
+      width={TAG.width}
+      height={TAG.height}
       upright={upright}
       className="lobby"
       tag={(seat) => (
@@ -59,7 +143,6 @@ export function Lobby({
           key={seat.seat}
           seat={seat}
           url={origin && view.tickets[seat.seat] ? `${origin}/seat#t=${view.tickets[seat.seat]}` : null}
-          qr={tag.qr}
           busy={busy}
           onRename={(name) => onCommand({ type: 'rename', seat: seat.seat, name })}
           onEdge={() => onCommand({ type: 'edge', seat: seat.seat })}
@@ -67,84 +150,78 @@ export function Lobby({
         />
       )}
     >
-      <section className="lobby__center" aria-labelledby="lobby-title">
-        <header className="lobby__head">
+      <section className="setup" aria-labelledby="lobby-title">
+        <header className="setup__head">
           <div>
             <p className="eyebrow">Trailside Seasons</p>
-            <h1 id="lobby-title" className="lobby__title">
+            <h1 id="lobby-title" className="setup__title">
               Table <span className="code">{view.id}</span>
             </h1>
+          </div>
+          <div className="setup__db">
+            <DbLine db={view.db} />
           </div>
           <button type="button" className="btn btn--ghost btn--danger btn--sm" disabled={busy} onClick={onAbandon}>
             Abandon table
           </button>
         </header>
-
-        {editing ? (
-          <div className="lobby__settings">
-            <SettingsForm value={draft} onChange={setDraft} disabled={busy} />
-            <label className="toggle">
-              <input type="checkbox" checked={!upright} onChange={(e) => onUpright(!e.target.checked)} />
-              <span>Turn name tags toward their seats (off for a tablet on a stand)</span>
-            </label>
-            <div className="row">
-              <button
-                type="button"
-                className="btn btn--primary"
-                disabled={busy}
-                onClick={() => {
-                  onCommand({ type: 'settings', settings: draft });
-                  setEditing(false);
-                }}
-              >
-                Apply
-              </button>
-              <button type="button" className="btn btn--ghost" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <ol className="lobby__steps">
-              <li>Scan the code on your side of the tablet with your phone.</li>
-              <li>Your resources, camera and secret objectives show on your phone.</li>
-              <li>Hikers move, and parks and gear are bought, here on the tablet.</li>
-            </ol>
-            <div className="lobby__actions">
-              <DbLine db={view.db} />
-              <p className="lobby__summary">
-                {view.settings.seats} seats ·{' '}
-                {[view.settings.expansions.nightfall && 'Nightfall', view.settings.expansions.wildlife && 'Wildlife']
-                  .filter(Boolean)
-                  .join(' + ') || 'base game'}{' '}
-                · {view.settings.pace} pace · phones open {view.settings.peek === 'cpu' ? 'computer seats only' : 'every seat'}{' '}
-                <button type="button" className="btn btn--link" onClick={() => setEditing(true)}>
-                  Change
-                </button>
-              </p>
-              <button type="button" className="btn btn--primary btn--big" disabled={busy} onClick={() => onCommand({ type: 'start' })}>
-                Start the game
-              </button>
-              <span className="muted" aria-live="polite">
-                {joined === 0
-                  ? 'Nobody has joined yet: the computer would play every seat.'
-                  : open > 0
-                    ? `${joined} joined · the computer plays the ${open} open seat${open === 1 ? '' : 's'}.`
-                    : 'Every seat is taken.'}
-              </span>
-            </div>
-          </>
-        )}
+        <SettingsTiles
+          value={view.settings}
+          onChange={(settings) => onCommand({ type: 'settings', settings })}
+          seats={view.seats}
+          joined={joined.length}
+          upright={upright}
+          onUpright={onUpright}
+          disabled={busy}
+        />
+        <footer className="setup__go">
+          <button type="button" className="btn btn--primary btn--big setup__cta" disabled={busy} onClick={() => onCommand({ type: 'start' })}>
+            Start the game
+          </button>
+          <p className="setup__status" aria-live="polite">
+            {joined.length === 0 ? (
+              'Nobody has joined yet: the computer would play every seat.'
+            ) : (
+              <>
+                <b>{listNames(joined.map((s) => s.name))} in.</b>{' '}
+                {open.length > 0
+                  ? `The computer plays seat${open.length === 1 ? '' : 's'} ${listNames(open.map((s) => String(s.seat + 1)))} unless someone scans in first.`
+                  : 'Every seat is taken.'}
+              </>
+            )}
+          </p>
+        </footer>
       </section>
     </EdgeFrame>
+  );
+}
+
+function listNames(names: string[]): string {
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** A seat's tag before the table exists: where its code will be. */
+function WaitingTag({ seat }: { seat: PublicSeat }) {
+  return (
+    <div className="seat-tag" style={seatStyle(seat)}>
+      <div className="seat-tag__qr seat-tag__qr--waiting" aria-hidden="true">
+        <Icon name="qr" size={34} />
+      </div>
+      <div className="seat-tag__meta">
+        <div className="seat-tag__head">
+          <Pawn seat={seat} size="md" />
+          <span className="seat-tag__name">Seat {seat.seat + 1}</span>
+        </div>
+        <span className="seat-tag__state">Its code appears when the table opens</span>
+      </div>
+    </div>
   );
 }
 
 function SeatTag({
   seat,
   url,
-  qr,
   busy,
   onRename,
   onEdge,
@@ -152,7 +229,6 @@ function SeatTag({
 }: {
   seat: PublicSeat;
   url: string | null;
-  qr: number;
   busy: boolean;
   onRename: (name: string) => void;
   onEdge: () => void;
@@ -162,78 +238,63 @@ function SeatTag({
   const [name, setName] = useState(here || seat.name.startsWith('Player ') ? '' : seat.name);
   const [showCode, setShowCode] = useState(!here);
   useEffect(() => setShowCode(!here), [here]);
-  const placeholder = here ? seat.name : `Player ${seat.seat + 1}`;
   const commit = () => {
     const trimmed = name.trim();
     if (trimmed && trimmed !== seat.name) onRename(trimmed);
   };
 
   return (
-    <div className={`seat-tag${here ? ' seat-tag--here' : ''}`} style={{ '--seat': seat.color } as React.CSSProperties}>
-      <div className="seat-tag__head">
-        <Pawn seat={seat} size="lg" />
-        {here ? (
-          <span className="seat-tag__name">{seat.name}</span>
-        ) : (
-          <input
-            className="seat-tag__input"
-            value={name}
-            maxLength={16}
-            placeholder={placeholder}
-            aria-label={`Name for seat ${seat.seat + 1}`}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-            }}
-          />
-        )}
-      </div>
-      <div className="seat-tag__meta">
-        <span className="seat-tag__state">{here ? (seat.phone ? '✓ Phone joined' : '✓ Seated') : 'Open — scan to join'}</span>
-        <button type="button" className="btn btn--icon" aria-label={`Move seat ${seat.seat + 1}'s tag to the next edge`} title="Move to the next edge" disabled={busy} onClick={onEdge}>
-          ↻
-        </button>
-      </div>
+    <div className={`seat-tag${here ? ' seat-tag--here' : ''}`} style={seatStyle(seat)}>
       {showCode && url ? (
         <a className="seat-tag__qr" href={url} target="_blank" rel="noreferrer" aria-label={`Seat ${seat.seat + 1} join link`}>
-          <QrCode value={url} label={`Scan to take seat ${seat.seat + 1}`} size={qr} />
+          <QrCode value={url} label={`Scan to take seat ${seat.seat + 1}`} size={TAG.qr} />
         </a>
       ) : (
-        <div className="seat-tag__hidden">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowCode(true)}>
-            Show code again
-          </button>
-          <span className="muted">Scanning it moves the seat to a new phone.</span>
+        <div className="seat-tag__qr seat-tag__qr--joined" aria-hidden="true">
+          <Icon name="check" size={56} />
         </div>
       )}
-      {here ? (
-        <div className="seat-tag__foot">
-          {showCode ? (
-            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowCode(false)}>
-              Hide code
-            </button>
-          ) : null}
-          <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={onFree}>
-            Free seat
-          </button>
+      <div className="seat-tag__meta">
+        <div className="seat-tag__head">
+          <Pawn seat={seat} size="md" />
+          {here ? (
+            <span className="seat-tag__name">{seat.name}</span>
+          ) : (
+            <input
+              className="seat-tag__input"
+              value={name}
+              maxLength={16}
+              placeholder={`Player ${seat.seat + 1}`}
+              aria-label={`Name for seat ${seat.seat + 1}`}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              }}
+            />
+          )}
         </div>
-      ) : null}
+        <span className="seat-tag__state">{here ? (seat.phone ? `Phone joined · seat ${seat.seat + 1}` : `Seated · seat ${seat.seat + 1}`) : 'Open · scan to join'}</span>
+        <div className="seat-tag__tools">
+          {here ? (
+            <>
+              <button type="button" className="tag-btn" onClick={() => setShowCode((s) => !s)}>
+                {showCode ? 'Hide code' : 'Show code'}
+              </button>
+              <button type="button" className="tag-btn" disabled={busy} onClick={onFree}>
+                Free seat
+              </button>
+            </>
+          ) : (
+            <button type="button" className="tag-btn" aria-label={`Move seat ${seat.seat + 1}'s tag to the next edge`} disabled={busy} onClick={onEdge}>
+              <Icon name="rotate" size={16} />
+              Next edge
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
-
-/** True on screens with room for full-size tags on every edge. */
-function useRoomy(): boolean {
-  const [roomy, setRoomy] = useState(true);
-  useEffect(() => {
-    const query = window.matchMedia('(min-width: 1200px) and (min-height: 960px)');
-    const update = () => setRoomy(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-  return roomy;
 }

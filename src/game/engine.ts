@@ -7,6 +7,7 @@ import {
   COST_RESOURCES,
   RESOURCES,
   type BottleKind,
+  type DecisionKind,
   type GameAction,
   type GameState,
   type Player,
@@ -19,7 +20,7 @@ import { SITES, TOKEN_LIMIT, gearDiscountsForPlayers, trailLength } from './data
 import { campsiteCapacity } from './data/campsites';
 import { scoreGame } from './scoring';
 import { BONUS_CARDS } from './data/bonuses';
-import { clone, label, log, spend } from './engine/primitives';
+import { bag, clone, label, log, spend, tokenCount } from './engine/primitives';
 import {
   applyPayment,
   campfireAllowance,
@@ -45,6 +46,7 @@ import {
   legalMoves,
   reservableParks,
   tokensOverLimit,
+  type MoveOption,
   usableCampsites,
 } from './engine/queries';
 import { buildTrail, GEAR_ROW_SIZE, seedSiteTokens, SEASONS, tentSitesFor } from './engine/setup';
@@ -109,6 +111,52 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       break;
   }
   return next;
+}
+
+/* ------------------------------------------------------------------ preview */
+
+export interface MovePreview {
+  /** What the mover's tokens change by. A tent site counts its own action, not a campsite. */
+  gain: Required<ResourceBag>;
+  /** Tokens held after the stop, before any are handed back. */
+  tokens: number;
+  /** How many of those would have to go back at the end of the turn. */
+  over: number;
+  /** The decision the stop opens, if it opens one; the token limit is reported as `over`. */
+  decision: DecisionKind | null;
+  /** True when the site carries a tent and a campsite could be chosen instead. */
+  tent: boolean;
+}
+
+/**
+ * What a legal move would hand the current player, worked out by playing it on
+ * a copy — so the preview can never disagree with the rules, season weather,
+ * gear and season tokens included. It only needs the mover's own sheet and the
+ * public board, so a phone can run it on its own redacted view. Null when the
+ * move is not legal.
+ */
+export function previewMove(state: GameState, option: MoveOption): MovePreview | null {
+  const legal = legalMoves(state).some(
+    (m) => m.hikerId === option.hikerId && m.to === option.to && m.useCampfire === option.useCampfire,
+  );
+  if (!legal) return null;
+  const mover = state.current;
+  let next = applyAction(state, { type: 'move', ...option });
+  const tent = next.pending?.kind === 'tent';
+  if (tent) next = applyAction(next, { type: 'tent', option: 'site' });
+
+  const before = state.players[mover].resources;
+  const after = next.players[mover];
+  const gain = bag({});
+  for (const r of RESOURCES) gain[r] = (after.resources[r] ?? 0) - (before[r] ?? 0);
+  const pending = next.pending?.player === mover ? next.pending.kind : null;
+  return {
+    gain,
+    tokens: tokenCount(after),
+    over: tokensOverLimit(next, mover),
+    decision: pending === 'discard' ? null : pending,
+    tent,
+  };
 }
 
 /** Bottles are a free action on your own turn, before or after moving. */

@@ -8,7 +8,8 @@ seat nobody scans into is played by the computer.
   offer, the gear shop and the campsites. Hikers are moved, and parks and gear bought, here.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
   gear, parks visited and reserved — and the two secret objectives, with a **Hide** button.
-  A phone can also open the computer players' sheets (or every sheet, if the table allows it).
+  On your turn it also lists where your hikers can go and what each stop would hand you. A phone
+  can also open the computer players' sheets (or every sheet, if the table allows it).
 - **Every game gets a fresh Upstash Redis database**, provisioned on the spot through Upstash's
   `start-redis` endpoint (no account, no API key), and used until the game is over or abandoned.
 
@@ -17,20 +18,25 @@ seat nobody scans into is played by the computer.
 
 ## How a game goes
 
-1. **Settings.** The tablet opens on the settings screen: seats (2–5), the Nightfall and Wildlife
-   expansions, two house rules, how fast the computers move, and whose sheets a phone may open.
-2. **Open the table.** The server provisions a new Upstash database for this game, and the tablet
-   shows the lobby: a **name tag and a QR code for each seat**, on the edge of the tablet nearest
-   whoever sits there, turned to face them. Names can be typed on the tablet or on the phone.
+1. **Set the table.** The tablet opens on one screen that lasts until the deal: the settings in
+   the middle — seats (2–5), the Nightfall and Wildlife expansions, two house rules, how fast the
+   computers move, whose sheets a phone may open, and whether the tags face each seat — and a
+   **name tag for each seat** on the edge of the tablet nearest whoever sits there, turned to
+   face them.
+2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
+   code** appears on every tag. The settings stay where they are, still editable, and **Start**
+   takes Open's place. Names can be typed on the tablet or on the phone.
 3. **Phones scan in.** Scanning a seat's code opens that seat on the phone. Scanning it again from
    another phone moves the seat there (the first phone is told), so a dead phone is never stuck.
 4. **Start.** Open seats become computer players, each with its own name and playing style.
-5. **Play.** Whoever is on the clock walks a hiker on the tablet: tap the hiker (the rear one is
-   picked to begin with), then any lit site. A move onto an occupied site asks before spending
-   the campfire. Decisions — the camera, trades, tents, the bison, the token limit — open a sheet
-   turned toward that player's edge. At the Trail End or a Ranger Station the park row and gear
-   shop grow **Visit / Reserve / Buy** buttons right on the board. The phone of whoever is up
-   buzzes.
+5. **Play.** Each seat has a rail along its own edge of the tablet. Whoever is on the clock has
+   their rail light up with what to do and their pack, and walks a hiker on the tablet: tap the
+   hiker (the rear one is picked to begin with), then any lit site. A move onto an occupied site
+   asks before spending the campfire. Decisions — the camera, trades, tents, the bison, the token
+   limit — open a sheet turned toward that player's edge. At the Trail End or a Ranger Station
+   the cards take the middle of the board, each park checking its cost against the player's pack,
+   with **Visit / Reserve / Buy** right on them; **Pass** is on the player's rail. The phone of
+   whoever is up buzzes, and lists what each reachable site would pay them.
 6. **Seasons and scoring.** The tablet turns the page between seasons. After winter, the final
    scores — with every objective revealed — show on the tablet and every phone.
 

@@ -1,1 +1,2 @@
 2026-10-19T12:34Z - First table: the tablet deals, each player joins by QR code, and every game provisions its own Upstash Redis database
+2026-10-31T18:00Z - Redesigned table: setup and lobby on one screen, a rail on each seat's edge, icon-first trail tiles, a shop at the Trail End that checks each park against your pack, and a phone that previews every move on your turn
