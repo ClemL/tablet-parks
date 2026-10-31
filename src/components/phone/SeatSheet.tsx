@@ -4,7 +4,7 @@ import { bonusCardById, bottleDef, canClaim, photoValue, tokenCount } from '@/ga
 import { TOKEN_LIMIT } from '@/game/data/sites';
 import { scoringView } from '@/game/scoring';
 import { HIDDEN_BONUS, reservedCount, sheetHidden } from '@/game/view';
-import type { GameState } from '@/game/types';
+import type { BonusProgress, GameState } from '@/game/types';
 import { RESOURCES } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { RESOURCE_LABEL } from '../bits';
@@ -136,6 +136,7 @@ export function SeatSheet({
                   <li key={id} className="objective">
                     <b>{card.name}</b>
                     <span>{card.text}</span>
+                    <Progress progress={card.progress(view)} />
                     <span className="objective__now">{card.score(view)} VP now</span>
                   </li>
                 );
@@ -220,5 +221,28 @@ function MiniPark({ name, vp, art, note }: { name: string; vp: number; art: Reac
         </span>
       ) : null}
     </article>
+  );
+}
+
+/** How far along an objective is: a bar toward a threshold, or a plain count when every one pays. */
+function Progress({ progress }: { progress: BonusProgress }) {
+  const { count, goal, unit } = progress;
+  if (goal === undefined) {
+    return (
+      <span className="objective__progress">
+        {count} {unit}
+      </span>
+    );
+  }
+  if (goal === 1) {
+    return <span className={`objective__progress${count >= 1 ? ' is-done' : ''}`}>{count >= 1 ? `Done: ${unit}` : `Not yet: ${unit}`}</span>;
+  }
+  return (
+    <span className="objective__progress">
+      {Math.min(count, goal)} of {goal} {unit}
+      <span className="objective__bar" role="meter" aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.min(count, goal)} aria-label={`${count} of ${goal} ${unit}`}>
+        <i style={{ width: `${Math.min(100, (count / goal) * 100)}%` }} />
+      </span>
+    </span>
   );
 }

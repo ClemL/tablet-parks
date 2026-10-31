@@ -126,6 +126,16 @@ export interface BonusCard {
   name: string;
   text: string;
   score: (p: PlayerScoringView) => number;
+  /** How far a player has got toward the card, for their phone to show mid-game. */
+  progress: (p: PlayerScoringView) => BonusProgress;
+}
+
+export interface BonusProgress {
+  count: number;
+  /** For a card that pays once a threshold is reached: the next threshold. */
+  goal?: number;
+  /** What `count` counts, worded for that number: "region" or "regions". */
+  unit: string;
 }
 
 /** Everything a bonus card is allowed to look at. */

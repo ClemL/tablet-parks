@@ -730,3 +730,32 @@
   line-height: 1.25;
   color: #4f4a3b;
 }
+
+.phone__next {
+  color: var(--gold);
+}
+
+.objective .objective__progress {
+  display: grid;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--card-muted);
+}
+
+.objective .objective__progress.is-done {
+  color: #2f6b45;
+}
+
+.objective__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd2b6;
+  overflow: hidden;
+}
+
+.objective__bar i {
+  display: block;
+  height: 100%;
+  background: #2f6b45;
+}

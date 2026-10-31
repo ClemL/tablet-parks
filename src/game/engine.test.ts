@@ -15,8 +15,10 @@ import {
   gearCost,
   occupants,
   openCampsites,
+  nextPlayer,
   photoCost,
   planPayment,
+  previewAction,
   previewMove,
   wildCoverage,
   reservableParks,
@@ -27,7 +29,7 @@ import {
   validPhotoPayment,
 } from './engine';
 import { aiAction } from './ai';
-import { scoreGame, scorePlayer } from './scoring';
+import { scoreGame, scorePlayer, scoringView } from './scoring';
 import {
   ADVANCED_SITES,
   basicSitesFor,
@@ -39,6 +41,7 @@ import {
   PHOTO_COST_DISCOUNTED,
   TOKEN_LIMIT,
 } from './data/sites';
+import { BONUS_CARDS } from './data/bonuses';
 import { GEAR } from './data/gear';
 import { SEASON_CARDS } from './data/seasons';
 import { viewFor } from './view';
@@ -1322,5 +1325,115 @@ describe('score so far', () => {
     expect(other.bonusBreakdown).toEqual([]);
     expect(other.photoVp).toBe(2);
     expect(scorePlayer(view, view.players[0]).bonusBreakdown).toHaveLength(2);
+  });
+});
+
+describe('who is up next', () => {
+  it('names the seat endTurn hands the clock to, every time, through whole games', () => {
+    for (const seed of [401, 402, 403]) {
+      let state = allCpu(seed);
+      let checked = 0;
+      for (let step = 0; step < 5000 && state.phase !== 'game-over'; step++) {
+        if (state.phase === 'season-end') {
+          state = applyAction(state, { type: 'end-season' });
+          continue;
+        }
+        const before = state;
+        state = applyAction(state, aiAction(state)!);
+        if (state.phase === 'playing' && !state.pending && state.current !== before.current) {
+          expect(state.current, `seed ${seed}, step ${step}`).toBe(nextPlayer(before));
+          checked++;
+        }
+      }
+      expect(checked).toBeGreaterThan(20);
+    }
+  });
+
+  it('skips players whose hikers are all home, and is null when nobody is out', () => {
+    const state = createGame({ seed: 404, players: 4 });
+    state.current = 0;
+    for (const h of state.players[1].hikers) h.finished = true;
+    expect(nextPlayer(state)).toBe(2);
+    for (const p of state.players) for (const h of p.hikers) h.finished = true;
+    expect(nextPlayer(state)).toBeNull();
+  });
+});
+
+describe('decision preview', () => {
+  function atCamera(seed: number) {
+    const state = createGame({ seed });
+    const index = putSite(state, 'camera');
+    state.current = 0;
+    state.players[0].resources = { sun: 3, water: 0, forest: 0, mountain: 0, wild: 0 };
+    return applyAction(state, { type: 'move', hikerId: 'p0h0', to: index });
+  }
+
+  it('says what each answer at the Camera Point does, without touching the game', () => {
+    const state = atCamera(411);
+    const before = JSON.stringify(state);
+    expect(previewAction(state, { type: 'camera', option: 'take-camera' })).toMatchObject({ camera: true, bottles: 0, next: 'camera' });
+    expect(previewAction(state, { type: 'camera', option: 'take-bottle' })).toMatchObject({ camera: false, bottles: 1, next: null });
+    expect(JSON.stringify(state)).toBe(before);
+
+    const holding = applyAction(state, { type: 'camera', option: 'take-camera' });
+    expect(previewAction(holding, { type: 'camera-photo', take: true })).toMatchObject({ photos: 1, gain: { sun: -1 } });
+  });
+
+  it('prices a trade and a campsite the way playing them would', () => {
+    const state = createGame({ seed: 412, expansions: { nightfall: true, wildlife: false } });
+    const index = putSite(state, 'forest', 2);
+    state.tentSites = [index];
+    state.current = 0;
+    state.players[0].resources = { sun: 2, water: 2, forest: 2, mountain: 2, wild: 0 };
+    const atTent = applyAction(state, { type: 'move', hikerId: 'p0h0', to: index });
+    expect(atTent.pending?.kind).toBe('tent');
+    for (const option of [{ type: 'tent', option: 'site' } as const, ...atTent.campsites.map((c) => ({ type: 'tent', option: 'camp', campsiteId: c.id }) as const)]) {
+      const preview = previewAction(atTent, option);
+      const played = applyAction(atTent, option);
+      if (!preview) continue;
+      for (const r of ['sun', 'water', 'forest', 'mountain', 'wild'] as const) {
+        expect(preview.gain[r]).toBe((played.players[0].resources[r] ?? 0) - (atTent.players[0].resources[r] ?? 0));
+      }
+      expect(preview.bottles).toBe(played.players[0].bottles.length - atTent.players[0].bottles.length);
+    }
+  });
+
+  it('refuses an answer the engine would not accept', () => {
+    const state = atCamera(413);
+    expect(previewAction(state, { type: 'swap-give', resource: 'sun' })).toBeNull();
+    expect(previewAction(state, { type: 'trail-end', option: 'skip' })).toBeNull();
+  });
+});
+
+describe('objective progress', () => {
+  it('has progress on every card, agreeing with its score', () => {
+    for (const seed of [421, 422, 423]) {
+      const state = playOut(seed);
+      for (const player of state.players) {
+        const view = scoringView(player, state.cameraHolder === player.index);
+        for (const card of BONUS_CARDS) {
+          const progress = card.progress(view);
+          expect(progress.count, card.id).toBeGreaterThanOrEqual(0);
+          expect(progress.unit.length, card.id).toBeGreaterThan(0);
+          const score = card.score(view);
+          if (card.id === 'completionist') {
+            expect(score).toBe(progress.count >= 4 ? 10 : progress.count === 3 ? 5 : 0);
+          } else if (progress.goal !== undefined) {
+            expect(score > 0, card.id).toBe(progress.count >= progress.goal);
+          } else if (card.id !== 'provisioner' && card.id !== 'planner') {
+            // Every unit pays, so nothing counted means nothing scored.
+            expect(score > 0, card.id).toBe(progress.count > 0);
+          }
+        }
+      }
+    }
+  });
+
+  it('counts toward a threshold: two regions of three', () => {
+    const card = BONUS_CARDS.find((c) => c.id === 'coast-to-coast')!;
+    const state = createGame({ seed: 424 });
+    const player = state.players[0];
+    player.parks = state.parkDeck.filter((p, i, all) => all.findIndex((o) => o.region === p.region) === i).slice(0, 2);
+    expect(card.progress(scoringView(player, false))).toEqual({ count: 2, goal: 3, unit: 'regions' });
   });
 });

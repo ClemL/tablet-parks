@@ -65,7 +65,24 @@ export interface Room {
   /** When the computer on the clock may take its next step; 0 when none is. */
   cpuDueAt: number;
   db: DbInfo;
+  /** The latest tap on the tablet that can still be taken back. Server-only. */
+  undo?: UndoRecord | null;
 }
+
+/**
+ * How to take back a person's latest action on the tablet: the game as it
+ * stood before it. It holds everyone's secrets, so it never leaves the server;
+ * a view carries only who may undo, until when, and the public log line.
+ */
+export interface UndoRecord {
+  seat: number;
+  at: number;
+  label: string;
+  state: GameState;
+}
+
+/** How long a person has to take back a mis-tap on the tablet. */
+export const UNDO_MS = 8000;
 
 export class RoomError extends Error {
   constructor(
@@ -174,6 +191,8 @@ export function changeSettings(room: Room, input: Partial<RoomSettings>): void {
 export function renameSeat(room: Room, seat: number, name: unknown): void {
   const record = room.seats[seat];
   if (!record) throw new RoomError('No such seat', 404);
+  // The snapshot holds who sat where and under what name; a seat change outdates it.
+  room.undo = null;
   record.name = cleanName(name);
   if (room.state && record.kind !== 'cpu') room.state.players[seat].name = seatName(room, seat);
 }
@@ -192,6 +211,7 @@ export function cycleEdge(room: Room, seat: number): void {
 export function joinSeat(room: Room, seat: number, device: string, name: unknown): void {
   const record = room.seats[seat];
   if (!record) throw new RoomError('No such seat', 404);
+  room.undo = null;
   if (room.phase === 'over') throw new RoomError('This game is over', 409);
   const typed = cleanName(name);
   // Taking a seat over from the computer drops the computer's name with it.
@@ -213,6 +233,7 @@ export function joinSeat(room: Room, seat: number, device: string, name: unknown
 export function leaveSeat(room: Room, seat: number): void {
   const record = room.seats[seat];
   if (!record) throw new RoomError('No such seat', 404);
+  room.undo = null;
   record.device = null;
   if (room.phase === 'lobby') {
     record.kind = 'open';
@@ -224,6 +245,7 @@ export function leaveSeat(room: Room, seat: number): void {
 export function freeSeat(room: Room, seat: number, now: number): void {
   const record = room.seats[seat];
   if (!record) throw new RoomError('No such seat', 404);
+  room.undo = null;
   record.device = null;
   if (room.phase === 'lobby') {
     record.kind = 'open';
@@ -346,6 +368,45 @@ export function playFor(room: Room, seat: number, action: GameAction, now: numbe
   if (JSON.stringify(next) === JSON.stringify(state)) throw new RoomError('That move is not allowed', 409);
   room.state = next;
   room.cpuDueAt = 0;
+  const said = next.log.slice(state.log.length).find((entry) => entry.player === seat)?.text ?? 'their last action';
+  room.undo = revealsNothing(state, next) ? { seat, at: now, label: said, state } : null;
+  settle(room, now);
+}
+
+/**
+ * True when nothing face down came to light between two states of one game:
+ * no card left a deck — a refilled park row or gear row shows the next card —
+ * and no new season was dealt. Taking back a move after that would let the
+ * table see a card and then pretend it had not.
+ */
+export function revealsNothing(before: GameState, after: GameState): boolean {
+  return (
+    before.season === after.season &&
+    before.rng === after.rng &&
+    before.parkDeck.length === after.parkDeck.length &&
+    before.gearDeck.length === after.gearDeck.length &&
+    before.bottleDeck.length === after.bottleDeck.length
+  );
+}
+
+/** The take-back still on offer at `now`, if there is one. */
+export function openUndo(room: Room, now: number): UndoRecord | null {
+  const undo = room.undo;
+  if (!undo || room.phase !== 'playing' || !room.state) return null;
+  if (now - undo.at > UNDO_MS || !revealsNothing(undo.state, room.state)) return null;
+  return undo;
+}
+
+/**
+ * Takes the tablet's latest action back, along with any computer steps played
+ * since — the computers then play again from there.
+ */
+export function undoLast(room: Room, now: number): void {
+  const undo = openUndo(room, now);
+  if (!undo) throw new RoomError('Too late to take that back', 409);
+  room.state = undo.state;
+  room.undo = null;
+  room.cpuDueAt = 0;
   settle(room, now);
 }
 
@@ -356,6 +417,7 @@ export function nextSeason(room: Room, now: number): void {
   }
   room.state = applyAction(room.state, { type: 'end-season' });
   room.cpuDueAt = 0;
+  room.undo = null;
   settle(room, now);
 }
 
@@ -457,6 +519,7 @@ export function drain(room: Room, now: number, maxSteps = 80): boolean {
     room.state = next;
     moved = true;
     room.cpuDueAt = 0;
+    if (room.undo && !revealsNothing(room.undo.state, next)) room.undo = null;
     if (next.phase === 'game-over') {
       settle(room, now);
       break;
@@ -471,6 +534,8 @@ export function drain(room: Room, now: number, maxSteps = 80): boolean {
 export function hydrateRoom(room: Room): Room {
   if (room.state) room.state = hydrate(room.state);
   room.cpuDueAt ??= 0;
+  room.undo ??= null;
+  if (room.undo) room.undo.state = hydrate(room.undo.state);
   room.settings = normalizeSettings(room.settings);
   return room;
 }
@@ -501,6 +566,8 @@ interface ViewBase {
   cpuThinking: boolean;
   game: GameView | null;
   serverNow: number;
+  /** Who may take their latest tap back, until when (server time), and what it was. */
+  undo: { seat: number; until: number; label: string } | null;
 }
 
 export type TableView = ViewBase & { role: 'table'; tickets: string[] };
@@ -578,5 +645,11 @@ function base(room: Room, now: number, actor: number | null, game: GameView | nu
     cpuThinking: actor !== null && room.state !== null && !room.state.players[actor].isHuman,
     game,
     serverNow: now,
+    undo: undoFor(room, now),
   };
+}
+
+function undoFor(room: Room, now: number): ViewBase['undo'] {
+  const undo = openUndo(room, now);
+  return undo ? { seat: undo.seat, until: undo.at + UNDO_MS, label: undo.label } : null;
 }

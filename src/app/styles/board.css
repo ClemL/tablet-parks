@@ -1088,3 +1088,62 @@
     width: auto;
   }
 }
+
+/* ------------------------------------------------- tapping things for rules */
+
+/* A hold on a tile reads its rules; the browser's own long-press menu would get in the way. */
+.site__face,
+.pressable {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.site__face {
+  cursor: pointer;
+}
+
+.card-btn {
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 12px;
+  flex: none;
+  display: block;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+
+button.camp {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-btn:hover .park,
+  .card-btn:hover .gear {
+    box-shadow:
+      0 0 0 2px var(--focus),
+      0 3px 10px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ------------------------------------------------------- up next and undo */
+
+.rail__chip--next {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1.5px var(--seat);
+}
+
+.rail-btn--undo {
+  border-color: var(--focus);
+  color: var(--focus);
+}

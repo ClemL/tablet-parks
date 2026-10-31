@@ -91,6 +91,13 @@ const PATHS = {
       <path d="M4 8v8M20 8v8" />
     </>
   ),
+  undo: <path d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
+  book: (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+      <path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6" />
+    </>
+  ),
   deck: (
     <>
       <rect x="6" y="3" width="12" height="16" rx="2" />

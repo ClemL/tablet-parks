@@ -278,3 +278,161 @@
   gap: 0.8rem;
   text-align: center;
 }
+
+/* ---------------------------------------------------------- choice outcomes */
+
+.choice__icon .ic,
+.choice__icon .tok {
+  display: block;
+}
+
+.choice__art {
+  display: block;
+  width: 56px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.choice__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.choice__label {
+  font-weight: 700;
+}
+
+.outcome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.outcome__chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  background: var(--surface-2);
+}
+
+.outcome__then {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.outcome__warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f0a070;
+}
+
+.outcome--none {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.undo-btn {
+  flex: none;
+  border-color: var(--focus);
+  color: var(--focus);
+}
+
+/* ------------------------------------------------------------- rules sheet */
+
+.info {
+  width: min(560px, 100%);
+}
+
+.sheet--left.info,
+.sheet--right.info {
+  width: min(560px, calc(100dvh - 24px));
+}
+
+.info__item {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.info__art {
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2c3c33;
+}
+
+.info__art svg,
+.info__site-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.info__site-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.info__kicker {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.info__text {
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.info__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.info__note {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.info__emoji {
+  font-size: 1.4rem;
+}
+
+.info__all {
+  display: grid;
+  gap: 1rem;
+}
+
+.info__all h3 {
+  font-size: 1.05rem;
+  color: var(--card);
+  margin-bottom: 0.3rem;
+}
+
+.info__all dl {
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.info__all dt {
+  font-weight: 700;
+}
+
+.info__all dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #c7d6ca;
+}

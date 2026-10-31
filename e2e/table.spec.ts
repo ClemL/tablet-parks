@@ -23,11 +23,18 @@ async function device(browser: Browser, options: Parameters<Browser['newContext'
 
 const newTablet = (browser: Browser) => device(browser, { viewport: TABLET });
 
-async function openTable(page: Page, options: { seats?: number; brisk?: boolean } = {}): Promise<void> {
+async function openTable(page: Page, options: { seats?: number; brisk?: boolean; base?: boolean } = {}): Promise<void> {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Trailside Seasons' })).toBeVisible();
   if (options.seats) await setSeats(page, options.seats);
   if (options.brisk) await page.getByRole('radio', { name: 'Brisk' }).click();
+  if (options.base) {
+    // No expansions: no tents, so a plain site opens no decision.
+    for (const name of ['Nightfall', 'Wildlife']) {
+      const toggle = page.getByRole('switch', { name });
+      if ((await toggle.getAttribute('aria-checked')) === 'true') await toggle.click();
+    }
+  }
   await page.getByRole('button', { name: 'Open the table' }).click();
   await expect(page.getByRole('button', { name: 'Start the game' })).toBeVisible({ timeout: 30_000 });
 }
@@ -160,9 +167,10 @@ test.describe('round the tablet', () => {
     }
     expect(played).toBeGreaterThanOrEqual(6);
 
-    // Kris's objectives are on Kris's phone, and nowhere on the tablet.
+    // Kris's objectives are on Kris's phone, each with how far along it is, and nowhere on the tablet.
     const objectives = await kris.locator('.objective b').allInnerTexts();
     expect(objectives).toHaveLength(2);
+    await expect(kris.locator('.objective .objective__progress')).toHaveCount(2);
     const tabletText = await tablet.locator('body').innerText();
     for (const name of objectives) expect(tabletText).not.toContain(name);
 
@@ -236,5 +244,47 @@ test.describe('round the tablet', () => {
     await act(tablet, () => tablet.getByRole('button', { name: 'Pass', exact: true }).click());
     await expect(tablet.locator('.shop')).toHaveCount(0);
     await expect(tablet.locator('.trail__sites')).toBeVisible();
+  });
+
+  test('tapping a site that is not lit reads its rules, turned toward a seat on request', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await expect(tablet.locator('.trail__sites')).toBeVisible();
+
+    // The Trailhead is never a place to walk to.
+    await tablet.locator('.site__face').first().click();
+    const rules = tablet.getByRole('dialog', { name: 'Trailhead' });
+    await expect(rules).toBeVisible();
+    await expect(rules).toContainText('Hikers start here');
+    await rules.getByRole('button', { name: 'Turn this toward the next seat' }).click();
+    await expect(rules).toHaveClass(/sheet--top/);
+    await rules.getByRole('button', { name: 'Close the rules' }).click();
+    await expect(rules).toHaveCount(0);
+
+    await tablet.getByRole('button', { name: 'Rules', exact: true }).click();
+    await expect(tablet.getByRole('dialog', { name: 'Everything on the board' })).toContainText('Trail End');
+  });
+
+  test('a mis-tap can be taken back for a few seconds, and the next seat is marked', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, base: true });
+    await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+
+    await expect(tablet.locator('.rail--acting')).toContainText('Kris', { timeout: 20_000 });
+    await expect(tablet.locator('.rail__chip--next')).toHaveCount(1);
+    const before = await tablet.locator('.site__hikers').allInnerTexts();
+
+    // A site that only pays out: no decision follows, so the take-back is on Kris's rail.
+    await act(tablet, () => tablet.locator('.site--target', { has: tablet.locator('.site__does .tok-row') }).first().locator('.site__face').click());
+    const undo = tablet.getByRole('button', { name: /^Take back: moved to/ });
+    await expect(undo).toBeVisible();
+    await act(tablet, () => undo.click());
+
+    await expect(tablet.locator('.rail--acting')).toContainText('Kris');
+    await expect(tablet.locator('.site--target').first()).toBeVisible();
+    expect(await tablet.locator('.site__hikers').allInnerTexts()).toEqual(before);
+    await expect(undo).toHaveCount(0);
   });
 });

@@ -7,6 +7,7 @@ import type { GameAction, GameState } from '@/game/types';
 import {
   PACE_MS,
   RoomError,
+  UNDO_MS,
   actorOf,
   changeSettings,
   cleanName,
@@ -22,6 +23,7 @@ import {
   seatView,
   startGame,
   tableView,
+  undoLast,
   type Room,
 } from './room';
 
@@ -384,5 +386,82 @@ describe('what each device is sent', () => {
     const room = lobby(2);
     startGame(room, T0);
     expect(tableView(room, T0, []).cpuThinking).toBe(true);
+  });
+});
+
+describe('taking a tap back', () => {
+  /** Two seats, a person in seat 0 on the clock, and a move that draws nothing. */
+  function ready(): { room: Room; move: GameAction } {
+    const room = lobby(2);
+    joinSeat(room, 0, 'phone', 'Kris');
+    startGame(room, T0);
+    expect(actorOf(room.state!)).toBe(0);
+    const option = legalMoves(room.state!).find((m) => !m.useCampfire && room.state!.trail[m.to] !== 'adv-talk')!;
+    return { room, move: { type: 'move', ...option } };
+  }
+
+  it('takes a person’s move back, with the computer steps played since', () => {
+    const { room, move } = ready();
+    const before = JSON.stringify(room.state);
+    playFor(room, 0, move, T0);
+    expect(tableView(room, T0 + 1, []).undo).toMatchObject({ seat: 0, until: T0 + UNDO_MS });
+    drain(room, T0 + 3000);
+
+    undoLast(room, T0 + 4000);
+    expect(JSON.stringify(room.state)).toBe(before);
+    expect(actorOf(room.state!)).toBe(0);
+    expect(room.cpuDueAt).toBe(0);
+    expect(tableView(room, T0 + 4001, []).undo).toBeNull();
+    // Once is all: the record went with it.
+    expect(() => undoLast(room, T0 + 4002)).toThrow(/Too late/);
+  });
+
+  it('refuses once the window has passed', () => {
+    const { room, move } = ready();
+    playFor(room, 0, move, T0);
+    expect(tableView(room, T0 + UNDO_MS + 1, []).undo).toBeNull();
+    expect(() => undoLast(room, T0 + UNDO_MS + 1)).toThrow(/Too late/);
+  });
+
+  it('refuses once a card has come to light', () => {
+    const { room } = ready();
+    const state = room.state!;
+    state.players[0].resources = { sun: 9, water: 9, forest: 9, mountain: 9, wild: 9 };
+    const end = state.trail.length - 1;
+    playFor(room, 0, { type: 'move', hikerId: 'p0h0', to: end }, T0);
+    expect(room.undo).not.toBeNull();
+    const deck = room.state!.parkDeck.length;
+    playFor(room, 0, { type: 'trail-end', option: 'claim-park', parkId: room.state!.parkRow[0].id }, T0 + 10);
+    // The row refilled from the deck: the next park is on show.
+    expect(room.state!.parkDeck.length).toBe(deck - 1);
+    expect(tableView(room, T0 + 20, []).undo).toBeNull();
+    expect(() => undoLast(room, T0 + 20)).toThrow(/Too late/);
+  });
+
+  it('forgets the take-back when a seat changes hands', () => {
+    const { room, move } = ready();
+    playFor(room, 0, move, T0);
+    joinSeat(room, 1, 'other', 'Srini');
+    expect(() => undoLast(room, T0 + 10)).toThrow(/Too late/);
+  });
+
+  it('never sends the snapshot to a device, only who may undo and what', () => {
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 3 }), DB, T0, 42);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const seat = actorOf(room.state!)!;
+    const option = legalMoves(room.state!).find((m) => !m.useCampfire && room.state!.trail[m.to] !== 'adv-talk')!;
+    playFor(room, seat, { type: 'move', ...option }, T0);
+    const other = seat === 0 ? 1 : 0;
+
+    const table = tableView(room, T0 + 1, []);
+    expect(Object.keys(table.undo!).sort()).toEqual(['label', 'seat', 'until']);
+    expect(table.undo!.label).toMatch(/moved to/);
+    const json = [JSON.stringify(table), JSON.stringify(seatView(room, other, T0 + 1))];
+    for (const id of room.state!.players[seat].bonusCards) {
+      for (const sent of json) expect(sent).not.toContain(`"${id}"`);
+    }
+    for (const sent of json) expect(sent).not.toContain('"undo":{"seat":' + seat + ',"at"');
   });
 });

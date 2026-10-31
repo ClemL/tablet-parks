@@ -57,6 +57,19 @@ export function legalMoves(state: GameState): MoveOption[] {
   return options;
 }
 
+/**
+ * Who takes the next turn once the current one ends: the next seat round the
+ * table with a hiker still out — the current player again only when everyone
+ * else is home. Null when nobody has a hiker out.
+ */
+export function nextPlayer(state: GameState): number | null {
+  for (let step = 1; step <= state.players.length; step++) {
+    const candidate = (state.current + step) % state.players.length;
+    if (state.players[candidate].hikers.some((h) => !h.finished)) return candidate;
+  }
+  return null;
+}
+
 /** Gear the player could pay for right now. */
 export function affordableGear(state: GameState, playerIndex: number): GearCard[] {
   const player = state.players[playerIndex];
