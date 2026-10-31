@@ -1,18 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CPU_SEATS, SEASONS, nextPlayer } from '@/game/engine';
+import { useCallback, useEffect, useState } from 'react';
+import { CPU_SEATS, SEASONS } from '@/game/engine';
 import { scorePlayer } from '@/game/scoring';
 import type { Edge, SeatView } from '@/room/room';
 import type { SeatPreview } from '@/server/service';
 import { ApiError, api } from '@/client/api';
-import { HIDE_OBJECTIVES_KEY, local, seatKey } from '@/client/storage';
+import { local, seatKey } from '@/client/storage';
 import { usePoll } from '@/client/usePoll';
 import { Pawn, seasonName, seatStyle } from '../bits';
 import { Icon } from '../Icon';
-import { Scoreboard } from '../Scoreboard';
-import { SeatSheet } from './SeatSheet';
-import { TurnPreview } from './TurnPreview';
+import { PhoneGame } from './PhoneGame';
 
 function ticketFromHash(): string | null {
   const match = /(?:^#|&)t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
@@ -89,7 +87,9 @@ export function PhoneApp() {
   return (
     <Seat
       view={view}
+      token={token}
       offline={poll.error?.status === 0 ? poll.error.message : null}
+      onView={(next) => poll.accept(next)}
       onLeave={async () => {
         try {
           if (token) await api.leave(token);
@@ -223,122 +223,44 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
   );
 }
 
-function Seat({ view, offline, onLeave }: { view: SeatView; offline: string | null; onLeave: () => void }) {
+function Seat({
+  view,
+  token,
+  offline,
+  onLeave,
+  onView,
+}: {
+  view: SeatView;
+  token: string;
+  offline: string | null;
+  onLeave: () => void;
+  onView: (view: SeatView) => void;
+}) {
   const me = view.seats[view.seat];
-  const [tab, setTab] = useState(view.seat);
-  const [hidden, setHidden] = useState(false);
-  useEffect(() => setHidden(local.get(HIDE_OBJECTIVES_KEY) === '1'), []);
-  const toggle = () => {
-    setHidden((h) => {
-      local.set(HIDE_OBJECTIVES_KEY, h ? null : '1');
-      return !h;
-    });
-  };
-  const yourTurn = view.actor === view.seat && !view.cpuThinking;
-  useTurnBuzz(yourTurn);
-
-  if (view.phase === 'lobby' || !view.game) {
-    return (
-      <main className="phone" style={seatStyle(me)}>
-        <PhoneHead view={view} />
-        <section className="phone__waiting">
-          <h2>You’re in.</h2>
-          <p>Waiting for the tablet to start the game. Open seats will be played by the computer.</p>
-          <ul className="phone__seats">
-            {view.seats.map((seat) => (
-              <li key={seat.seat}>
-                <Pawn seat={seat} size="sm" /> {seat.name}
-                <span className="muted"> · {seat.kind === 'human' ? 'joined' : 'open'}</span>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="btn btn--ghost" onClick={onLeave}>
-            Leave this seat
-          </button>
-        </section>
-      </main>
-    );
+  if (view.phase !== 'lobby' && view.game) {
+    return <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />;
   }
-
-  const state = view.game;
-  const actor = view.actor;
-  const turn =
-    state.phase === 'game-over'
-      ? 'The game is over.'
-      : state.phase === 'season-end'
-        ? `${seasonName(state.season)} is over — the tablet starts the next season.`
-        : yourTurn
-          ? 'Your turn — make your move on the tablet.'
-          : actor !== null
-            ? view.cpuThinking
-              ? `${state.players[actor].name} (computer) is thinking…`
-              : `${state.players[actor].name}’s turn.`
-            : '';
-  const shown = view.seats[tab] ?? me;
-  const coming = state.phase === 'playing' ? nextPlayer(state) : null;
-  const youNext = !yourTurn && coming === view.seat && coming !== actor;
-
   return (
     <main className="phone" style={seatStyle(me)}>
-      <PhoneHead view={view} objectivesHidden={hidden} />
-
-      <nav className="seats-nav" aria-label="Whose sheet">
-        {view.seats.map((seat) => {
-          const locked = state.redacted.hiddenSheets[seat.seat];
-          const on = tab === seat.seat;
-          const you = seat.seat === view.seat;
-          return (
-            <button
-              key={seat.seat}
-              type="button"
-              className={`seat-pick${on ? ' is-on' : ''}${you ? ' seat-pick--you' : ''}`}
-              aria-pressed={on}
-              aria-label={you ? 'Your sheet' : locked ? `${seat.name}’s sheet stays on their phone` : `${seat.name}’s sheet`}
-              disabled={locked}
-              onClick={() => setTab(seat.seat)}
-            >
-              <Pawn seat={seat} size="md" />
-              {you ? <span>You</span> : on ? <span>{seat.name}</span> : null}
-              {locked ? (
-                <span className="seat-pick__lock">
-                  <Icon name="lock" size={12} />
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </nav>
-
-      <p className={`phone__turn${yourTurn ? ' phone__turn--you' : ''}`} aria-live="polite">
-        {actor !== null && !yourTurn ? <Pawn seat={view.seats[actor]} size="sm" /> : null}
-        <span>
-          {turn}
-          {youNext ? <b className="phone__next"> You’re up next.</b> : null}
-        </span>
-      </p>
-      {offline ? (
-        <p className="notice" role="status">
-          {offline}
+      <PhoneHead view={view} />
+      <section className="phone__waiting">
+        <h2>You’re in.</h2>
+        <p>Waiting for the tablet to start the game. Open seats will be played by the computer.</p>
+        <p className="phone__sideways">
+          <Icon name="phone" size={18} /> Once the game is dealt, turn your phone sideways: it is played in landscape.
         </p>
-      ) : null}
-
-      {yourTurn && tab === view.seat ? <TurnPreview state={state} seat={view.seat} /> : null}
-
-      {state.phase === 'game-over' ? (
-        <section className="phone__scores">
-          <h2>Final scores</h2>
-          <Scoreboard state={state} seats={view.seats} highlight={view.seat} />
-        </section>
-      ) : null}
-
-      <SeatSheet state={state} seat={shown} mine={tab === view.seat} objectivesHidden={hidden} onToggleObjectives={toggle} />
-
-      <footer className="phone__foot">
-        <span className="muted">Moves are made on the tablet.</span>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onLeave}>
+        <ul className="phone__seats">
+          {view.seats.map((seat) => (
+            <li key={seat.seat}>
+              <Pawn seat={seat} size="sm" /> {seat.name}
+              <span className="muted"> · {seat.kind === 'human' ? 'joined' : 'open'}</span>
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="btn btn--ghost" onClick={onLeave}>
           Leave this seat
         </button>
-      </footer>
+      </section>
     </main>
   );
 }
@@ -374,13 +296,4 @@ function PhoneHead({ view, objectivesHidden = false }: { view: SeatView; objecti
       ) : null}
     </header>
   );
-}
-
-/** A short buzz when the table comes round to you, where the phone allows it. */
-function useTurnBuzz(yourTurn: boolean) {
-  const was = useRef(false);
-  useEffect(() => {
-    if (yourTurn && !was.current && 'vibrate' in navigator) navigator.vibrate?.(180);
-    was.current = yourTurn;
-  }, [yourTurn]);
 }

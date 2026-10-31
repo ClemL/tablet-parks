@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------- parks */
 
 .park {
-  width: 132px;
+  width: 146px;
   flex: none;
   background: var(--card);
   color: var(--ink);
@@ -35,7 +35,7 @@
 
 .park__art {
   position: relative;
-  height: 80px;
+  height: 64px;
   background: #2c3c33;
 }
 
@@ -102,11 +102,14 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--card-muted);
 }
 
 .park__back {
-  height: 80px;
+  height: 64px;
   display: grid;
   place-items: center;
   background: repeating-linear-gradient(45deg, #2f4a36 0 8px, #355440 8px 16px);
@@ -131,7 +134,7 @@
 /* -------------------------------------------------------------------- gear */
 
 .gear {
-  width: 164px;
+  width: 150px;
   flex: none;
   background: var(--card-adv);
   color: var(--ink);

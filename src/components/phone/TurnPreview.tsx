@@ -34,7 +34,7 @@ export function TurnPreview({ state, seat }: { state: GameState; seat: number })
     return (
       <section className="preview" aria-labelledby="preview-title">
         <h2 id="preview-title" className="preview__title">
-          Decide on the tablet: {shopping ? pendingLabel(state) : decisionText(state).title}
+          {shopping ? `At the ${pendingLabel(state)}: choose in Parks or on the tablet` : `Decide on the tablet: ${decisionText(state).title}`}
         </h2>
         {shopping ? (
           <p className="preview__note">

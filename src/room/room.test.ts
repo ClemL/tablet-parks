@@ -19,6 +19,7 @@ import {
   nextSeason,
   normalizeSettings,
   playFor,
+  playForPhone,
   seatTags,
   seatView,
   startGame,
@@ -463,5 +464,44 @@ describe('taking a tap back', () => {
       for (const sent of json) expect(sent).not.toContain(`"${id}"`);
     }
     for (const sent of json) expect(sent).not.toContain('"undo":{"seat":' + seat + ',"at"');
+  });
+});
+
+describe('a phone at a park decision', () => {
+  /** Two people; whoever is on the clock walks a hiker to the Trail End from the tablet. */
+  function atTrailEnd(): { room: Room; seat: number; other: number } {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const seat = actorOf(room.state!)!;
+    const hiker = room.state!.players[seat].hikers[0].id;
+    playFor(room, seat, { type: 'move', hikerId: hiker, to: room.state!.trail.length - 1 }, T0);
+    expect(room.state!.pending).toMatchObject({ player: seat, kind: 'trail-end' });
+    return { room, seat, other: 1 - seat };
+  }
+
+  it('answers its own seat’s park decision', () => {
+    const { room, seat } = atTrailEnd();
+    playForPhone(room, seat, { type: 'trail-end', option: 'skip' }, T0 + 10);
+    expect(room.state!.pending).toBeNull();
+  });
+
+  it('never walks a hiker, and never answers for another seat', () => {
+    const { room, seat, other } = atTrailEnd();
+    const move = { type: 'move', hikerId: room.state!.players[seat].hikers[1].id, to: 1 } as GameAction;
+    expect(() => playForPhone(room, seat, move, T0 + 10)).toThrow(/park decisions only/);
+    expect(() => playForPhone(room, other, { type: 'trail-end', option: 'skip' }, T0 + 10)).toThrow(/not your decision/);
+    // The wrong kind of park decision for where the hiker stands is refused too.
+    expect(() => playForPhone(room, seat, { type: 'park-or-gear', option: 'skip' }, T0 + 10)).toThrow(/not your decision/);
+    expect(room.state!.pending?.kind).toBe('trail-end');
+  });
+
+  it('has nothing to answer while its player is walking', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    startGame(room, T0);
+    expect(actorOf(room.state!)).toBe(0);
+    expect(() => playForPhone(room, 0, { type: 'trail-end', option: 'skip' }, T0)).toThrow(/not your decision/);
   });
 });

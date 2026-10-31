@@ -373,6 +373,26 @@ export function playFor(room: Room, seat: number, action: GameAction, now: numbe
   settle(room, now);
 }
 
+/** What a phone may answer for its own seat: the park decision it stands at. */
+const PHONE_ACTIONS = new Set<GameAction['type']>(['trail-end', 'park-or-gear']);
+
+/**
+ * A phone answering its own seat's park decision — visit, reserve, buy gear,
+ * or pass — so a player can shop from the cards in their hand. Hikers are
+ * still walked on the tablet, and no phone can answer for another seat.
+ */
+export function playForPhone(room: Room, seat: number, action: GameAction, now: number): void {
+  const state = room.state;
+  if (room.phase !== 'playing' || !state) throw new RoomError('The game is not running', 409);
+  if (!isGameAction(action) || !PHONE_ACTIONS.has(action.type)) {
+    throw new RoomError('A phone answers park decisions only — hikers are walked on the tablet', 403);
+  }
+  if (state.pending?.player !== seat || state.pending.kind !== action.type) {
+    throw new RoomError('That is not your decision to make right now', 409);
+  }
+  playFor(room, seat, action, now);
+}
+
 /**
  * True when nothing face down came to light between two states of one game:
  * no card left a deck — a refilled park row or gear row shows the next card —

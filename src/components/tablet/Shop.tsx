@@ -6,20 +6,17 @@ import {
   canClaimChance,
   canReserveTop,
   claimableParks,
-  effectiveCost,
   gearCost,
-  planPayment,
   reservableParks,
-  wildCoverage,
 } from '@/game/engine';
 import { parkDeckLeft } from '@/game/view';
 import type { GameAction, GameState, ParkCard, Player } from '@/game/types';
-import { COST_RESOURCES } from '@/game/types';
 import { IllustratedParkArt } from '@/art/illustrated';
 import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token } from '../Token';
 import { parkPlace } from '../ParkCard';
+import { costCheck } from '../shopping';
 import { useLongPress } from '@/client/useLongPress';
 import type { InfoSubject } from './InfoSheet';
 
@@ -155,18 +152,6 @@ export function Shop({
       ) : null}
     </div>
   );
-}
-
-/** Each resource a park asks for against what the player holds, and whether wildcards close the gap. */
-function costCheck(state: GameState, player: Player, park: ParkCard) {
-  const cost = effectiveCost(player, park, state);
-  const covered = planPayment(player, cost, wildCoverage(state)) !== null;
-  return COST_RESOURCES.filter((r) => cost[r] > 0).map((r) => {
-    const need = cost[r];
-    const have = player.resources[r] ?? 0;
-    const status = have >= need ? 'have' : covered ? 'wild' : 'short';
-    return { r, need, have, status } as const;
-  });
 }
 
 function ShopPark({

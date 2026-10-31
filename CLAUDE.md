@@ -40,8 +40,9 @@ Router on Vercel. Every new game provisions its own Upstash Redis database throu
   `room.test.ts` asserting on the JSON before changing what a view carries.
 * **Handles stay sealed.** Devices only ever hold sealed handles (`src/server/seal.ts`). Database
   credentials, the `start-redis` idempotency key and the RNG seed never reach a browser.
-* **Only the tablet moves.** `/api/games/move` and `/control` accept the tablet's handle only. The
-  phones read; they do not act, apart from joining and leaving their seat.
+* **Only the tablet walks hikers.** `/api/games/move` and `/control` accept the tablet's handle only.
+  A phone may answer its own seat's park decision — visit, reserve, buy gear or pass — through
+  `/api/games/choose` (`playForPhone`), and nothing else; otherwise the phones read, join and leave.
 * **Verify UI work in a real browser.** Drive the built app in Chromium (tablet 1280×800, phone
   390×844) before claiming a UI change works, and add the flow to `e2e/` when it matters.
 * **Motion and colour are accessibility surfaces.** Respect `prefers-reduced-motion`; gate hover
