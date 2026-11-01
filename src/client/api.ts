@@ -48,6 +48,8 @@ export const api = {
   join: (ticket: string, name: string) => call<{ seat: string; view: SeatView }>('/api/games/join', { body: { ticket, name } }),
   move: (host: string, seat: number, action: GameAction) =>
     call<TableView>('/api/games/move', { token: host, body: { seat, action } }),
+  /** A phone answering its own seat's park decision. */
+  choose: (seat: string, action: GameAction) => call<SeatView>('/api/games/choose', { token: seat, body: { action } }),
   control: (host: string, command: TableCommand) =>
     call<TableView>('/api/games/control', { token: host, body: { command } }),
   leave: (seat: string) => call<{ ok: true }>('/api/games/leave', { token: seat, body: {} }),

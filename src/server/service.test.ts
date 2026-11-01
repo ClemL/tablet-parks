@@ -9,6 +9,7 @@ import { RedisStore, GAME_TTL_SECONDS } from './store';
 import {
   RoomError,
   abandonGame,
+  choosePark,
   controlGame,
   createGame,
   joinGame,
@@ -129,6 +130,27 @@ describe.skipIf(!redisAvailable)('a game round a tablet, each in its own databas
     const second = await joinGame(view.tickets[1], '');
     expect(full(await readGame(second.seat)).seats[1].name).toBe('Srini');
     await rejects(readGame(first.seat), 403);
+  });
+
+  it('lets a phone answer its own park decision, and only that', async () => {
+    const { host, view } = await createGame({ seats: 2 });
+    const phones = [await joinGame(view.tickets[0], 'Kris'), await joinGame(view.tickets[1], 'Srini')];
+    const started = await controlGame(host, { type: 'start' });
+    const seat = started.actor!;
+    const end = started.game!.trail.length - 1;
+    const hiker = started.game!.players[seat].hikers[0].id;
+    await playMove(host, seat, { type: 'move', hikerId: hiker, to: end });
+
+    const skip = { type: 'trail-end', option: 'skip' } as const;
+    // Not the tablet's handle, not a QR code, not the other player's phone.
+    await rejects(choosePark(host, skip), 401);
+    await rejects(choosePark(view.tickets[seat], skip), 401);
+    await rejects(choosePark(phones[1 - seat].seat, skip), 409);
+
+    const answered = await choosePark(phones[seat].seat, skip);
+    expect(answered.role).toBe('seat');
+    expect(answered.seat).toBe(seat);
+    expect(answered.game!.pending).toBeNull();
   });
 
   it('refuses forged and foreign handles', async () => {

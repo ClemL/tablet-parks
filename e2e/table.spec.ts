@@ -8,6 +8,8 @@ import { expect, test, type Browser, type BrowserContext, type Page } from '@pla
 
 const TABLET = { width: 1280, height: 800 };
 const PHONE = { width: 390, height: 844 };
+/** Once the game is dealt, a phone is played held sideways. */
+const SIDEWAYS = { width: 844, height: 390 };
 
 /** Every device a test opens, closed after it — a page left open keeps polling into the next test. */
 const opened: BrowserContext[] = [];
@@ -150,8 +152,9 @@ test.describe('round the tablet', () => {
     await joinOnPhone(browser, await seatLink(tablet, 2), 'Srini');
     await tablet.getByRole('button', { name: 'Start the game' }).click();
     await expect(tablet.locator('.trail')).toBeVisible();
+    await kris.setViewportSize(SIDEWAYS);
 
-    // The phones never move anything: there are no game controls on them.
+    // The phones never walk a hiker: there is no trail on them to tap.
     await expect(kris.getByText(/make your move on the tablet|thinking|’s turn/)).toBeVisible({ timeout: 10_000 });
     await expect(kris.locator('.site, .market')).toHaveCount(0);
 
@@ -211,13 +214,15 @@ test.describe('round the tablet', () => {
     await openTable(tablet, { seats: 2, brisk: true });
     const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
     await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
 
     await expect(tablet.locator('.site--target').first()).toBeVisible({ timeout: 20_000 });
     await expect(kris.getByText('Your turn — make your move on the tablet.')).toBeVisible({ timeout: 10_000 });
     await expect(tablet.locator('.rail--acting')).toContainText('Walk a hiker');
 
     // Both hikers start on the Trailhead, so the phone lists one group: the sites the tablet lit.
-    const lit = await tablet.locator('.site--target .site__name').allInnerTexts();
+    // Each tile's name leads with its step on the switchback.
+    const lit = (await tablet.locator('.site--target .site__name').allInnerTexts()).map((name) => name.replace(/^\d+\s*/, ''));
     const listed = await kris.locator('.preview__group').first().locator('.reach__name').allInnerTexts();
     expect(listed.length).toBeGreaterThan(0);
     expect(listed).toEqual(lit);
@@ -286,5 +291,48 @@ test.describe('round the tablet', () => {
     await expect(tablet.locator('.site--target').first()).toBeVisible();
     expect(await tablet.locator('.site__hikers').allInnerTexts()).toEqual(before);
     await expect(undo).toHaveCount(0);
+  });
+
+  test('once dealt, a phone is played sideways', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+
+    const prompt = kris.getByRole('heading', { name: 'Turn your phone sideways' });
+    await expect(prompt).toBeVisible({ timeout: 10_000 });
+    await expect(kris.locator('.play__frame')).toBeHidden();
+
+    await kris.setViewportSize(SIDEWAYS);
+    await expect(prompt).toBeHidden();
+    await expect(kris.getByRole('tab', { name: 'Sheet' })).toHaveAttribute('aria-selected', 'true');
+    // The parks and the gear are a swipe away, to browse; nothing to press until a hiker stops for them.
+    await kris.getByRole('tab', { name: 'Parks' }).click();
+    await expect(kris.locator('#panel-parks .offer').first()).toBeVisible();
+    await expect(kris.locator('#panel-parks .offer-btn')).toHaveCount(0);
+  });
+
+  test('at a park decision the phone brings up the parks, and can answer it', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+
+    const end = tablet.locator('.site--target', { hasText: 'Trail End' }).locator('.site__face');
+    await expect(end).toBeVisible({ timeout: 20_000 });
+    await act(tablet, () => end.click());
+    await expect(tablet.locator('.shop')).toBeVisible();
+
+    // The phone turns to the parks by itself, with the decision's buttons live.
+    await expect(kris.getByRole('tab', { name: /^Parks/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
+    await expect(kris.locator('#panel-parks').getByRole('button', { name: /^Reserve/ }).first()).toBeEnabled();
+    await kris.getByRole('tab', { name: /^Gear/ }).click();
+    await expect(kris.locator('#panel-gear').getByRole('button', { name: 'Buy' }).first()).toBeVisible();
+
+    // Passing on the phone answers the stop: the tablet's shop closes.
+    await kris.locator('#panel-gear').getByRole('button', { name: 'Pass', exact: true }).click();
+    await expect(tablet.locator('.shop')).toHaveCount(0, { timeout: 10_000 });
+    await expect(kris.locator('#panel-parks .offer-btn')).toHaveCount(0);
   });
 });

@@ -4,10 +4,14 @@ The [PARKS-style hiking game](https://github.com/ClemL/parks-game), rebuilt for 
 middle of the table and a phone in every player's hand. Up to five seats (four by default); every
 seat nobody scans into is played by the computer.
 
-- **The tablet is the board, and the only controller.** It shows the hiking trail, the parks on
-  offer, the gear shop and the campsites. Hikers are moved, and parks and gear bought, here.
+- **The tablet is the board.** It shows the hiking trail — a switchback in two rows, out along the
+  top and back along the bottom to the Trail End — the parks on offer, the gear shop and the
+  campsites. Hikers are walked here; parks and gear are bought here or on the buyer's own phone.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
-  gear, parks visited and reserved — and the two secret objectives, with a **Hide** button.
+  gear, parks visited and reserved — and the two secret objectives, with a **Hide** button. Once
+  the game is dealt the phone is held sideways, with three panels a swipe apart: the sheet, the
+  parks and the gear shop. When one of your hikers stops at the Trail End or a Ranger Station the
+  parks come up by themselves, and you can visit, reserve, buy or pass from the phone.
   On your turn it also lists where your hikers can go and what each stop would hand you, and at a
   decision what each answer would do; each objective shows how far along it is. A phone can also
   open the computer players' sheets (or every sheet, if the table allows it).

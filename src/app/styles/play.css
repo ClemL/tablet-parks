@@ -1,0 +1,497 @@
+/* ------------------------------------- the phone held sideways, once dealt */
+
+.play {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.rotate {
+  display: none;
+}
+
+.play__frame {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Upright, the game gives way to the prompt to turn the phone. */
+@media (orientation: portrait) {
+  .play {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .play__frame {
+    display: none;
+  }
+
+  .rotate {
+    display: flex;
+    min-height: 100dvh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+  }
+}
+
+.rotate__phone {
+  color: var(--seat);
+  animation: tip 2.4s ease-in-out infinite;
+}
+
+@keyframes tip {
+  0%,
+  30% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+.rotate h2 {
+  font-size: 1.6rem;
+  color: #fff;
+}
+
+.rotate p {
+  max-width: 32ch;
+  color: #c7d6ca;
+}
+
+.phone__sideways {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: var(--gold);
+}
+
+/* ------------------------------------------------------------------- bar */
+
+.play__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+  background: var(--surface-2);
+  border-bottom: 3px solid var(--seat);
+}
+
+.play__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 140px;
+  line-height: 1.1;
+}
+
+.play__who h1 {
+  font-size: 1.1rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play__who span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.play__turn {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play__turn--you {
+  background: var(--seat);
+  border-color: var(--seat);
+  color: var(--on-seat);
+  font-weight: 800;
+}
+
+.play__turn--you .phone__next {
+  color: inherit;
+}
+
+.play__score {
+  flex: none;
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.play__score b {
+  font-size: 1.3rem;
+}
+
+.play__tabs {
+  flex: none;
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.play__tabs button {
+  position: relative;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.play__tabs button.is-on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.play__dot {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--focus);
+  box-shadow: 0 0 0 2px var(--surface-2);
+}
+
+.play__notice {
+  flex: none;
+  padding: 4px 14px;
+  font-size: 0.84rem;
+  background: color-mix(in srgb, var(--danger) 18%, var(--surface));
+}
+
+/* ---------------------------------------------------------------- panels */
+
+/* Three panels a swipe apart: each snaps into place and scrolls on its own. */
+.panels {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.panels::-webkit-scrollbar {
+  display: none;
+}
+
+.panel {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  padding: 10px max(14px, env(safe-area-inset-right)) 16px max(14px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel--sheet .seats-nav {
+  flex-wrap: nowrap;
+}
+
+.play__leave {
+  margin-left: auto;
+}
+
+/* The sheet's blocks side by side: the mat's own sections become the grid's items. */
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-auto-flow: row dense;
+  gap: 10px;
+  align-items: start;
+}
+
+.sheet-grid .mat:not(.mat--locked) {
+  display: contents;
+}
+
+.sheet-grid .preview {
+  grid-row: span 2;
+}
+
+/* ---------------------------------------------------------- park and gear */
+
+.shopping {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shopping__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.shopping__head h2 {
+  font-size: 1.3rem;
+  color: var(--card);
+}
+
+.shopping__now {
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.shopping__later {
+  flex: 1;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.shopping__pass {
+  min-width: 96px;
+}
+
+.offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.offer {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.offer--can {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.offer--mine {
+  border: 3px solid var(--focus);
+}
+
+.offer__art {
+  position: relative;
+  height: 64px;
+  background: #2c3c33;
+}
+
+.offer__art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.offer__vp {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--on-gold);
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+}
+
+.offer__mine {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--focus);
+  color: var(--on-gold);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.offer__bison {
+  position: absolute;
+  left: 5px;
+  bottom: 3px;
+  font-size: 1.1rem;
+}
+
+.offer__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 7px 9px 9px;
+}
+
+.offer__body h3 {
+  font-size: 1rem;
+}
+
+.offer__place {
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: var(--card-muted);
+}
+
+.offer__check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.offer__buttons {
+  margin-top: auto;
+  display: grid;
+  gap: 5px;
+}
+
+.offer__can {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #2f6b45;
+}
+
+.offer-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  min-height: 42px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-line);
+  background: var(--card-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.shopping__head .offer-btn {
+  border-color: var(--line);
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.offer-btn--go {
+  background: #2f6b45;
+  border-color: #2f6b45;
+  color: #fff;
+}
+
+.offer-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.offer--deck {
+  background: var(--card-2);
+}
+
+.offer__back {
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(45deg, #2f4a36 0 8px, #355440 8px 16px);
+  color: var(--card);
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.gear-offers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.gear-offer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card-adv);
+  color: var(--ink);
+  border: 1px solid #b99a5b;
+}
+
+.gear-offer__icon {
+  font-size: 1.5rem;
+  flex: none;
+}
+
+.gear-offer__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.gear-offer__text h3 {
+  font-size: 1rem;
+}
+
+.gear-offer__text p {
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #4f4a3b;
+}
+
+.gear-offer__price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.gear-offer__price s {
+  font-weight: 400;
+  color: var(--card-muted);
+}
+
+.gear-offer__buy {
+  flex: none;
+  min-width: 72px;
+}

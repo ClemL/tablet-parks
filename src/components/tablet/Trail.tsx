@@ -36,7 +36,18 @@ function hikersAt(state: GameState, index: number): Hiker[] {
 }
 
 /**
- * The season's trail, start to end, in one row. While a person is on the clock
+ * Where a site sits on the switchback: the first half of the trail runs left to
+ * right along the top row, turns down at the right-hand end, and the rest runs
+ * back right to left along the bottom row to the Trail End.
+ */
+function switchback(index: number, length: number): { row: 1 | 2; col: number; heading: 'east' | 'turn' | 'west' | 'end' } {
+  const cols = Math.ceil(length / 2);
+  if (index < cols) return { row: 1, col: index + 1, heading: index === cols - 1 ? 'turn' : 'east' };
+  return { row: 2, col: cols - (index - cols), heading: index === length - 1 ? 'end' : 'west' };
+}
+
+/**
+ * The season's trail, start to end, as a switchback in two rows. While a person is on the clock
  * the sites they can reach light up: tap one to walk there (the rear hiker is
  * picked to begin with; tap the other hiker to switch). A site that needs a
  * campfire to share says so on the tile and asks first. Tapping any other
@@ -77,9 +88,10 @@ export function Trail({
 
   return (
     <section className="trail" aria-label="The trail">
-      <ol className="trail__sites" style={{ '--sites': state.trail.length } as React.CSSProperties}>
+      <ol className="trail__sites" style={{ '--cols': Math.ceil(state.trail.length / 2) } as React.CSSProperties}>
         {state.trail.map((kind, index) => {
           const def = siteDef(kind);
+          const place = switchback(index, state.trail.length);
           const token = state.siteTokens[index];
           const tent = state.tentSites.includes(index);
           const here = hikersAt(state, index);
@@ -92,8 +104,10 @@ export function Trail({
           return (
             <li
               key={`${state.season}-${index}`}
+              style={{ gridRow: place.row, gridColumn: place.col }}
               className={[
                 'site',
+                `site--${place.heading}`,
                 end ? 'site--end' : '',
                 def.tier === 'advanced' ? 'site--advanced' : '',
                 target ? (target.useCampfire ? 'site--campfire' : 'site--target') : '',
@@ -116,8 +130,13 @@ export function Trail({
                 }}
               >
                 <SiteArt id={kind} className="site__art" />
-                <span className="site__name">{def.name}</span>
-                <span className="site__does">{def.gain ? <TokenRow bag={def.gain} size="md" /> : SHORT[kind] ?? def.text}</span>
+                <span className="site__name">
+                  <span className="site__step" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  {def.name}
+                </span>
+                <span className="site__does">{def.gain ? <TokenRow bag={def.gain} size="sm" /> : SHORT[kind] ?? def.text}</span>
                 {target ? (
                   <span className="site__foot">
                     {target.useCampfire ? (
@@ -147,7 +166,7 @@ export function Trail({
                 {here.map((hiker) => {
                   const seat = seats[hiker.owner];
                   const pickable = mine.length > 1 && mine.some((h) => h.id === hiker.id);
-                  const pawn = <Pawn seat={seat} size={here.length > 3 ? 'sm' : 'md'} ring={selected?.id === hiker.id} />;
+                  const pawn = <Pawn seat={seat} size={here.length > 5 ? 'sm' : 'md'} ring={selected?.id === hiker.id} />;
                   return pickable ? (
                     <button
                       key={hiker.id}

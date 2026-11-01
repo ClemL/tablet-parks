@@ -148,11 +148,11 @@ function BoardHead({ state, view, onMenu, onRules }: { state: GameState; view: T
         Camera
         {state.cameraHolder === null ? <span className="muted">on the trail</span> : <Pawn seat={view.seats[state.cameraHolder]} size="sm" />}
       </span>
-      <span className="holder" title="The first player token">
+      <span className="holder" title={state.firstPlayerTokenClaimed ? 'The first player token' : 'The first player token: the next reserve this season takes it'}>
         <Icon name="flag" size={18} className="holder__gold" />
         First player
         <Pawn seat={view.seats[state.firstPlayer]} size="sm" />
-        {!state.firstPlayerTokenClaimed ? <span className="muted">next reserve takes it</span> : null}
+        {!state.firstPlayerTokenClaimed ? <span className="muted">up for grabs</span> : null}
       </span>
       <button type="button" className="btn btn--ghost btn--sm board__menu" onClick={onRules}>
         <Icon name="book" size={18} />

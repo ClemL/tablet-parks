@@ -12,6 +12,7 @@ import {
   leaveSeat,
   newRoom,
   nextSeason,
+  playForPhone,
   undoLast,
   normalizeSettings,
   playFor,
@@ -264,6 +265,17 @@ export async function playMove(token: string | null, seat: number, action: GameA
   const handle = requireHandle(token, ['h']);
   const { room, now } = await mutate(handle, (r, at) => playFor(r, seat, action, at));
   return tableView(room, now, ticketsFor(room, handle.d));
+}
+
+/** A phone answering its own seat's park decision: visit, reserve, buy gear or pass. Nothing else. */
+export async function choosePark(token: string | null, action: GameAction): Promise<SeatView> {
+  const handle = requireHandle(token, ['s']);
+  if (handle.k !== 's') throw new RoomError('Not a seat', 401);
+  const { room, now } = await mutate(handle, (r, at) => {
+    checkSeat(r, handle);
+    playForPhone(r, handle.s, action, at);
+  });
+  return seatView(room, handle.s, now);
 }
 
 export type TableCommand =
