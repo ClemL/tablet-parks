@@ -2,6 +2,7 @@
 
 import { claimableParks, legalMoves, pendingLabel, previewAction, previewMove, siteDef, type MovePreview } from '@/game/engine';
 import { TOKEN_LIMIT } from '@/game/data/sites';
+import type { ReactNode } from 'react';
 import type { DecisionKind, GameState, Hiker } from '@/game/types';
 import { Icon } from '../Icon';
 import { TokenBag } from '../Token';
@@ -22,12 +23,24 @@ const DECISION: Partial<Record<DecisionKind, string>> = {
  * own sheet, which only this phone may read — so you can choose before you
  * reach for the tablet. It only reads: the move is still made on the tablet.
  */
-export function TurnPreview({ state, seat }: { state: GameState; seat: number }) {
+export function TurnPreview({
+  state,
+  seat,
+  hikers: names,
+  fallback = null,
+}: {
+  state: GameState;
+  seat: number;
+  /** What this seat calls its two hikers, in the order of the player's hikers. */
+  hikers: readonly string[];
+  /** Shown when there is nothing of this player's to preview. */
+  fallback?: ReactNode;
+}) {
   const me = state.players[seat];
-  if (state.current !== seat || state.phase !== 'playing') return null;
+  if (state.current !== seat || state.phase !== 'playing') return <>{fallback}</>;
 
   if (state.pending) {
-    if (state.pending.player !== seat) return null;
+    if (state.pending.player !== seat) return <>{fallback}</>;
     const shopping = state.pending.kind === 'trail-end' || state.pending.kind === 'park-or-gear';
     const parks = shopping ? claimableParks(state, seat) : [];
     const choices = shopping ? null : decisionChoices(state);
@@ -62,7 +75,8 @@ export function TurnPreview({ state, seat }: { state: GameState; seat: number })
   const movable = me.hikers.filter((h) => !h.finished && moves.some((m) => m.hikerId === h.id)).sort((a, b) => a.position - b.position);
   // Two hikers on one site can reach the same places: list them once.
   const hikers = movable.filter((h, i) => movable.findIndex((o) => o.position === h.position) === i);
-  if (hikers.length === 0) return null;
+  if (hikers.length === 0) return <>{fallback}</>;
+  const nameOf = (hiker: Hiker) => names[me.hikers.findIndex((h) => h.id === hiker.id)] ?? 'Hiker';
 
   return (
     <section className="preview" aria-labelledby="preview-title">
@@ -70,13 +84,20 @@ export function TurnPreview({ state, seat }: { state: GameState; seat: number })
         Where your hikers can go
       </h2>
       {hikers.map((hiker, i) => (
-        <HikerOptions key={hiker.id} state={state} seat={seat} hiker={hiker} rear={i === 0 && hikers.length > 1} both={movable.length > hikers.length} />
+        <HikerOptions
+          key={hiker.id}
+          state={state}
+          seat={seat}
+          hiker={hiker}
+          name={movable.length > hikers.length ? movable.map(nameOf).join(' and ') : nameOf(hiker)}
+          rear={i === 0 && hikers.length > 1}
+        />
       ))}
     </section>
   );
 }
 
-function HikerOptions({ state, seat, hiker, rear, both }: { state: GameState; seat: number; hiker: Hiker; rear: boolean; both: boolean }) {
+function HikerOptions({ state, seat, hiker, name, rear }: { state: GameState; seat: number; hiker: Hiker; name: string; rear: boolean }) {
   const moves = legalMoves(state).filter((m) => m.hikerId === hiker.id);
   const free = moves.filter((m) => !m.useCampfire);
   const shared = moves.length - free.length;
@@ -85,7 +106,8 @@ function HikerOptions({ state, seat, hiker, rear, both }: { state: GameState; se
   return (
     <div className="preview__group">
       <h3 className="preview__from">
-        {both ? 'Both hikers' : rear ? 'Rear hiker' : 'Hiker'} at the {from}
+        {name}
+        {rear ? <span className="muted"> (rear)</span> : null} at the {from}
       </h3>
       <ul className="preview__list">
         {free.map((move) => {

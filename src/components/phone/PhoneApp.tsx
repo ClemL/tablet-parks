@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { CPU_SEATS, SEASONS } from '@/game/engine';
-import { scorePlayer } from '@/game/scoring';
 import type { Edge, SeatView } from '@/room/room';
+import { isPokemon } from '@/room/names';
 import type { SeatPreview } from '@/server/service';
 import { ApiError, api } from '@/client/api';
 import { local, seatKey } from '@/client/storage';
@@ -119,7 +119,8 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
     api.preview(ticket).then(
       (p) => {
         setPreview(p);
-        const stock = CPU_SEATS.some((c) => c.name === p.seat.name) || /^Player \d$/.test(p.seat.name);
+        // A stock or handed-out name is not theirs to keep: leave the box blank for a fresh one.
+        const stock = CPU_SEATS.some((c) => c.name === p.seat.name) || /^Player \d$/.test(p.seat.name) || isPokemon(p.seat.name);
         if (!stock) setName(p.seat.name);
       },
       (err: unknown) => setProblem(err instanceof ApiError && err.status === 410 ? 'This game has ended.' : err instanceof Error ? err.message : 'Could not read that code'),
@@ -177,7 +178,7 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
               }}
             >
               <label htmlFor="join-name">Your name</label>
-              <input id="join-name" value={name} maxLength={16} autoComplete="nickname" placeholder={`Player ${seat.seat + 1}`} onChange={(e) => setName(e.target.value)} />
+              <input id="join-name" value={name} maxLength={16} autoComplete="nickname" placeholder="Blank for a Pokémon name" onChange={(e) => setName(e.target.value)} />
               <ul className="join__what">
                 <li>
                   <Icon name="pack" />
@@ -265,16 +266,10 @@ function Seat({
   );
 }
 
-/**
- * Who this phone is, and — on your own sheet — what you would score if the game
- * ended now. Hidden objectives are left out of the total too, so the number
- * cannot give them away over your shoulder.
- */
-function PhoneHead({ view, objectivesHidden = false }: { view: SeatView; objectivesHidden?: boolean }) {
+/** Who this phone is, at which table and seat. */
+function PhoneHead({ view }: { view: SeatView }) {
   const me = view.seats[view.seat];
   const game = view.game;
-  const score = game ? scorePlayer(game, game.players[view.seat]) : null;
-  const total = score ? score.total - (objectivesHidden ? score.bonusVp : 0) : null;
   return (
     <header className="phone__head">
       <Pawn seat={me} size="lg" />
@@ -285,15 +280,6 @@ function PhoneHead({ view, objectivesHidden = false }: { view: SeatView; objecti
           {game ? ` · ${seasonName(game.season)}, ${game.season} of ${SEASONS}` : ''}
         </p>
       </div>
-      {score && total !== null ? (
-        <p
-          className="phone__score"
-          title={`Parks ${score.parkVp}, photos ${score.photoVp}${objectivesHidden ? '' : `, objectives ${score.bonusVp}`}, first player ${score.firstPlayerVp}, left over ${score.leftoverVp}`}
-        >
-          <b>{total}</b> VP
-          <span>{objectivesHidden ? 'without objectives' : 'if it ended now'}</span>
-        </p>
-      ) : null}
     </header>
   );
 }

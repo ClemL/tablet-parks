@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SEASONS, nextPlayer } from '@/game/engine';
-import { scorePlayer } from '@/game/scoring';
 import type { GameAction } from '@/game/types';
 import type { SeatView } from '@/room/room';
 import { ApiError, api } from '@/client/api';
@@ -12,17 +11,22 @@ import { Icon } from '../Icon';
 import { Scoreboard } from '../Scoreboard';
 import { SeatSheet } from './SeatSheet';
 import { TurnPreview } from './TurnPreview';
+import { Roster } from './Roster';
 import { GearPanel, ParksPanel, type Shopping } from './Shopping';
 
 const PANELS = [
   { id: 'sheet', label: 'Sheet' },
+  { id: 'moves', label: 'Moves' },
   { id: 'parks', label: 'Parks' },
   { id: 'gear', label: 'Gear' },
 ] as const;
 
+const panelIndex = (id: (typeof PANELS)[number]['id']) => PANELS.findIndex((p) => p.id === id);
+
 /**
- * A player's phone once the game is dealt: held sideways, with three panels a
- * swipe apart — their sheet, the parks, and the gear shop. The phone still
+ * A player's phone once the game is dealt: held sideways, with four panels a
+ * swipe apart — their sheet, where their hikers can go, the parks, and the
+ * gear shop. The phone still
  * walks no hikers; it answers its own player's park decisions — visit,
  * reserve, buy, or pass — and jumps to the parks when one comes up.
  */
@@ -71,8 +75,15 @@ export function PhoneGame({
   // A stop at a park decision brings the parks up by itself, once per stop.
   const stop = shopping && pending ? `${state.season}:${pending.hikerId}:${pending.siteIndex}` : null;
   useEffect(() => {
-    if (stop) go(1);
+    if (stop) go(panelIndex('parks'));
   }, [stop, go]);
+  // The turn coming round brings the moves up once — but only from the sheet,
+  // where the preview used to sit, so nobody browsing the shop is pulled away.
+  const walking = yourTurn && !pending && state.phase === 'playing' ? `${state.season}:${state.log.length}` : null;
+  useEffect(() => {
+    if (walking && panel === 0) go(panelIndex('moves'));
+    // `panel` is read, not watched: swiping back to the sheet must not bounce.
+  }, [walking, go]);
 
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -105,13 +116,12 @@ export function PhoneGame({
               : '';
   const coming = state.phase === 'playing' ? nextPlayer(state) : null;
   const youNext = !yourTurn && coming === view.seat && coming !== actor;
-  const score = scorePlayer(state, state.players[view.seat]);
-  const total = score.total - (hidden ? score.bonusVp : 0);
   const shown = view.seats[tab] ?? me;
 
   return (
     <main className="play" style={seatStyle(me)}>
       <RotatePrompt />
+      <Roster view={view} />
       <div className="play__frame">
         <header className="play__bar">
           <Pawn seat={me} size="md" />
@@ -125,13 +135,12 @@ export function PhoneGame({
             {turn}
             {youNext ? <b className="phone__next"> You’re up next.</b> : null}
           </p>
-          <p className="play__score" title={hidden ? 'Without your hidden objectives' : 'If the game ended now'}>
-            <b>{total}</b> VP
-          </p>
           <div className="play__tabs" role="tablist" aria-label="Panels">
             {PANELS.map((p, i) => {
               // The panels this stop can be answered from are marked while it waits.
-              const open = Boolean(shopping) && (p.id === 'parks' || (p.id === 'gear' && shopping === 'trail-end'));
+              const open =
+                (Boolean(shopping) && (p.id === 'parks' || (p.id === 'gear' && shopping === 'trail-end'))) ||
+                (p.id === 'moves' && yourTurn && !shopping && state.phase === 'playing');
               return (
                 <button
                   key={p.id}
@@ -203,9 +212,22 @@ export function PhoneGame({
               </section>
             ) : null}
             <div className="sheet-grid">
-              {yourTurn && tab === view.seat ? <TurnPreview state={state} seat={view.seat} /> : null}
               <SeatSheet state={state} seat={shown} mine={tab === view.seat} objectivesHidden={hidden} onToggleObjectives={toggle} />
             </div>
+          </section>
+          <section id="panel-moves" role="tabpanel" aria-labelledby="tab-moves" className="panel panel--moves">
+            <TurnPreview
+              state={state}
+              seat={view.seat}
+              hikers={me.hikers}
+              fallback={
+                <p className="preview__idle">
+                  {state.phase === 'playing'
+                    ? 'On your turn, this lists where each of your hikers can go and what each stop would hand you.'
+                    : 'Nobody is walking right now.'}
+                </p>
+              }
+            />
           </section>
           <section id="panel-parks" role="tabpanel" aria-labelledby="tab-parks" className="panel">
             <ParksPanel state={state} seat={view.seat} shopping={shopping} busy={busy} onChoose={choose} />

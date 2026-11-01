@@ -2,6 +2,7 @@ import { aiAction } from '@/game/ai';
 import { applyAction, createGame, CPU_SEATS, defaultDiscard, DEFAULT_EXPANSIONS, DEFAULT_HOUSE_RULES, hydrate, legalMoves } from '@/game/engine';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/data/sites';
 import { viewFor, type GameView } from '@/game/view';
+import { hikerNames, pickPokemon } from './names';
 import type { AiPersonality, ExpansionFlags, GameAction, GameState, HouseRules } from '@/game/types';
 
 /**
@@ -194,6 +195,7 @@ export function renameSeat(room: Room, seat: number, name: unknown): void {
   // The snapshot holds who sat where and under what name; a seat change outdates it.
   room.undo = null;
   record.name = cleanName(name);
+  if (!record.name && record.kind === 'human') record.name = defaultName(room, seat);
   if (room.state && record.kind !== 'cpu') room.state.players[seat].name = seatName(room, seat);
 }
 
@@ -216,6 +218,7 @@ export function joinSeat(room: Room, seat: number, device: string, name: unknown
   const typed = cleanName(name);
   // Taking a seat over from the computer drops the computer's name with it.
   if (typed || record.kind === 'cpu') record.name = typed;
+  if (!record.name) record.name = defaultName(room, seat);
   record.device = device;
   if (record.kind !== 'human') {
     record.kind = 'human';
@@ -262,6 +265,12 @@ export function freeSeat(room: Room, seat: number, now: number): void {
   schedule(room, now);
 }
 
+/** A Pokémon name for a person who left theirs blank, unused by anyone else at the table. */
+function defaultName(room: Room, seat: number): string {
+  const taken = room.seats.flatMap((s, i) => (i === seat ? [] : [seatName(room, i)]));
+  return pickPokemon(room.seed, seat, taken);
+}
+
 /** The next stock opponent whose name nobody at the table is using yet. */
 function nextStockCpu(room: Room): { name: string; personality: AiPersonality } {
   const taken = new Set(room.seats.map((_, i) => seatName(room, i)));
@@ -276,6 +285,9 @@ export function startGame(room: Room, now: number): void {
     expansions: room.settings.expansions,
     houseRules: room.settings.houseRules,
     players: room.seats.length,
+  });
+  room.seats.forEach((record, seat) => {
+    if (record.kind === 'human' && !record.name.trim()) record.name = defaultName(room, seat);
   });
   for (const record of room.seats) {
     if (record.kind !== 'human') {
@@ -572,6 +584,8 @@ export interface PublicSeat {
   color: string;
   /** True while a phone holds the seat. */
   phone: boolean;
+  /** What the seat's two hikers are called, in the order of the player's hikers. */
+  hikers: [string, string];
 }
 
 interface ViewBase {
@@ -617,6 +631,7 @@ function publicSeats(room: Room): PublicSeat[] {
     tag: tags[seat],
     color: SEAT_COLORS[seat],
     phone: record.device !== null,
+    hikers: hikerNames(names[seat], room.seed, seat),
   }));
 }
 

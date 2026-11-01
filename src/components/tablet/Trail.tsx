@@ -5,7 +5,7 @@ import { legalMoves, siteDef, type MoveOption } from '@/game/engine';
 import type { GameState, Hiker, SiteKind } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
-import { Pawn, RESOURCE_LABEL } from '../bits';
+import { Pawn, RESOURCE_LABEL, hikerName } from '../bits';
 import { Icon } from '../Icon';
 import { Token, TokenRow } from '../Token';
 import { useLongPress } from '@/client/useLongPress';
@@ -166,14 +166,15 @@ export function Trail({
                 {here.map((hiker) => {
                   const seat = seats[hiker.owner];
                   const pickable = mine.length > 1 && mine.some((h) => h.id === hiker.id);
-                  const pawn = <Pawn seat={seat} size={here.length > 5 ? 'sm' : 'md'} ring={selected?.id === hiker.id} />;
+                  const name = hikerName(seat, state.players[hiker.owner].hikers, hiker.id);
+                  const pawn = <Pawn seat={seat} size={here.length > 5 ? 'sm' : 'md'} ring={selected?.id === hiker.id} hiker={name} />;
                   return pickable ? (
                     <button
                       key={hiker.id}
                       type="button"
                       className={`hiker hiker--pick${selected?.id === hiker.id ? ' is-on' : ''}`}
                       aria-pressed={selected?.id === hiker.id}
-                      aria-label={`Move this hiker of ${seat.name}`}
+                      aria-label={`Move ${name} of ${seat.name}`}
                       onClick={() => setChosen(hiker.id)}
                     >
                       {pawn}
@@ -217,7 +218,7 @@ export function TrailStrip({ state, seats, at }: { state: GameState; seats: Publ
           <span className="strip-site__name">{siteDef(kind).name}</span>
           <span className="strip-site__hikers">
             {hikersAt(state, index).map((hiker) => (
-              <Pawn key={hiker.id} seat={seats[hiker.owner]} size="xs" />
+              <Pawn key={hiker.id} seat={seats[hiker.owner]} size="xs" hiker={hikerName(seats[hiker.owner], state.players[hiker.owner].hikers, hiker.id)} />
             ))}
           </span>
         </li>

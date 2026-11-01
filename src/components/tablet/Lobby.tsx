@@ -52,6 +52,7 @@ export function DraftTable({
     tag: `P${seat + 1}`,
     color: SEAT_COLORS[seat],
     phone: false,
+    hikers: ['Hiker 1', 'Hiker 2'],
   }));
   const memory = health?.store === 'memory';
 

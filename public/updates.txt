@@ -2,3 +2,4 @@
 2026-10-31T18:00Z - Redesigned table: setup and lobby on one screen, a rail on each seat's edge, icon-first trail tiles, a shop at the Trail End that checks each park against your pack, and a phone that previews every move on your turn
 2026-10-31T22:30Z - Tap or hold anything on the board for its rules, take a mis-tap back for eight seconds, see who is up next, see what each answer to a decision would do, and track each objective's progress on your phone
 2026-10-31T23:45Z - The trail runs as a switchback in two rows; phones are played sideways once the game is dealt, with the sheet, the parks and the gear a swipe apart, and a player can visit, reserve, buy or pass from their own phone
+2026-11-01T01:13Z - Phones: hiker moves get their own Moves panel, no running VP in the header, and a who-is-who roster when the game is dealt; blank names become Gen 1 Pokémon whose hikers are ♂ and ♀ (otherwise Hiker 1 and 2); the site rules mention the Trail Map's free sharing

@@ -68,6 +68,13 @@ async function joinOnPhone(browser: Browser, url: string, name: string): Promise
   return phone;
 }
 
+/** Closes the who-is-who roster a phone shows when the game is dealt, if it is up. */
+async function dismissRoster(phone: Page): Promise<void> {
+  const roster = phone.locator('.roster');
+  if (await roster.count()) await roster.getByRole('button', { name: 'Let’s hike' }).click();
+  await expect(phone.locator('.roster')).toHaveCount(0);
+}
+
 /**
  * Clicks, and waits for the tablet's call to the server to come back, so the
  * next look at the screen sees the game after this action rather than during.
@@ -223,7 +230,10 @@ test.describe('round the tablet', () => {
     // Both hikers start on the Trailhead, so the phone lists one group: the sites the tablet lit.
     // Each tile's name leads with its step on the switchback.
     const lit = (await tablet.locator('.site--target .site__name').allInnerTexts()).map((name) => name.replace(/^\d+\s*/, ''));
-    const listed = await kris.locator('.preview__group').first().locator('.reach__name').allInnerTexts();
+    // The moves have their own panel, which comes up by itself when the turn does.
+    await dismissRoster(kris);
+    await expect(kris.getByRole('tab', { name: /^Moves/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
+    const listed = await kris.locator('#panel-moves .preview__group').first().locator('.reach__name').allInnerTexts();
     expect(listed.length).toBeGreaterThan(0);
     expect(listed).toEqual(lit);
     // It only reads: nothing on the phone can make the move.
@@ -305,7 +315,11 @@ test.describe('round the tablet', () => {
 
     await kris.setViewportSize(SIDEWAYS);
     await expect(prompt).toBeHidden();
+    await dismissRoster(kris);
+    await kris.getByRole('tab', { name: 'Sheet' }).click();
     await expect(kris.getByRole('tab', { name: 'Sheet' })).toHaveAttribute('aria-selected', 'true');
+    // No running score in the header: the sheet carries the details.
+    await expect(kris.locator('.play__bar')).not.toContainText('VP');
     // The parks and the gear are a swipe away, to browse; nothing to press until a hiker stops for them.
     await kris.getByRole('tab', { name: 'Parks' }).click();
     await expect(kris.locator('#panel-parks .offer').first()).toBeVisible();
@@ -321,6 +335,7 @@ test.describe('round the tablet', () => {
 
     const end = tablet.locator('.site--target', { hasText: 'Trail End' }).locator('.site__face');
     await expect(end).toBeVisible({ timeout: 20_000 });
+    await dismissRoster(kris);
     await act(tablet, () => end.click());
     await expect(tablet.locator('.shop')).toBeVisible();
 
@@ -334,5 +349,26 @@ test.describe('round the tablet', () => {
     await kris.locator('#panel-gear').getByRole('button', { name: 'Pass', exact: true }).click();
     await expect(tablet.locator('.shop')).toHaveCount(0, { timeout: 10_000 });
     await expect(kris.locator('#panel-parks .offer-btn')).toHaveCount(0);
+  });
+
+  test('a blank name becomes a Pokémon, and the deal shows everyone who is who', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const phone = await joinOnPhone(browser, await seatLink(tablet, 1), '');
+    const name = (await phone.locator('.phone__who h1').innerText()).trim();
+    expect(name).not.toMatch(/^Player/);
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await phone.setViewportSize(SIDEWAYS);
+
+    const roster = phone.locator('.roster');
+    await expect(roster).toBeVisible({ timeout: 10_000 });
+    await expect(roster.getByRole('heading', { name })).toBeVisible();
+    await expect(roster).toContainText(`${name} ♂`);
+    await expect(roster).toContainText(`${name} ♀`);
+    await expect(roster.locator('.roster__others li')).toHaveCount(1);
+    // It gets out of the way by itself after a few seconds.
+    await expect(roster).toHaveCount(0, { timeout: 8_000 });
+    // And the tablet's pawns carry the hikers' marks.
+    await expect(tablet.locator('.site__hikers .pawn__mark').first()).toBeVisible();
   });
 });

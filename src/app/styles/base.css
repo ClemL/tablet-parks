@@ -400,3 +400,30 @@ input:not([type]),
     transition-duration: 0.01ms !important;
   }
 }
+
+/* One hiker of a seat: the ♂/♀ or the number sits on the pawn's rim, so two pawns of one colour still differ. */
+.pawn--marked {
+  position: relative;
+}
+
+.pawn__mark {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--seat);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pawn--xs .pawn__mark {
+  display: none;
+}

@@ -132,16 +132,7 @@
   color: inherit;
 }
 
-.play__score {
-  flex: none;
-  font-family: var(--display);
-  font-weight: 700;
-  color: var(--gold);
-}
 
-.play__score b {
-  font-size: 1.3rem;
-}
 
 .play__tabs {
   flex: none;
@@ -238,8 +229,14 @@
   display: contents;
 }
 
-.sheet-grid .preview {
-  grid-row: span 2;
+/* The moves get a panel of their own: one column of hikers, readable at a glance. */
+.panel--moves .preview {
+  max-width: 720px;
+}
+
+.preview__idle {
+  margin: 8px 2px;
+  color: var(--muted);
 }
 
 /* ---------------------------------------------------------- park and gear */
