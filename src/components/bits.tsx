@@ -39,17 +39,46 @@ export function bagSize(bag: ResourceBag): number {
  * so the table never depends on telling two colours apart. Each seat has its
  * own ink: white letters on the light seat colours fall below 4.5:1.
  */
-export function Pawn({ seat, size = 'md', ring }: { seat: PublicSeat; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; ring?: boolean }) {
+export function Pawn({
+  seat,
+  size = 'md',
+  ring,
+  hiker,
+}: {
+  seat: PublicSeat;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  ring?: boolean;
+  /** Set when the pawn stands for one hiker rather than the whole seat: its name, and a corner mark. */
+  hiker?: string;
+}) {
+  const mark = hiker ? hikerMark(hiker) : null;
   return (
     <span
-      className={`pawn pawn--${size}${ring ? ' pawn--ring' : ''}`}
+      className={`pawn pawn--${size}${ring ? ' pawn--ring' : ''}${mark ? ' pawn--marked' : ''}`}
       style={seatStyle(seat)}
-      aria-label={seat.name}
+      aria-label={hiker ? `${hiker} (${seat.name})` : seat.name}
+      title={hiker}
       role="img"
     >
       {seat.tag}
+      {mark ? (
+        <span className="pawn__mark" aria-hidden="true">
+          {mark}
+        </span>
+      ) : null}
     </span>
   );
+}
+
+/** What one hiker is called: "Pikachu ♀" for a Pokémon, otherwise "Hiker 1" or "Hiker 2". */
+export function hikerName(seat: PublicSeat | undefined, hikers: readonly { id: string }[], hikerId: string): string {
+  const index = Math.max(0, hikers.findIndex((h) => h.id === hikerId));
+  return seat?.hikers?.[index] ?? `Hiker ${index + 1}`;
+}
+
+/** The corner mark that tells a seat's two pawns apart: the ♂ or ♀, or the hiker's number. */
+export function hikerMark(name: string): string {
+  return name.match(/[♂♀]$/)?.[0] ?? name.match(/\d+$/)?.[0] ?? '';
 }
 
 /** The custom properties every seat-coloured surface reads: `--seat` and the ink that sits on it. */

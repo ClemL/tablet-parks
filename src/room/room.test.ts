@@ -20,6 +20,7 @@ import {
   normalizeSettings,
   playFor,
   playForPhone,
+  renameSeat,
   seatTags,
   seatView,
   startGame,
@@ -27,6 +28,7 @@ import {
   undoLast,
   type Room,
 } from './room';
+import { POKEMON, hikerNames, isPokemon, pickPokemon } from './names';
 
 const DB = { source: 'memory' as const, label: 'test', expires: null };
 const T0 = 1_000_000;
@@ -157,6 +159,61 @@ describe('seats', () => {
     leaveSeat(room, 0);
     expect(room.seats[0].kind).toBe('human');
     expect(room.seats[0].device).toBeNull();
+  });
+
+  it('names a phone that joins without a name after a Pokémon nobody else is using', () => {
+    const room = lobby(4);
+    joinSeat(room, 0, 'a', '');
+    joinSeat(room, 1, 'b', '   ');
+    joinSeat(room, 2, 'c', 'Kris');
+    const [first, second] = [room.seats[0].name, room.seats[1].name];
+    expect(isPokemon(first)).toBe(true);
+    expect(isPokemon(second)).toBe(true);
+    expect(first).not.toBe(second);
+    startGame(room, T0);
+    const names = room.state!.players.map((p) => p.name);
+    expect(names.slice(0, 3)).toEqual([first, second, 'Kris']);
+    // The computer filling the last seat never wears a name a person already has.
+    expect(new Set(names).size).toBe(4);
+  });
+
+  it('keeps the stock computer names for the computers', () => {
+    for (let seed = 0; seed < 200; seed++) {
+      expect(['Pikachu', 'Eevee', 'Charizard', 'Snorlax']).not.toContain(pickPokemon(seed, 0, []));
+    }
+  });
+
+  it('skips a Pokémon somebody typed for themselves', () => {
+    const pick = pickPokemon(7, 0, []);
+    expect(pickPokemon(7, 0, [pick.toUpperCase()])).not.toBe(pick);
+  });
+
+  it('gives a person who blanks their name on the tablet a Pokémon, not "Player n"', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    renameSeat(room, 0, '');
+    expect(isPokemon(room.seats[0].name)).toBe(true);
+  });
+
+  it('calls a Pokémon seat\'s hikers ♂ and ♀, anyone else\'s Hiker 1 and 2', () => {
+    const room = lobby(3);
+    joinSeat(room, 0, 'a', '');
+    joinSeat(room, 1, 'b', 'Kris');
+    startGame(room, T0);
+    const seats = tableView(room, T0, []).seats;
+    const name = seats[0].name;
+    expect([...seats[0].hikers].sort()).toEqual([`${name} ♀`, `${name} ♂`]);
+    expect(seats[1].hikers).toEqual(['Hiker 1', 'Hiker 2']);
+    // The computer's stock name is a Pokémon too.
+    expect(seats[2].hikers.every((h) => /[♂♀]$/.test(h))).toBe(true);
+    // Which hiker is which is fixed for the game, not re-rolled on every view.
+    expect(seatView(room, 0, T0 + 5000).seats[0].hikers).toEqual(seats[0].hikers);
+  });
+
+  it('mixes which hiker is ♂ across seats and games', () => {
+    const firsts = new Set(Array.from({ length: 40 }, (_, seed) => hikerNames('Mew', seed, 0)[0]));
+    expect(firsts).toEqual(new Set(['Mew ♂', 'Mew ♀']));
+    expect(POKEMON.length).toBeGreaterThan(20);
   });
 
   it('gives every pawn a distinct tag', () => {

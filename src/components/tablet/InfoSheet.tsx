@@ -7,7 +7,7 @@ import type { GameState } from '@/game/types';
 import { EDGES, type Edge, type PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
 import { IllustratedParkArt } from '@/art/illustrated';
-import { Pawn, RESOURCE_LABEL, costLabel } from '../bits';
+import { Pawn, RESOURCE_LABEL, costLabel, hikerName } from '../bits';
 import { Icon } from '../Icon';
 import { Token, TokenBag, TokenRow } from '../Token';
 import { parkPlace } from '../ParkCard';
@@ -173,13 +173,13 @@ function SiteRules({ state, seats, index }: { state: GameState; seats: PublicSea
         </p>
       ) : null}
       {index > 0 && index < end ? (
-        <p className="info__note">One hiker at a time. Sharing a site with another hiker costs your campfire.</p>
+        <p className="info__note">One hiker at a time. Sharing a site with another hiker costs your campfire, unless you own the Trail Map.</p>
       ) : null}
       {here.length > 0 ? (
         <p className="info__line">
           Here now:{' '}
           {here.map((h) => (
-            <Pawn key={h.id} seat={seats[h.owner]} size="sm" />
+            <Pawn key={h.id} seat={seats[h.owner]} size="sm" hiker={hikerName(seats[h.owner], state.players[h.owner].hikers, h.id)} />
           ))}
         </p>
       ) : null}
