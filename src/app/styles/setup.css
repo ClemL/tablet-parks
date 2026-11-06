@@ -1,34 +1,92 @@
-/* The middle of the table before the deal: the settings, between the seat tags. */
+/*
+ * Setting the table, read upright from one side: a band of the trail's own
+ * scenery carries the title, every seat has a card in one row so everyone can
+ * scan at once, and the settings sit in a bar under the cards.
+ */
 
-.lobby .edge-center {
-  display: grid;
-  place-items: center;
-  padding: 10px;
-}
-
-.setup {
-  width: min(100%, 1000px);
-  max-height: 100%;
-  overflow: auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: var(--shadow-big);
-  padding: 16px 20px 12px;
+.basecamp {
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  padding: 0 0 max(8px, env(safe-area-inset-bottom));
 }
 
-.setup__head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+.basecamp > :not(.panorama) {
+  margin-left: max(28px, env(safe-area-inset-left));
+  margin-right: max(28px, env(safe-area-inset-right));
+}
+
+.basecamp__notice,
+.basecamp__error {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* ---- the scenery band ---- */
+
+.panorama {
+  position: relative;
+  flex: none;
+  height: clamp(140px, 21dvh, 176px);
+  overflow: hidden;
+}
+
+.panorama__art {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.panorama__scene,
+.panorama__scene svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.panorama::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(27, 36, 31, 0) 35%, rgba(27, 36, 31, 0.9) 88%, var(--bg));
+  pointer-events: none;
+}
+
+.panorama__path {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18%;
+  width: 100%;
+  height: 46%;
+  z-index: 1;
+}
+
+.panorama__path path {
+  fill: none;
+  stroke: var(--card);
+  stroke-width: 4px;
+  stroke-dasharray: 2 12;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.panorama__sign {
+  position: absolute;
+  z-index: 2;
+  left: max(28px, env(safe-area-inset-left));
+  top: 18px;
+  padding: 14px 22px 16px;
+  border-radius: 16px;
+  background: rgba(27, 36, 31, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .setup__title {
-  font-size: 1.9rem;
+  font-size: clamp(2rem, 4.2vw, 2.9rem);
   line-height: 1.05;
   color: var(--card);
 }
@@ -37,15 +95,349 @@
   color: var(--gold);
 }
 
-.setup__db {
-  margin-left: auto;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 4px 12px;
+.panorama__aside {
+  position: absolute;
+  z-index: 2;
+  right: max(28px, env(safe-area-inset-right));
+  top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 46%;
+}
+
+.panorama__db {
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(27, 36, 31, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 0.84rem;
   color: #c7d6ca;
-  min-width: 0;
 }
+
+.panorama__abandon {
+  background: rgba(27, 36, 31, 0.86);
+}
+
+/* ---- who is hiking ---- */
+
+.hikers {
+  position: relative;
+  z-index: 2;
+  margin-top: -40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hikers__head {
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.hikers__head h2 {
+  font-size: 1.45rem;
+  color: var(--card);
+}
+
+.hikers__note {
+  flex: 1 1 320px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.hikers__row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+  gap: 14px;
+}
+
+.seat-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--ink);
+  border-top: 8px solid var(--seat);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.seat-card--here {
+  box-shadow:
+    0 0 0 3px var(--seat),
+    var(--shadow);
+}
+
+.seat-card__qr {
+  width: 156px;
+  height: 156px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.seat-card__qr--waiting {
+  background: transparent;
+  border: 2px dashed var(--card-line);
+  color: #8a8270;
+}
+
+.seat-card__qr--joined {
+  position: relative;
+  background: var(--seat);
+  color: var(--on-seat);
+}
+
+.seat-card__initial {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.seat-card__check {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #2f6b45;
+  color: #fff;
+}
+
+.seat-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.seat-card__name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seat-card__input {
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-line);
+  background: #fffaf0;
+  color: var(--ink);
+  text-align: center;
+}
+
+.seat-card__input::placeholder {
+  color: #6e6956;
+  font-weight: 600;
+}
+
+.seat-card__state {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--card-muted);
+}
+
+.seat-card__state--here {
+  color: #2f6b45;
+  font-weight: 800;
+}
+
+.seat-card__tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ---- the settings and the way in ---- */
+
+.basecamp__bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px 24px;
+  flex-wrap: wrap;
+}
+
+.basecamp-settings {
+  flex: 1 1 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.basecamp-settings__chips {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.setting-chip {
+  font: inherit;
+  text-align: left;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 10px 8px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.setting-chip[aria-checked='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.setting-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.setting-chip__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.setting-chip__kind {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.setting-chip__mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line);
+}
+
+.setting-chip[aria-checked='true'] .setting-chip__mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.setting-chip b {
+  font-size: 0.98rem;
+  line-height: 1.15;
+}
+
+.setting-chip__hint {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+.basecamp-settings__row {
+  display: flex;
+  gap: 10px 24px;
+  flex-wrap: wrap;
+}
+
+.basecamp-settings__seg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.basecamp-settings__label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.basecamp-settings__hint {
+  margin-left: 6px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.basecamp-settings__seg .seg button {
+  padding: 0 16px;
+}
+
+.basecamp__go {
+  flex: 0 1 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.basecamp__status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: #c7d6ca;
+}
+
+.basecamp__cta {
+  font-family: var(--display);
+  font-size: 1.4rem;
+  min-height: 64px;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 1100px) {
+  .basecamp-settings__chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hikers__row {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .panorama__aside {
+    position: static;
+  }
+}
+
+/* ---- controls shared with the table menu ---- */
 
 .db-line {
   display: inline-flex;
@@ -61,73 +453,6 @@
 .db-line--warn,
 .db-line--warn .ic {
   color: var(--gold);
-}
-
-.setup__go {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.setup__cta {
-  font-family: var(--display);
-  font-size: 1.35rem;
-  min-height: 58px;
-  padding: 0 2.2rem;
-  flex: none;
-  box-shadow: var(--shadow);
-}
-
-.setup__status {
-  color: #c7d6ca;
-  font-size: 0.95rem;
-}
-
-.setup__status b {
-  color: var(--text);
-}
-
-.setup .footer {
-  padding: 0;
-  justify-content: flex-start;
-  font-size: 0.74rem;
-  gap: 0.2rem 1rem;
-}
-
-/* -------------------------------------------------------------------- tiles */
-
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.tile {
-  background: var(--surface-2);
-  border: 1px solid var(--line-soft);
-  border-radius: 14px;
-  padding: 10px 14px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.tile h3 {
-  font-size: 1.05rem;
-  color: var(--card);
-}
-
-.tile__row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.tile__hint {
-  font-size: 0.84rem;
-  line-height: 1.3;
-  color: var(--muted);
 }
 
 .stepper {
@@ -160,52 +485,6 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: 1.5rem;
-}
-
-.mini-table {
-  margin-left: auto;
-  width: 110px;
-  height: 72px;
-  padding: 11px;
-}
-
-.mini-table__top {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  background: #2f4036;
-  border: 1px solid #4a6155;
-}
-
-.mini-table__seat {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  line-height: 0;
-}
-
-.switch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 42px;
-}
-
-.switch-row__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-  line-height: 1.2;
-}
-
-.switch-row__text b {
-  font-weight: 700;
-}
-
-.switch-row__text span {
-  font-size: 0.82rem;
-  color: var(--muted);
 }
 
 .switch {
@@ -281,19 +560,30 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 1000px) {
-  .tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+
+.tag-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--card-line);
+  background: var(--card-2);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
 }
 
-@media (max-width: 640px) {
-  .tiles {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .setup__go {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.tag-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
+
+.qr {
+  display: block;
+  border-radius: 6px;
+}
+

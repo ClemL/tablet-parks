@@ -11,7 +11,6 @@ import { DraftTable, Lobby } from './Lobby';
 import { Board } from './Board';
 
 const SETTINGS_KEY = 'tablet-parks.settings';
-const UPRIGHT_KEY = 'tablet-parks.upright';
 
 /**
  * The tablet. It starts on the settings screen; opening the table provisions a
@@ -25,12 +24,10 @@ export function TabletApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [upright, setUprightState] = useState(false);
   const [initial, setInitial] = useState<RoomSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     setToken(local.get(HOST_KEY));
-    setUprightState(local.get(UPRIGHT_KEY) === '1');
     try {
       const saved = local.get(SETTINGS_KEY);
       if (saved) setInitial(normalizeSettings(JSON.parse(saved) as Partial<RoomSettings>));
@@ -103,13 +100,9 @@ export function TabletApp() {
     }
     forget(null);
   };
-  const setUpright = (value: boolean) => {
-    setUprightState(value);
-    local.set(UPRIGHT_KEY, value ? '1' : null);
-  };
 
   if (!ready) return null;
-  if (!token) return <DraftTable initial={initial} notice={notice} upright={upright} onUpright={setUpright} onOpen={open} />;
+  if (!token) return <DraftTable initial={initial} notice={notice} onOpen={open} />;
   if (!view) {
     return (
       <main className="loading" aria-busy="true">
@@ -125,7 +118,7 @@ export function TabletApp() {
   if (view.phase === 'lobby') {
     return (
       <>
-        <Lobby view={view} busy={busy} upright={upright} onUpright={setUpright} onCommand={onCommand} onAbandon={onAbandon} />
+        <Lobby view={view} busy={busy} onCommand={onCommand} onAbandon={onAbandon} />
         {error ? (
           <p className="toast" role="alert">
             {error}
@@ -139,8 +132,6 @@ export function TabletApp() {
       view={view}
       busy={busy}
       error={error ?? (poll.error?.status === 0 ? poll.error.message : null)}
-      upright={upright}
-      onUpright={setUpright}
       onAction={onAction}
       onCommand={onCommand}
       onAbandon={onAbandon}

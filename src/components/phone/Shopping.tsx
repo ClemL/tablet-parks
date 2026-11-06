@@ -2,6 +2,8 @@
 
 import {
   affordableGear,
+  canBuyTopGear,
+  gearDeckCount,
   bisonPark,
   canClaimChance,
   canReserveTop,
@@ -10,6 +12,7 @@ import {
   reservableParks,
 } from '@/game/engine';
 import { parkDeckLeft } from '@/game/view';
+import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
 import type { GameAction, GameState, ParkCard } from '@/game/types';
 import { IllustratedParkArt } from '@/art/illustrated';
 import { RESOURCE_LABEL } from '../bits';
@@ -192,6 +195,32 @@ export function GearPanel({
             </article>
           );
         })}
+        {state.houseRules.deckGear ? (
+          <article className="gear-offer gear-offer--deck">
+            <span className="gear-offer__icon" aria-hidden="true">
+              <Icon name="deck" size={24} />
+            </span>
+            <div className="gear-offer__text">
+              <h3>Top of the gear deck</h3>
+              <p>Unseen, {gearDeckCount(state)} left: its usual price less 1 sun.</p>
+              <span className="gear-offer__price">
+                Needs {DECK_GEAR_MIN_SUN} <Token r="sun" size="xs" decorative /> sun
+                {sun < DECK_GEAR_MIN_SUN ? ` · ${DECK_GEAR_MIN_SUN - sun} short` : ''}
+              </span>
+            </div>
+            {shopping === 'trail-end' ? (
+              <button
+                type="button"
+                className="offer-btn offer-btn--go gear-offer__buy"
+                disabled={!canBuyTopGear(state, seat) || busy}
+                aria-label="Buy the top card of the gear deck unseen, for 1 sun less"
+                onClick={() => onChoose({ type: 'trail-end', option: 'buy-top-gear' })}
+              >
+                Buy unseen
+              </button>
+            ) : null}
+          </article>
+        ) : null}
       </div>
     </div>
   );

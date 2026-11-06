@@ -25,7 +25,7 @@ async function device(browser: Browser, options: Parameters<Browser['newContext'
 
 const newTablet = (browser: Browser) => device(browser, { viewport: TABLET });
 
-async function openTable(page: Page, options: { seats?: number; brisk?: boolean; base?: boolean } = {}): Promise<void> {
+async function openTable(page: Page, options: { seats?: number; brisk?: boolean; base?: boolean; deckGear?: boolean } = {}): Promise<void> {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Trailside Seasons' })).toBeVisible();
   if (options.seats) await setSeats(page, options.seats);
@@ -37,6 +37,7 @@ async function openTable(page: Page, options: { seats?: number; brisk?: boolean;
       if ((await toggle.getAttribute('aria-checked')) === 'true') await toggle.click();
     }
   }
+  if (options.deckGear) await page.getByRole('switch', { name: 'Gear from the deck' }).click();
   await page.getByRole('button', { name: 'Open the table' }).click();
   await expect(page.getByRole('button', { name: 'Start the game' })).toBeVisible({ timeout: 30_000 });
 }
@@ -98,9 +99,10 @@ async function playOnce(tablet: Page): Promise<boolean> {
     await act(tablet, () => choice.click());
     return true;
   }
-  if (await tablet.locator('.shop').count()) {
-    // Exact: the gear row can hold an "Annual Park Pass".
-    await act(tablet, () => tablet.getByRole('button', { name: 'Pass', exact: true }).click());
+  // A park decision: the parks stay in their drawer, and Pass is on the turn bar.
+  const pass = tablet.locator('.turnbar .rail-btn--pass');
+  if (await pass.count()) {
+    await act(tablet, () => pass.click());
     return true;
   }
   const target = tablet.locator('.site--target .site__face');
@@ -130,7 +132,7 @@ test.describe('round the tablet', () => {
     const phone = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
     await expect(phone.getByRole('heading', { name: 'Kris' })).toBeVisible();
     await expect(tablet.getByText('Phone joined · seat 1')).toBeVisible();
-    await expect(tablet.locator('.seat-tag__name', { hasText: 'Kris' })).toBeVisible();
+    await expect(tablet.locator('.seat-card__name', { hasText: 'Kris' })).toBeVisible();
 
     // The settings stay on the same screen once the table is open, and change the room.
     await tablet.getByRole('radio', { name: 'Brisk' }).click();
@@ -207,7 +209,7 @@ test.describe('round the tablet', () => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     await tablet.getByRole('button', { name: 'Start the game' }).click();
-    await expect(tablet.locator('.rail--thinking')).toBeVisible();
+    await expect(tablet.locator('.turnbar--thinking')).toBeVisible();
     const before = await tablet.locator('.site__hikers .hiker').evaluateAll((els) => els.map((e) => e.closest('.site')?.className));
     await expect
       .poll(async () => tablet.locator('.site__hikers .hiker').evaluateAll((els) => els.map((e) => e.closest('.site')?.className)), {
@@ -225,7 +227,7 @@ test.describe('round the tablet', () => {
 
     await expect(tablet.locator('.site--target').first()).toBeVisible({ timeout: 20_000 });
     await expect(kris.getByText('Your turn — make your move on the tablet.')).toBeVisible({ timeout: 10_000 });
-    await expect(tablet.locator('.rail--acting')).toContainText('Walk a hiker');
+    await expect(tablet.locator('.turnbar--acting')).toContainText('Walk a hiker');
 
     // Both hikers start on the Trailhead, so the phone lists one group: the sites the tablet lit.
     // Each tile's name leads with its step on the switchback.
@@ -240,28 +242,64 @@ test.describe('round the tablet', () => {
     await expect(kris.locator('.preview button')).toHaveCount(0);
   });
 
-  test('at the Trail End the cards take the table, and passing gives it back to the trail', async ({ browser }) => {
+  test('the parks and gear stay hidden until asked for, even at the Trail End', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
     await tablet.getByRole('button', { name: 'Start the game' }).click();
 
+    const drawer = tablet.locator('#market-drawer');
     const end = tablet.locator('.site--target', { hasText: 'Trail End' }).locator('.site__face');
     await expect(end).toBeVisible({ timeout: 20_000 });
+    await expect(drawer).toBeHidden();
     await act(tablet, () => end.click());
 
+    // The decision is announced on the turn bar; the cards wait in the drawer, and on Kris's phone.
+    await expect(tablet.locator('.turnbar--acting')).toContainText('At the Trail End');
+    await expect(drawer).toBeHidden();
+    await expect(tablet.locator('.trail__sites')).toBeVisible();
+    await tablet.getByRole('button', { name: 'Parks & gear' }).click();
     await expect(tablet.locator('.shop')).toBeVisible();
     await expect(tablet.getByRole('heading', { name: 'Visit or reserve a park' })).toBeVisible();
-    await expect(tablet.locator('.trail-strip')).toBeVisible();
     await expect(tablet.locator('.shop-park').first().locator('.check').first()).toBeVisible();
-    await expect(tablet.locator('.trail__sites')).toHaveCount(0);
 
     await act(tablet, () => tablet.getByRole('button', { name: 'Pass', exact: true }).click());
     await expect(tablet.locator('.shop')).toHaveCount(0);
-    await expect(tablet.locator('.trail__sites')).toBeVisible();
+    // Left open, the drawer goes back to the cards on offer; closing it puts it away.
+    await expect(drawer.locator('.market')).toBeVisible();
+    await tablet.getByRole('button', { name: 'Hide parks and gear' }).click();
+    await expect(drawer).toBeHidden();
   });
 
-  test('tapping a site that is not lit reads its rules, turned toward a seat on request', async ({ browser }) => {
+  test('with the deck-gear house rule, the top of the gear deck is for sale unseen', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, deckGear: true });
+    await expect(tablet.getByRole('switch', { name: 'Gear from the deck' })).toHaveAttribute('aria-checked', 'true');
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+
+    const end = tablet.locator('.site--target', { hasText: 'Trail End' }).locator('.site__face');
+    await expect(end).toBeVisible({ timeout: 20_000 });
+    await dismissRoster(kris);
+    await act(tablet, () => end.click());
+
+    // On the tablet: the deck is in the gear shop, closed to a pack without 3 sun.
+    await tablet.getByRole('button', { name: 'Parks & gear' }).click();
+    const deck = tablet.locator('.shop-gear--deck');
+    await expect(deck).toContainText('Top of the gear deck');
+    const sun = Number((await tablet.locator('.turnbar .rail__pack-tokens > span').first().innerText()).trim());
+    const buy = deck.getByRole('button', { name: /Buy the top card of the gear deck/ });
+    if (sun >= 3) await expect(buy).toBeEnabled();
+    else await expect(buy).toBeDisabled();
+
+    // On the phone: the same offer, in the Gear panel.
+    await kris.getByRole('tab', { name: /^Gear/ }).click();
+    await expect(kris.locator('#panel-gear .gear-offer--deck')).toContainText('Top of the gear deck');
+    await act(tablet, () => tablet.getByRole('button', { name: 'Pass', exact: true }).click());
+  });
+
+  test('tapping a site that is not lit reads its rules, upright', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     await tablet.getByRole('button', { name: 'Start the game' }).click();
@@ -272,8 +310,9 @@ test.describe('round the tablet', () => {
     const rules = tablet.getByRole('dialog', { name: 'Trailhead' });
     await expect(rules).toBeVisible();
     await expect(rules).toContainText('Hikers start here');
-    await rules.getByRole('button', { name: 'Turn this toward the next seat' }).click();
-    await expect(rules).toHaveClass(/sheet--top/);
+    // The board reads from one side, so the rules do too.
+    await expect(rules).toHaveClass(/sheet--bottom/);
+    await expect(rules.getByRole('button', { name: 'Turn this toward the next seat' })).toHaveCount(0);
     await rules.getByRole('button', { name: 'Close the rules' }).click();
     await expect(rules).toHaveCount(0);
 
@@ -287,17 +326,17 @@ test.describe('round the tablet', () => {
     await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
     await tablet.getByRole('button', { name: 'Start the game' }).click();
 
-    await expect(tablet.locator('.rail--acting')).toContainText('Kris', { timeout: 20_000 });
-    await expect(tablet.locator('.rail__chip--next')).toHaveCount(1);
+    await expect(tablet.locator('.turnbar--acting')).toContainText('Kris', { timeout: 20_000 });
+    await expect(tablet.locator('.order__seat--next')).toHaveCount(1);
     const before = await tablet.locator('.site__hikers').allInnerTexts();
 
-    // A site that only pays out: no decision follows, so the take-back is on Kris's rail.
+    // A site that only pays out: no decision follows, so the take-back is on the turn bar.
     await act(tablet, () => tablet.locator('.site--target', { has: tablet.locator('.site__does .tok-row') }).first().locator('.site__face').click());
     const undo = tablet.getByRole('button', { name: /^Take back: moved to/ });
     await expect(undo).toBeVisible();
     await act(tablet, () => undo.click());
 
-    await expect(tablet.locator('.rail--acting')).toContainText('Kris');
+    await expect(tablet.locator('.turnbar--acting')).toContainText('Kris');
     await expect(tablet.locator('.site--target').first()).toBeVisible();
     expect(await tablet.locator('.site__hikers').allInnerTexts()).toEqual(before);
     await expect(undo).toHaveCount(0);
@@ -318,8 +357,9 @@ test.describe('round the tablet', () => {
     await dismissRoster(kris);
     await kris.getByRole('tab', { name: 'Sheet' }).click();
     await expect(kris.getByRole('tab', { name: 'Sheet' })).toHaveAttribute('aria-selected', 'true');
-    // No running score in the header: the sheet carries the details.
-    await expect(kris.locator('.play__bar')).not.toContainText('VP');
+    // No running score in the header: the sheet carries the details. A score, not the
+    // letters: a table code can spell "VP".
+    await expect(kris.locator('.play__bar')).not.toContainText(/\d\s*VP\b/);
     // The parks and the gear are a swipe away, to browse; nothing to press until a hiker stops for them.
     await kris.getByRole('tab', { name: 'Parks' }).click();
     await expect(kris.locator('#panel-parks .offer').first()).toBeVisible();
@@ -337,7 +377,9 @@ test.describe('round the tablet', () => {
     await expect(end).toBeVisible({ timeout: 20_000 });
     await dismissRoster(kris);
     await act(tablet, () => end.click());
-    await expect(tablet.locator('.shop')).toBeVisible();
+    // The tablet keeps the parks in their drawer: the decision is the phone's to show.
+    await expect(tablet.locator('.turnbar--acting')).toContainText('At the Trail End');
+    await expect(tablet.locator('#market-drawer')).toBeHidden();
 
     // The phone turns to the parks by itself, with the decision's buttons live.
     await expect(kris.getByRole('tab', { name: /^Parks/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
@@ -345,9 +387,9 @@ test.describe('round the tablet', () => {
     await kris.getByRole('tab', { name: /^Gear/ }).click();
     await expect(kris.locator('#panel-gear').getByRole('button', { name: 'Buy' }).first()).toBeVisible();
 
-    // Passing on the phone answers the stop: the tablet's shop closes.
+    // Passing on the phone answers the stop: the tablet's turn bar moves on.
     await kris.locator('#panel-gear').getByRole('button', { name: 'Pass', exact: true }).click();
-    await expect(tablet.locator('.shop')).toHaveCount(0, { timeout: 10_000 });
+    await expect(tablet.locator('.turnbar')).not.toContainText('At the Trail End', { timeout: 10_000 });
     await expect(kris.locator('#panel-parks .offer-btn')).toHaveCount(0);
   });
 
