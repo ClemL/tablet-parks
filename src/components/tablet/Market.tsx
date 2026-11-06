@@ -2,6 +2,7 @@
 
 import { bisonPark, campsiteDef, gearCost } from '@/game/engine';
 import { campsiteCapacity } from '@/game/data/campsites';
+import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
 import { parkDeckLeft, reservedCount } from '@/game/view';
 import type { GameState } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
@@ -55,6 +56,7 @@ export function Market({ state, seats, onInfo }: { state: GameState; seats: Publ
             {state.gearDiscountsLeft > 0
               ? `${state.gearDiscountsLeft} early-buyer discount${state.gearDiscountsLeft === 1 ? '' : 's'} left this season`
               : 'full price'}
+            {state.houseRules.deckGear ? ` · with ${DECK_GEAR_MIN_SUN}+ sun, the top of the deck sells unseen for 1 sun less` : ''}
           </span>
         </h3>
         <div className="market__row">

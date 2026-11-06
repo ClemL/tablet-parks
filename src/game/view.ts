@@ -8,6 +8,8 @@ import { clone } from './engine/primitives';
 export interface RedactedInfo {
   /** Cards left in the park deck, whose order the view no longer carries. */
   parkDeckCount: number;
+  /** Cards left in the gear deck: the deck-gear house rule sells its top card unseen. */
+  gearDeckCount: number;
   /** Parks each seat has reserved, for the seats whose cards are hidden. */
   reservedCount: number[];
   /** Seats whose whole sheet — resources, kit, parks — this view leaves out. */
@@ -36,7 +38,7 @@ export interface ViewPolicy {
 /**
  * Builds the state a single device is allowed to see.
  *
- * Always out: the park deck's order, the RNG cursor that would predict it, the
+ * Always out: the park and gear decks' order, the RNG cursor that would predict it, the
  * other seats' bonus cards and the parks they have reserved. The counts stay,
  * because the board has to keep showing "59 in the deck" and "Ada holds 2
  * reservations". Once the game is over the scoreboard reveals everything, so
@@ -53,6 +55,7 @@ export function viewFor(state: GameState, seat: number | null, policy: ViewPolic
 
   view.redacted = {
     parkDeckCount: state.parkDeck.length,
+    gearDeckCount: state.gearDeck.length,
     reservedCount: state.players.map((p) => p.reserved.length),
     hiddenSheets: state.players.map((p) => hide.has(p.index)),
     seat,

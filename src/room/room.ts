@@ -128,6 +128,7 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
     houseRules: {
       blindReserve: input?.houseRules?.blindReserve !== false,
       rangerFirst: input?.houseRules?.rangerFirst === true,
+      deckGear: input?.houseRules?.deckGear === true,
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',

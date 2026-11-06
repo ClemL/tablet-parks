@@ -6,7 +6,7 @@ import {
   type ParkCard,
 } from '../types';
 import { CAMPSITES, campsiteCapacity } from '../data/campsites';
-import { SITES, TOKEN_LIMIT } from '../data/sites';
+import { DECK_GEAR_MIN_SUN, SITES, TOKEN_LIMIT } from '../data/sites';
 import {
   canClaim,
   chanceSeason,
@@ -176,6 +176,22 @@ export function canReserveTop(state: GameState): boolean {
 function parkDeckCount(state: GameState): number {
   const redacted = (state as GameState & { redacted?: { parkDeckCount: number } }).redacted;
   return redacted ? redacted.parkDeckCount : state.parkDeck.length;
+}
+
+/**
+ * The deck-gear house rule: with enough sun, the top of the gear deck may be
+ * bought unseen. Works on a redacted view too, which keeps only the deck's count.
+ */
+export function canBuyTopGear(state: GameState, playerIndex: number): boolean {
+  if (state.houseRules?.deckGear !== true) return false;
+  const player = state.players[playerIndex];
+  return (player?.resources.sun ?? 0) >= DECK_GEAR_MIN_SUN && gearDeckCount(state) > 0;
+}
+
+/** Gear cards left face down, whether this is a full state or a redacted view. */
+export function gearDeckCount(state: GameState): number {
+  const redacted = (state as GameState & { redacted?: { gearDeckCount?: number } }).redacted;
+  return redacted ? (redacted.gearDeckCount ?? 0) : state.gearDeck.length;
 }
 
 /** Tokens a player must hand back before their turn can end. */

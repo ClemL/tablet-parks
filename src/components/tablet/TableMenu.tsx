@@ -15,16 +15,12 @@ import { DbLine } from './DbLine';
 export function TableMenu({
   view,
   busy,
-  upright,
-  onUpright,
   onCommand,
   onAbandon,
   onClose,
 }: {
   view: TableView;
   busy: boolean;
-  upright: boolean;
-  onUpright: (value: boolean) => void;
   onCommand: (command: TableCommand) => void;
   onAbandon: () => void;
   onClose: () => void;
@@ -119,10 +115,6 @@ export function TableMenu({
             </section>
 
             <section className="menu__group">
-              <label className="toggle">
-                <input type="checkbox" checked={!upright} onChange={(e) => onUpright(!e.target.checked)} />
-                <span>Turn each seat’s rail and decisions toward that seat (off for a tablet on a stand)</span>
-              </label>
               <DbLine db={view.db} />
             </section>
 

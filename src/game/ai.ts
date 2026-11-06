@@ -10,7 +10,9 @@ import {
   bagTotal,
   bottleDef,
   canAffordPhoto,
+  canBuyTopGear,
   canReserveTop,
+  deckGearCost,
   claimableParks,
   effectiveCost,
   gearCost,
@@ -304,9 +306,25 @@ function bestParkOrGearValue(
       .map((g) => gearValue(state, player, g, values) * w.gearAppetite - gearCost(state, g) * 0.5)
       .sort((a, b) => b - a)[0];
     if (gear !== undefined) options.push(gear);
+    const blind = topGearScore(state, player, values);
+    if (blind !== null) options.push(blind);
   }
 
   return Math.max(...options);
+}
+
+/**
+ * The deck-gear house rule, priced the way a person at the table could: the
+ * average over the cards still face down, never the one that happens to be on
+ * top. Null when the rule does not apply.
+ */
+function topGearScore(state: GameState, player: Player, values: Record<Resource, number>): number | null {
+  if (!canBuyTopGear(state, player.index) || state.gearDeck.length === 0) return null;
+  const w = weightsFor(player);
+  const scores = state.gearDeck.map(
+    (g) => gearValue(state, player, g, values) * w.gearAppetite - deckGearCost(state, g) * 0.5,
+  );
+  return scores.reduce((sum, v) => sum + v, 0) / scores.length;
 }
 
 /** Reserving the deck's top card: an average park, sight unseen. */
@@ -608,12 +626,12 @@ function copyDecision(state: GameState, player: Player): GameAction {
 /** The Ranger Station: the Trail End's park actions, mid-trail. */
 function parkOrGearDecision(state: GameState, player: Player): GameAction {
   const choice = parkOrGearChoice(state, player, false);
-  if (!choice || choice.option === 'buy-gear') return { type: 'park-or-gear', option: 'skip' };
+  if (!choice || choice.option === 'buy-gear' || choice.option === 'buy-top-gear') return { type: 'park-or-gear', option: 'skip' };
   return { ...choice, option: choice.option, type: 'park-or-gear' };
 }
 
 type ParkChoice = {
-  option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'buy-gear' | 'chance-park';
+  option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'buy-gear' | 'buy-top-gear' | 'chance-park';
   parkId?: string;
   gearId?: string;
 };
@@ -657,6 +675,10 @@ function parkOrGearChoice(state: GameState, player: Player, withGear: boolean): 
     : undefined;
   if (gear && gear.score > 0.5) {
     options.push({ score: gear.score, choice: { option: 'buy-gear', gearId: gear.g.id } });
+  }
+  const blind = withGear ? topGearScore(state, player, values) : null;
+  if (blind !== null && blind > 0.5) {
+    options.push({ score: blind, choice: { option: 'buy-top-gear' } });
   }
 
   // A Season of Chance park is worth taking when nothing on the board is better.

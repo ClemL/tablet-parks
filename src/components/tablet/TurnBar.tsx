@@ -2,7 +2,6 @@
 
 import { bottleDef, pendingLabel, tokenCount, usableBottles } from '@/game/engine';
 import { TOKEN_LIMIT } from '@/game/data/sites';
-import { reservedCount } from '@/game/view';
 import type { GameAction, GameState } from '@/game/types';
 import { RESOURCES } from '@/game/types';
 import type { PublicSeat, TableView } from '@/room/room';
@@ -11,148 +10,108 @@ import { Icon } from '../Icon';
 import { Token } from '../Token';
 
 /**
- * A seat's strip along its own edge of the tablet, turned to face whoever sits
- * there. Between turns it says who they are and what the table can see of
- * them; on their turn it grows a colour and says what to do, with their pack —
- * the tablet may show it while they act — and the few controls that are not a
- * card or a site: emptying a flask, and passing at a park decision. A
- * computer's turn shows its latest move instead. The seat whose turn comes
- * next is marked, and for a few seconds after a tap on the tablet the rail of
- * whoever made it offers to take it back.
+ * The bar along the bottom of the board, read upright from one side. Whoever
+ * is on the clock gets it: what to do, their pack — the tablet may show it
+ * while they act — and the few controls that are not a stop or a card:
+ * emptying a flask, and passing at a park decision. A computer's turn shows
+ * its latest move instead. For a few seconds after a tap on the tablet it
+ * offers to take the tap back. Its far end opens the parks and gear, which
+ * are hidden until asked for: each player browses them on their own phone.
  */
-export function SeatRail({
-  seat,
+export function TurnBar({
   view,
   busy,
   onAction,
-  next = false,
-  undo = null,
+  undo,
+  drawerOpen,
+  onDrawer,
 }: {
-  seat: PublicSeat;
   view: TableView;
   busy: boolean;
   onAction: (action: GameAction) => void;
-  /** This seat moves once the current turn is over. */
-  next?: boolean;
-  undo?: Undo | null;
+  undo: Undo | null;
+  drawerOpen: boolean;
+  onDrawer: () => void;
 }) {
   const state = view.game!;
-  const player = state.players[seat.seat];
-  const onClock = view.actor === seat.seat;
-  const thinking = onClock && view.cpuThinking;
-  const acting = onClock && !view.cpuThinking;
-  const home = player.hikers.filter((h) => h.finished).length;
-  const reserved = reservedCount(state, seat.seat);
+  const actor = view.actor;
+  const seat = actor !== null ? view.seats[actor] : null;
+  const thinking = seat !== null && view.cpuThinking;
+  const acting = seat !== null && !view.cpuThinking;
 
   return (
     <section
-      className={`rail${acting ? ' rail--acting' : ''}${thinking ? ' rail--thinking' : ''}`}
-      style={seatStyle(seat)}
-      aria-label={`${seat.name}${acting ? ', on the clock' : thinking ? ', thinking' : ''}`}
+      className={`turnbar${acting ? ' turnbar--acting' : ''}${thinking ? ' turnbar--thinking' : ''}`}
+      style={seat ? seatStyle(seat) : undefined}
+      aria-label={seat ? `${seat.name}${acting ? ', on the clock' : ', thinking'}` : 'The turn'}
     >
-      <Pawn seat={seat} size={acting ? 'xl' : 'lg'} />
-      <div className="rail__who">
-        <span className="rail__name">{seat.name}</span>
-        {acting ? (
-          <span className="rail__chip">Your turn</span>
-        ) : thinking ? (
-          <span className="rail__chip">Thinking</span>
-        ) : next ? (
-          <span className="rail__chip rail__chip--next">Up next</span>
-        ) : (
-          <Kind seat={seat} />
-        )}
-      </div>
-      {acting ? (
-        <Acting state={state} seat={seat} busy={busy} onAction={onAction} undo={undo} />
-      ) : thinking ? (
+      {seat ? (
+        <>
+          <Pawn seat={seat} size={acting ? 'xl' : 'lg'} />
+          <div className="turnbar__who">
+            <span className="turnbar__name">{seat.name}</span>
+            <span className="turnbar__chip">{acting ? 'Your turn' : 'Thinking'}</span>
+          </div>
+        </>
+      ) : null}
+      {acting && seat ? (
+        <Acting state={state} seat={seat} busy={busy} onAction={onAction} undo={undo && undo.seat === seat.seat ? undo : null} drawerOpen={drawerOpen} />
+      ) : (
         <p className="rail__say rail__say--muted">
-          <span className="dots" aria-hidden="true" />
+          {thinking ? <span className="dots" aria-hidden="true" /> : null}
           {lastMove(state)}
         </p>
-      ) : (
-        <div className="rail__facts">
-          <span className="rail__fact">
-            <Icon name="boot" size={18} />
-            {home} of 2 home
-          </span>
-          <span className="rail__fact">
-            <Icon name="ticket" size={18} />
-            {reserved === 0 ? 'none reserved' : `${reserved} reserved`}
-          </span>
-          {state.cameraHolder === seat.seat ? (
-            <span className="rail__fact rail__fact--token">
-              <Icon name="camera" size={18} />
-              Camera
-            </span>
-          ) : null}
-          {state.firstPlayer === seat.seat ? (
-            <span className="rail__fact rail__fact--gold">
-              <Icon name="flag" size={18} />
-              First player
-            </span>
-          ) : null}
-        </div>
       )}
-      {!acting && undo ? (
+      {undo && (!acting || undo.seat !== actor) ? (
         <div className="rail__actions">
           <UndoButton undo={undo} busy={busy} />
         </div>
       ) : null}
+      <button type="button" className={`turnbar__drawer${drawerOpen ? ' is-on' : ''}`} aria-expanded={drawerOpen} aria-controls="market-drawer" onClick={onDrawer}>
+        <Icon name="deck" size={20} />
+        {drawerOpen ? 'Hide parks & gear' : 'Parks & gear'}
+      </button>
     </section>
   );
 }
 
-function Kind({ seat }: { seat: PublicSeat }) {
-  if (seat.kind === 'cpu') {
-    return (
-      <span className="rail__kind">
-        <Icon name="cpu" size={15} />
-        computer
-      </span>
-    );
-  }
-  return (
-    <span className="rail__kind">
-      <Icon name="phone" size={15} />
-      {seat.phone ? 'phone' : 'no phone'}
-    </span>
-  );
-}
-
-/** What the person on the clock does next, their pack, and the controls that are not on a card or a site. */
+/** What the person on the clock does next, their pack, and the controls that are not on a card or a stop. */
 function Acting({
   state,
   seat,
   busy,
   onAction,
   undo,
+  drawerOpen,
 }: {
   state: GameState;
   seat: PublicSeat;
   busy: boolean;
   onAction: (action: GameAction) => void;
   undo: Undo | null;
+  drawerOpen: boolean;
 }) {
   const player = state.players[seat.seat];
   const pending = state.pending;
   const shopping = pending && (pending.kind === 'trail-end' || pending.kind === 'park-or-gear') ? pending.kind : null;
   const movable = player.hikers.filter((h) => !h.finished).length;
   const bottles = usableBottles(player);
+  const phone = seat.phone ? 'on your phone' : 'here';
+  const here = drawerOpen ? 'on the cards above' : 'with Parks & gear';
 
   let say: string;
   let sub: string;
   if (shopping === 'trail-end') {
-    say = 'At the Trail End: pick one action.';
-    sub = 'Visit a park, reserve one, or buy gear. Or pass.';
+    say = 'At the Trail End: visit or reserve a park, or buy gear.';
+    sub = seat.phone ? `Choose ${phone}, or ${here}. Or pass.` : `Choose ${here}. Or pass.`;
   } else if (shopping === 'park-or-gear') {
     say = 'At the Ranger Station: visit or reserve a park.';
-    sub = 'Or pass and keep walking next turn.';
+    sub = seat.phone ? `Choose ${phone}, or ${here}. Or pass and keep walking.` : `Choose ${here}. Or pass and keep walking.`;
   } else if (pending) {
     say = `Deciding: ${pendingLabel(state)}.`;
-    sub = 'The choices are on the sheet turned toward you.';
+    sub = 'The choices are on the sheet above.';
   } else {
-    say = 'Walk a hiker: tap a lit site.';
+    say = 'Walk a hiker: tap a lit stop.';
     sub = movable > 1 ? 'Your rear hiker is picked. Tap your other hiker to move that one instead.' : 'One hiker left on the trail this season.';
   }
 
@@ -218,6 +177,7 @@ export function lastMove(state: GameState): string {
 }
 
 export interface Undo {
+  seat: number;
   label: string;
   seconds: number;
   onUndo: () => void;

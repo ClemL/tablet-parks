@@ -3,13 +3,16 @@
 import {
   affordableGear,
   bisonPark,
+  canBuyTopGear,
   canClaimChance,
   canReserveTop,
   claimableParks,
   gearCost,
+  gearDeckCount,
   reservableParks,
 } from '@/game/engine';
 import { parkDeckLeft } from '@/game/view';
+import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
 import type { GameAction, GameState, ParkCard, Player } from '@/game/types';
 import { IllustratedParkArt } from '@/art/illustrated';
 import { RESOURCE_LABEL } from '../bits';
@@ -147,6 +150,28 @@ export function Shop({
                 </article>
               );
             })}
+            {state.houseRules.deckGear ? (
+              <article className="shop-gear shop-gear--deck">
+                <span className="shop-gear__icon" aria-hidden="true">
+                  <Icon name="deck" size={26} />
+                </span>
+                <div className="shop-gear__text">
+                  <h3>Top of the gear deck</h3>
+                  <p>
+                    Unseen, {gearDeckCount(state)} left. Its usual price less 1 sun — with {DECK_GEAR_MIN_SUN} or more sun.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="shop-btn shop-btn--go shop-gear__buy"
+                  disabled={!canBuyTopGear(state, shopper) || busy}
+                  aria-label="Buy the top card of the gear deck unseen, for 1 sun less"
+                  onClick={() => act('buy-top-gear')}
+                >
+                  Buy unseen
+                </button>
+              </article>
+            ) : null}
           </div>
         </section>
       ) : null}

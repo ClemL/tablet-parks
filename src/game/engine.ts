@@ -10,6 +10,7 @@ import {
   type DecisionKind,
   type GameAction,
   type GameState,
+  type GearCard,
   type Player,
   type Resource,
   type ResourceBag,
@@ -26,6 +27,7 @@ import {
   campfireAllowance,
   canAffordPhoto,
   chanceSeason,
+  deckGearCost,
   defaultPhotoPayment,
   effectiveCost,
   gainAtSite,
@@ -38,6 +40,7 @@ import {
 import {
   affordableGear,
   bisonPark,
+  canBuyTopGear,
   campsiteDef,
   canReserveTop,
   claimableParks,
@@ -851,18 +854,7 @@ function buyGear(state: GameState, player: Player, gearId?: string): boolean {
   if (!card || !affordableGear(state, player.index).some((g) => g.id === card.id)) return false;
 
   const cost = gearCost(state, card);
-  const discounted = state.gearDiscountsLeft > 0;
-  spend(player, 'sun', cost);
-  player.gear.push(card);
-  if (card.effect.kind === 'extra-bottle') {
-    player.bottles.push({
-      id: `p${player.index}g${player.bottles.length}`,
-      kind: card.effect.bottle,
-      used: false,
-    });
-  }
-  if (card.effect.kind === 'season-campfire') player.campfires += 1;
-  if (discounted) state.gearDiscountsLeft -= 1;
+  const discounted = takeGear(state, player, card, cost);
 
   const index = state.gearRow.findIndex((g) => g.id === card.id);
   const replacement = state.gearDeck.shift();
@@ -875,6 +867,44 @@ function buyGear(state: GameState, player: Player, gearId?: string): boolean {
     `bought ${card.name} for ${cost} sun${discounted ? ' (early buyer discount)' : ''}`,
   );
   return true;
+}
+
+/**
+ * The deck-gear house rule: the top card of the gear deck, bought before
+ * anyone sees it, for a sun less than its usual price. The face-up row stays.
+ */
+function buyTopGear(state: GameState, player: Player): boolean {
+  if (!canBuyTopGear(state, player.index)) return false;
+  const card = state.gearDeck[0];
+  const cost = deckGearCost(state, card);
+  // Gear tops out at 4 sun, so the rule's 3-sun minimum always covers it; this
+  // only guards a future card priced higher.
+  if ((player.resources.sun ?? 0) < cost || player.gear.some((g) => g.id === card.id)) return false;
+  state.gearDeck.shift();
+  const discounted = takeGear(state, player, card, cost);
+  log(
+    state,
+    player.index,
+    `bought the top card of the gear deck, ${card.name}, for ${cost} sun${discounted ? ' (early buyer discount too)' : ''}`,
+  );
+  return true;
+}
+
+/** Pays for a gear card and puts it to work. True when it used an early-buyer discount. */
+function takeGear(state: GameState, player: Player, card: GearCard, cost: number): boolean {
+  const discounted = state.gearDiscountsLeft > 0;
+  spend(player, 'sun', cost);
+  player.gear.push(card);
+  if (card.effect.kind === 'extra-bottle') {
+    player.bottles.push({
+      id: `p${player.index}g${player.bottles.length}`,
+      kind: card.effect.bottle,
+      used: false,
+    });
+  }
+  if (card.effect.kind === 'season-campfire') player.campfires += 1;
+  if (discounted) state.gearDiscountsLeft -= 1;
+  return discounted;
 }
 
 function resolveTrailEnd(state: GameState, action: Extract<GameAction, { type: 'trail-end' }>): void {
@@ -896,6 +926,9 @@ function resolveTrailEnd(state: GameState, action: Extract<GameAction, { type: '
       break;
     case 'buy-gear':
       buyGear(state, player, action.gearId);
+      break;
+    case 'buy-top-gear':
+      buyTopGear(state, player);
       break;
     default:
       log(state, player.index, 'passed at the Trail End');

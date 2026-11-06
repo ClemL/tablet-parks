@@ -182,6 +182,9 @@ export const PHOTO_COST = 2;
 export const PHOTO_COST_DISCOUNTED = 1;
 /** The first player to buy gear in a season pays this much less sun. */
 export const FIRST_GEAR_DISCOUNT = 1;
+/** The deck-gear house rule: the sun a player must hold, and what the blind buy saves. */
+export const DECK_GEAR_MIN_SUN = 3;
+export const DECK_GEAR_DISCOUNT = 1;
 /** How many players get that discount (two at 4-5 players, one otherwise). */
 export function gearDiscountsForPlayers(players: number): number {
   return players >= 4 ? 2 : 1;

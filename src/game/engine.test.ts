@@ -3,6 +3,8 @@ import {
   applyAction,
   bagTotal,
   bisonPark,
+  canBuyTopGear,
+  deckGearCost,
   campfireAllowance,
   canAffordPhoto,
   canClaimChance,
@@ -652,6 +654,104 @@ describe('the Trail End', () => {
     expect(claimableParks(state, 0).some((p) => p.id === park.id)).toBe(false);
     expect(claimableParks(state, 1).some((p) => p.id === park.id)).toBe(true);
     expect(reservableParks(state).some((p) => p.id === park.id)).toBe(false);
+  });
+});
+
+describe('the deck-gear house rule', () => {
+  /** A base game with the rule on, the season card cleared so only the gear discounts apply. */
+  function deckGearGame(seed: number, sun: number): GameState {
+    const state = createGame({ seed, expansions: { nightfall: false, wildlife: false }, houseRules: { deckGear: true } });
+    state.seasonCard = null;
+    state.players[0].resources = { sun, water: 0, forest: 0, mountain: 0, wild: 0 };
+    return state;
+  }
+
+  it('is off unless the table turns it on', () => {
+    const state = createGame({ seed: 140, expansions: { nightfall: false, wildlife: false } });
+    expect(state.houseRules.deckGear).toBe(false);
+    state.players[0].resources = { sun: 9, water: 0, forest: 0, mountain: 0, wild: 0 };
+    expect(canBuyTopGear(state, 0)).toBe(false);
+    const deck = state.gearDeck.map((g) => g.id);
+    let next = arriveAtEnd(state);
+    next = applyAction(next, { type: 'trail-end', option: 'buy-top-gear' });
+    expect(next.players[0].gear).toHaveLength(0);
+    expect(next.players[0].resources.sun).toBe(9);
+    expect(next.gearDeck.map((g) => g.id)).toEqual(deck);
+  });
+
+  it('sells the top of the gear deck, unseen, for a sun less, and leaves the row alone', () => {
+    const state = deckGearGame(141, 5);
+    const top = state.gearDeck[0];
+    const row = state.gearRow.map((g) => g.id);
+    const price = deckGearCost(state, top);
+    // The usual price with the early-buyer discount, less the rule's sun.
+    expect(price).toBe(Math.max(0, top.cost - 1 - 1));
+    let next = arriveAtEnd(state);
+    expect(canBuyTopGear(next, 0)).toBe(true);
+    next = applyAction(next, { type: 'trail-end', option: 'buy-top-gear' });
+    expect(next.players[0].gear.map((g) => g.id)).toEqual([top.id]);
+    expect(next.players[0].resources.sun).toBe(5 - price);
+    expect(next.gearDeck).toHaveLength(state.gearDeck.length - 1);
+    expect(next.gearRow.map((g) => g.id)).toEqual(row);
+    expect(next.gearDiscountsLeft).toBe(state.gearDiscountsLeft - 1);
+    expect(next.pending).toBeNull();
+    expect(next.log.at(-1)?.text).toContain(top.name);
+  });
+
+  it('needs 3 sun, which covers any card once the discount is taken off', () => {
+    const poor = deckGearGame(142, 2);
+    expect(canBuyTopGear(poor, 0)).toBe(false);
+    let refused = arriveAtEnd(poor);
+    refused = applyAction(refused, { type: 'trail-end', option: 'buy-top-gear' });
+    expect(refused.players[0].gear).toHaveLength(0);
+    expect(refused.players[0].resources.sun).toBe(2);
+
+    for (const card of GEAR) {
+      const state = deckGearGame(143, 3);
+      state.gearDiscountsLeft = 0;
+      state.gearDeck = [card, ...state.gearDeck.filter((g) => g.id !== card.id)];
+      state.gearRow = state.gearRow.filter((g) => g.id !== card.id);
+      expect(deckGearCost(state, card)).toBeLessThanOrEqual(3);
+      let next = arriveAtEnd(state);
+      next = applyAction(next, { type: 'trail-end', option: 'buy-top-gear' });
+      expect(next.players[0].gear.map((g) => g.id), card.id).toEqual([card.id]);
+      expect(next.players[0].resources.sun).toBe(3 - (card.cost - 1));
+    }
+  });
+
+  it('works on a view, which knows how many gear cards are left but not which', () => {
+    const state = deckGearGame(144, 4);
+    const view = viewFor(state, 0);
+    expect(view.gearDeck).toEqual([]);
+    expect(view.redacted.gearDeckCount).toBe(state.gearDeck.length);
+    expect(canBuyTopGear(view, 0)).toBe(true);
+    expect(canBuyTopGear(viewFor(deckGearGame(144, 2), 0), 0)).toBe(false);
+  });
+
+  it('lets the computers price the blind buy without reading the deck order', () => {
+    const state = deckGearGame(145, 6);
+    state.players[0].isHuman = false;
+    state.players[0].personality = 'collector';
+    const atEnd = arriveAtEnd(state);
+    const reversed = structuredClone(atEnd);
+    reversed.gearDeck.reverse();
+    expect(aiAction(reversed)).toEqual(aiAction(atEnd));
+  });
+
+  it('plays a full computer game with the rule on', () => {
+    let state = createGame({ seed: 146, houseRules: { deckGear: true } });
+    state.players[0].isHuman = false;
+    state.players[0].personality = 'collector';
+    let blind = 0;
+    for (let step = 0; step < 5000 && state.phase !== 'game-over'; step++) {
+      const action = aiAction(state)!;
+      if (action.type === 'trail-end' && action.option === 'buy-top-gear') blind += 1;
+      state = applyAction(state, action);
+    }
+    expect(state.phase).toBe('game-over');
+    const owned = state.players.flatMap((p) => p.gear.map((g) => g.id));
+    expect(new Set(owned).size).toBe(owned.length);
+    expect(blind).toBeGreaterThanOrEqual(0);
   });
 });
 
