@@ -287,6 +287,12 @@ export interface HouseRules {
   blindReserve: boolean;
   /** Season 1's advanced site is always the Ranger Station rather than a random draw. */
   rangerFirst: boolean;
+  /**
+   * With 3 or more sun at the Trail End, gear may be bought from the top of the
+   * gear deck, sight unseen, for 1 sun less than its usual price. Gear tops out
+   * at 4 sun, so 3 sun always covers whatever turns up.
+   */
+  deckGear: boolean;
 }
 
 export interface LogEntry {
@@ -379,7 +385,7 @@ export type GameAction =
     }
   | {
       type: 'trail-end';
-      option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'buy-gear' | 'chance-park' | 'skip';
+      option: 'claim-park' | 'reserve-park' | 'reserve-top' | 'buy-gear' | 'buy-top-gear' | 'chance-park' | 'skip';
       parkId?: string;
       gearId?: string;
     }

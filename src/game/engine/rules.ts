@@ -10,6 +10,7 @@ import {
 } from '../types';
 import {
   CAMPFIRES_PER_SEASON,
+  DECK_GEAR_DISCOUNT,
   FIRST_GEAR_DISCOUNT,
   PHOTO_COST,
   PHOTO_COST_DISCOUNTED,
@@ -143,6 +144,11 @@ export function gearCost(state: GameState, card: GearCard): number {
     0,
     card.cost - (state.gearDiscountsLeft > 0 ? FIRST_GEAR_DISCOUNT : 0) - seasonal,
   );
+}
+
+/** A gear card bought blind off the deck under the deck-gear house rule: its usual price, less a sun. */
+export function deckGearCost(state: GameState, card: GearCard): number {
+  return Math.max(0, gearCost(state, card) - DECK_GEAR_DISCOUNT);
 }
 
 /**

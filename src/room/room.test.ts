@@ -87,6 +87,14 @@ describe('settings', () => {
     expect(settings.peek).toBe('cpu');
   });
 
+  it('keeps the deck-gear house rule off unless the tablet turns it on', () => {
+    expect(normalizeSettings(undefined).houseRules.deckGear).toBe(false);
+    expect(normalizeSettings({ houseRules: { deckGear: 'yes' } as never }).houseRules.deckGear).toBe(false);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true } }), DB, T0, 3);
+    startGame(room, T0);
+    expect(room.state!.houseRules.deckGear).toBe(true);
+  });
+
   it('grows and shrinks the lobby, but never out from under a seated person', () => {
     const room = lobby(4);
     changeSettings(room, { seats: 5 });
@@ -440,6 +448,20 @@ describe('what each device is sent', () => {
     }
   });
 
+  it('counts the gear deck for every device without naming a card in it', () => {
+    const room = midGame();
+    const state = room.state!;
+    for (const view of [tableView(room, T0, []), seatView(room, 0, T0), seatView(room, 2, T0)]) {
+      expect(view.game!.gearDeck).toEqual([]);
+      expect(view.game!.redacted.gearDeckCount).toBe(state.gearDeck.length);
+      const json = JSON.stringify(view);
+      const seen = new Set([...state.gearRow, ...state.players.flatMap((p) => p.gear)].map((g) => g.id));
+      for (const card of state.gearDeck.filter((g) => !seen.has(g.id))) {
+        expect(json).not.toContain(`"${card.id}"`);
+      }
+    }
+  });
+
   it('tells the tablet when a computer is the one thinking', () => {
     const room = lobby(2);
     startGame(room, T0);
@@ -552,6 +574,19 @@ describe('a phone at a park decision', () => {
     // The wrong kind of park decision for where the hiker stands is refused too.
     expect(() => playForPhone(room, seat, { type: 'park-or-gear', option: 'skip' }, T0 + 10)).toThrow(/not your decision/);
     expect(room.state!.pending?.kind).toBe('trail-end');
+  });
+
+  it('buys the top of the gear deck from the phone when the house rule is on', () => {
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true } }), DB, T0, 42);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const seat = actorOf(room.state!)!;
+    room.state!.players[seat].resources.sun = 4;
+    const top = room.state!.gearDeck[0];
+    playFor(room, seat, { type: 'move', hikerId: room.state!.players[seat].hikers[0].id, to: room.state!.trail.length - 1 }, T0);
+    playForPhone(room, seat, { type: 'trail-end', option: 'buy-top-gear' }, T0 + 10);
+    expect(room.state!.players[seat].gear.map((g) => g.id)).toEqual([top.id]);
   });
 
   it('has nothing to answer while its player is walking', () => {
