@@ -77,6 +77,8 @@ export function viewFor(state: GameState, seat: number | null, policy: ViewPolic
       player.resources = {};
       player.waterThisTurn = 0;
       player.bottles = [];
+      player.flaskOrder = [];
+      player.flasksUsed = 0;
       player.campfires = 0;
       player.photos = 0;
       player.gear = [];

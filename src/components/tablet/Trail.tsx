@@ -7,9 +7,11 @@ import type { PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
 import { Pawn, RESOURCE_LABEL, hikerName } from '../bits';
 import { Icon } from '../Icon';
-import { Token, TokenRow } from '../Token';
+import { Token, TokenBag, TokenRow } from '../Token';
 import { useLongPress } from '@/client/useLongPress';
 import { trailLayout } from './trailLayout';
+import { Traveller, useBoardMotion } from './motion';
+import { TentArt } from '@/art/tent';
 
 /**
  * What a site does, short enough for a tile a dozen of which share one row.
@@ -71,9 +73,16 @@ export function Trail({
   const mine = canMove !== null ? state.players[canMove].hikers.filter((h) => !h.finished && moves.some((m) => m.hikerId === h.id)) : [];
   const [chosen, setChosen] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<MoveOption | null>(null);
-  const arrived = useArrivals(state);
+  const lit = useArrivals(state);
   const [box, size] = useSize<HTMLElement>();
   const layout = trailLayout(state.trail.length, size.width, size.height);
+  const motion = useBoardMotion(state);
+  // Only a hiker still standing where its trip ends waits hidden for it.
+  const standing = new Map(state.players.flatMap((p) => p.hikers.map((h) => [h.id, h.position] as const)));
+  const away = new Set(motion.travels.filter((t) => standing.get(t.hikerId) === t.to).map((t) => t.hikerId));
+  // A stop lights up when its walker gets there, not when the move is made.
+  const arriving = new Set(motion.travels.map((t) => t.to));
+  const arrived = new Set([...lit].filter((index) => !arriving.has(index)));
 
   // A new turn starts from the rear hiker, the usual move.
   const turnKey = `${state.season}:${state.current}:${state.log.length}`;
@@ -171,7 +180,7 @@ export function Trail({
                   ) : null}
                   {tent ? (
                     <span className="site__tent" title="Tent site: camp here instead of taking the action">
-                      <Icon name="tent" size={18} />
+                      <TentArt size={40} />
                     </span>
                   ) : null}
                   <span className="site__hikers">
@@ -184,7 +193,7 @@ export function Trail({
                         <button
                           key={hiker.id}
                           type="button"
-                          className={`hiker hiker--pick${selected?.id === hiker.id ? ' is-on' : ''}`}
+                          className={`hiker hiker--pick${selected?.id === hiker.id ? ' is-on' : ''}${away.has(hiker.id) ? ' hiker--away' : ''}`}
                           aria-pressed={selected?.id === hiker.id}
                           aria-label={`Move ${name} of ${seat.name}`}
                           onClick={() => setChosen(hiker.id)}
@@ -192,7 +201,7 @@ export function Trail({
                           {pawn}
                         </button>
                       ) : (
-                        <span key={hiker.id} className="hiker">
+                        <span key={hiker.id} className={`hiker${away.has(hiker.id) ? ' hiker--away' : ''}`}>
                           {pawn}
                         </span>
                       );
@@ -203,6 +212,53 @@ export function Trail({
             })
           : null}
       </ol>
+      {layout.places.length === state.trail.length ? (
+        <div className="trail__motion" aria-hidden="true">
+          {motion.travels.map((travel) => {
+            const seat = seats[travel.owner];
+            if (!seat) return null;
+            const hikers = state.players[travel.owner].hikers;
+            return (
+              <Traveller key={travel.key} travel={travel} places={layout.places} stop={layout.stop} onDone={motion.arrived}>
+                <Pawn seat={seat} size="lg" hiker={hikerName(seat, hikers, travel.hikerId)} />
+              </Traveller>
+            );
+          })}
+          {motion.fx.map((fx) => {
+            const place = layout.places[fx.at];
+            if (!place) return null;
+            const gained = fx.gain && Object.keys(fx.gain).length > 0;
+            return (
+              // On the stop's own disc: the hikers stand on its rim, and a first-row stop has no room above them.
+              <span key={fx.key} className={`fx fx--${fx.kind}`} style={{ left: place.x, top: place.y, '--fx-delay': `${fx.delay}ms` } as React.CSSProperties}>
+                {fx.kind === 'fire' ? (
+                  <>
+                    <span className="fx__flame">
+                      <Icon name="fire" size={84} />
+                    </span>
+                    <i className="fx__ember" />
+                    <i className="fx__ember" />
+                    <i className="fx__ember" />
+                  </>
+                ) : (
+                  <>
+                    <span className="fx__flask">
+                      <Icon name="flask" size={46} />
+                    </span>
+                    <i className="fx__drop" />
+                    <i className="fx__drop" />
+                    {gained ? (
+                      <span className="fx__gain">
+                        <TokenBag bag={fx.gain!} sign size="sm" />
+                      </span>
+                    ) : null}
+                  </>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      ) : null}
       {confirm ? (
         <div className="trail__confirm" role="alertdialog" aria-label="Spend a campfire?">
           <Icon name="fire" size={22} />
@@ -259,7 +315,8 @@ function useArrivals(state: GameState): Set<number> {
     for (const [id, position] of now) if (before.get(id) !== position && position > 0) moved.add(position);
     if (moved.size === 0) return;
     setLit(moved);
-    const timer = setTimeout(() => setLit(new Set()), 1600);
+    // Long enough to outlast the longest walk there, which holds the flash back until arrival.
+    const timer = setTimeout(() => setLit(new Set()), 5000);
     return () => clearTimeout(timer);
   }, [state, season]);
   return lit;

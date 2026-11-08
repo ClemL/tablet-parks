@@ -11,6 +11,8 @@ import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token, TokenBag } from '../Token';
 import { IllustratedParkArt } from '@/art/illustrated';
+import { FlaskButton } from './Flasks';
+import { GearIcon, useGearName } from '../gearTheme';
 
 /**
  * One player's mat: the pack, the camera and kit, the objectives (on your own),
@@ -23,6 +25,7 @@ export function SeatSheet({
   objectivesHidden,
   onToggleObjectives,
   onPark,
+  flasks,
 }: {
   state: GameState;
   seat: PublicSeat;
@@ -31,6 +34,8 @@ export function SeatSheet({
   onToggleObjectives: () => void;
   /** Tapping a visited park tells its story. */
   onPark?: (park: ParkCard) => void;
+  /** On your own sheet, each flask is a switch that arms it. */
+  flasks?: { busy: boolean; onToggle: (id: string) => void };
 }) {
   const player = state.players[seat.seat];
   if (sheetHidden(state, seat.seat)) {
@@ -43,6 +48,7 @@ export function SeatSheet({
     );
   }
 
+  const nameOf = useGearName();
   const held = tokenCount(player);
   const photoVp = player.photos * photoValue(player);
   const parkVp = player.parks.reduce((sum, p) => sum + p.vp, 0);
@@ -105,6 +111,13 @@ export function SeatSheet({
         </li>
         {player.bottles.map((bottle) => {
           const def = bottleDef(bottle.kind);
+          if (flasks) {
+            return (
+              <li key={bottle.id} className="kit__item kit__item--flask">
+                <FlaskButton bottle={bottle} order={player.flaskOrder ?? []} busy={flasks.busy} onToggle={flasks.onToggle} />
+              </li>
+            );
+          }
           return (
             <li key={bottle.id} className={bottle.used ? 'kit__item kit__item--used' : 'kit__item'}>
               <Icon name="flask" />
@@ -199,9 +212,9 @@ export function SeatSheet({
           <ul className="gear-list">
             {player.gear.map((card) => (
               <li key={card.id} className="gear-chip">
-                <span aria-hidden="true">{card.icon}</span>
+                <GearIcon card={card} />
                 <span>
-                  <b>{card.name}</b>
+                  <b>{nameOf(card)}</b>
                   <small>{card.text}</small>
                 </span>
               </li>

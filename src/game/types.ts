@@ -175,6 +175,15 @@ export interface Player {
    */
   waterThisTurn: number;
   bottles: Bottle[];
+  /**
+   * The flasks this player armed, by id, in the order they fill themselves:
+   * when a turn ends with water just collected, the first unused armed flask
+   * takes it, then the next. Flasks start unarmed; arming one is the player's
+   * standing choice, kept from season to season.
+   */
+  flaskOrder: string[];
+  /** Flasks emptied this game, armed or by hand — the phone nudges a player who never has. */
+  flasksUsed: number;
   campfires: number;
   /** True once this season's first hiker came home and re-lit the campfire. */
   campfireRelit: boolean;
@@ -295,12 +304,24 @@ export interface HouseRules {
    * at 4 sun, so 3 sun always covers whatever turns up.
    */
   deckGear: boolean;
+  /** Every player starts the game holding one park, dealt face down from the deck into their reservations. */
+  startReserve: boolean;
 }
 
 export interface LogEntry {
+  /** Counts up through the game, so a device can tell new entries from old once the log is trimmed. */
+  id?: number;
   season: number;
   player: number;
   text: string;
+  /**
+   * What this step did to the player's pack, gains positive and costs
+   * negative. The text already says it to every device; this is the same
+   * thing in numbers, for the phones' toasts and the board's effects.
+   */
+  delta?: ResourceBag;
+  /** A step the board animates: a flask emptied, or a campfire spent to share a site. */
+  event?: 'flask' | 'campfire';
 }
 
 export type GamePhase = 'playing' | 'season-end' | 'game-over';

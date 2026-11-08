@@ -9,12 +9,13 @@ import {
   type ActionPreview,
 } from '@/game/engine';
 import { TOKEN_LIMIT } from '@/game/data/sites';
-import type { DecisionKind, GameAction, GameState } from '@/game/types';
+import type { DecisionKind, GameAction, GameState, GearCard } from '@/game/types';
 import { COST_RESOURCES } from '@/game/types';
 import { SiteArt } from '@/art/siteArt';
 import { RESOURCE_LABEL } from './bits';
 import { Icon } from './Icon';
 import { Token, TokenBag } from './Token';
+import { GearIcon } from './gearTheme';
 
 /*
  * A pending decision, described once for both screens that show it: the
@@ -82,7 +83,7 @@ export function decisionText(state: GameState): { title: string; note: string } 
  * asks which tokens to pay or hand back instead (a photo, the token limit), or
  * when it is a park decision, which the board's shop answers.
  */
-export function decisionChoices(state: GameState): Choice[] | null {
+export function decisionChoices(state: GameState, gearName: (card: GearCard) => string = (card) => card.name): Choice[] | null {
   const pending = state.pending;
   if (!pending) return null;
   const player = state.players[pending.player];
@@ -169,13 +170,9 @@ export function decisionChoices(state: GameState): Choice[] | null {
         .filter((g) => !player.gear.some((o) => o.id === g.id))
         .map((g) => ({
           key: g.id,
-          label: g.name,
+          label: gearName(g),
           sub: g.text,
-          icon: (
-            <span className="choice__emoji" aria-hidden="true">
-              {g.icon}
-            </span>
-          ),
+          icon: <GearIcon card={g} className="choice__emoji" />,
           action: { type: 'outfitter', gearId: g.id } as GameAction,
         }));
     default:

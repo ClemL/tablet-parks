@@ -321,6 +321,115 @@ describe('camera', () => {
   });
 });
 
+describe('armed flasks', () => {
+  /** Player 0 alone on a Valley (2 water) one step out, nothing else paying, no tents. */
+  function atValley(seed: number) {
+    const state = createGame({ seed, expansions: { nightfall: false, wildlife: false } });
+    state.trail[1] = 'valley';
+    state.siteTokens[1] = null;
+    state.seasonCard = null;
+    state.current = 0;
+    const player = state.players[0];
+    player.resources = { sun: 0, water: 0, forest: 0, mountain: 0, wild: 0 };
+    player.bottles = [
+      { id: 'sun', kind: 'sun-flask', used: false },
+      { id: 'pine', kind: 'pine-flask', used: false },
+      { id: 'stone', kind: 'stone-flask', used: false },
+    ];
+    return state;
+  }
+
+  it('start unarmed: collecting water leaves every flask alone', () => {
+    const state = atValley(41);
+    expect(state.players[1].flaskOrder).toEqual([]);
+    const next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: 1 });
+    expect(next.players[0].resources.water).toBe(2);
+    expect(next.players[0].bottles.every((b) => !b.used)).toBe(true);
+    expect(next.players[0].flasksUsed).toBe(0);
+  });
+
+  it('fill themselves in the order armed, as far as the fresh water goes', () => {
+    const state = atValley(42);
+    state.players[0].flaskOrder = ['stone', 'sun', 'pine'];
+    const next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: 1 });
+    const me = next.players[0];
+    // Two water: the Stone Flask first, then the Sun Flask; nothing left for the Pine Flask.
+    expect(me.resources).toMatchObject({ water: 0, mountain: 1, sun: 2, forest: 0 });
+    expect(me.bottles.find((b) => b.id === 'stone')!.used).toBe(true);
+    expect(me.bottles.find((b) => b.id === 'sun')!.used).toBe(true);
+    expect(me.bottles.find((b) => b.id === 'pine')!.used).toBe(false);
+    expect(me.flasksUsed).toBe(2);
+    // The turn moved on, and the log says what each flask did, in numbers too.
+    expect(next.current).not.toBe(0);
+    const emptied = next.log.filter((e) => e.event === 'flask');
+    expect(emptied.map((e) => e.delta)).toEqual([{ water: -1, mountain: 1 }, { water: -1, sun: 2 }]);
+  });
+
+  it('skip a flask used this season, and never touch water already in the pack', () => {
+    const state = atValley(43);
+    const me = state.players[0];
+    me.resources.water = 5;
+    me.bottles[0].used = true;
+    me.flaskOrder = ['sun', 'pine'];
+    const next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: 1 });
+    // Only the two fresh water can go, and the used Sun Flask is passed over.
+    expect(next.players[0].resources).toMatchObject({ water: 6, forest: 1 });
+    expect(next.players[0].bottles.find((b) => b.id === 'pine')!.used).toBe(true);
+  });
+
+  it('count a flask emptied by hand too', () => {
+    const state = atValley(44);
+    state.players[0].resources.water = 1;
+    state.players[0].waterThisTurn = 1;
+    const next = applyAction(state, { type: 'use-bottle', bottleId: 'pine' });
+    expect(next.players[0].flasksUsed).toBe(1);
+    expect(next.log.at(-1)).toMatchObject({ event: 'flask', delta: { water: -1, forest: 1 } });
+  });
+});
+
+describe('the log in numbers', () => {
+  it('numbers every entry and says what a stop paid', () => {
+    const state = createGame({ seed: 45, expansions: { nightfall: false, wildlife: false } });
+    state.trail[1] = 'valley';
+    state.siteTokens[1] = null;
+    state.seasonCard = null;
+    state.current = 0;
+    const next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: 1 });
+    const ids = next.log.map((e) => e.id);
+    expect(ids.every((id, i) => i === 0 || id! > ids[i - 1]!)).toBe(true);
+    expect(next.log.at(-1)).toMatchObject({ player: 0, delta: { water: 2 } });
+  });
+
+  it('marks a campfire spent to share a site', () => {
+    const state = createGame({ seed: 46, expansions: { nightfall: false, wildlife: false } });
+    state.current = 0;
+    state.players[1].hikers[0].position = 1;
+    const shared = legalMoves(state).find((m) => m.useCampfire && m.to === 1);
+    expect(shared).toBeDefined();
+    const next = applyAction(state, { type: 'move', ...shared! });
+    expect(next.log.some((e) => e.event === 'campfire' && e.player === 0)).toBe(true);
+  });
+});
+
+describe('the starting-reserve house rule', () => {
+  it('deals every player one park face down, leaving the row as it would be', () => {
+    const plain = createGame({ seed: 47 });
+    const dealt = createGame({ seed: 47, houseRules: { startReserve: true } });
+    expect(plain.players.every((p) => p.reserved.length === 0)).toBe(true);
+    expect(dealt.players.every((p) => p.reserved.length === 1)).toBe(true);
+    expect(dealt.parkRow).toEqual(plain.parkRow);
+    expect(dealt.parkDeck).toHaveLength(plain.parkDeck.length - dealt.players.length);
+    // Dealt, not reserved: nobody took the first player token for it.
+    expect(dealt.firstPlayerTokenClaimed).toBe(false);
+    const ids = dealt.players.map((p) => p.reserved[0].id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('is off unless asked for', () => {
+    expect(createGame({ seed: 48 }).houseRules.startReserve).toBe(false);
+  });
+});
+
 describe('bottles', () => {
   it('converts one water into the bottle output, once per season', () => {
     const state = createGame({ seed: 31 });

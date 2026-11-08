@@ -115,6 +115,25 @@ export function TableMenu({
             </section>
 
             <section className="menu__group">
+              <h3>REI’s goods</h3>
+              <div className="segmented" role="radiogroup" aria-label="REI’s goods">
+                {([true, false] as const).map((on) => (
+                  <button
+                    key={String(on)}
+                    type="button"
+                    role="radio"
+                    aria-checked={view.settings.pokemonGear === on}
+                    className={view.settings.pokemonGear === on ? 'is-on' : ''}
+                    disabled={busy}
+                    onClick={() => onCommand({ type: 'settings', settings: { pokemonGear: on } })}
+                  >
+                    {on ? 'Pokémon gear' : 'Plain gear'}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="menu__group">
               <h3>This tablet’s display</h3>
               <DisplaySettings />
             </section>

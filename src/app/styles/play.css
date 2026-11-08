@@ -598,3 +598,450 @@
 .menu-panel__rules h2 {
   font-size: 1.2rem;
 }
+
+/* ----------------------------------------------------------- the hike panel */
+
+/* Where the hikers can go on the left; what this player carries down the right. */
+.hike {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 230px);
+  gap: 12px;
+  align-items: start;
+}
+
+.hike__main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hike__pack {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+
+.hike__res {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 8px;
+}
+
+.hike__res li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.05rem;
+}
+
+.hike__res li.is-none {
+  opacity: 0.45;
+}
+
+.hike__kit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hike__kit:empty {
+  display: none;
+}
+
+.hike__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px 3px 7px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+}
+
+.hike__chip--camera .ic {
+  color: var(--gold);
+}
+
+.hike__chip--fire .ic {
+  color: var(--fire);
+}
+
+.hike__flasks h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--body);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+
+.hike__flasks h3 span {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.hike__flasks ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .hike {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hike__pack {
+    position: static;
+  }
+}
+
+/* The Nightfall campsites with room left, above the hike. */
+.open-camps {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #22283a;
+  border: 1px solid #3b4566;
+}
+
+.open-camps__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  color: #dce6f5;
+  margin-bottom: 8px;
+}
+
+.open-camps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.open-camps__item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.open-camps__item--out {
+  opacity: 0.6;
+}
+
+.open-camps__icon {
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.open-camps__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.open-camps__text b {
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.open-camps__text small {
+  font-size: 0.76rem;
+  line-height: 1.25;
+  color: #b9c4dc;
+}
+
+.open-camps__left {
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------ flasks */
+
+.flask {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flask--armed {
+  border-style: solid;
+  border-color: var(--token-water);
+  background: color-mix(in srgb, var(--token-water) 14%, var(--surface));
+}
+
+.flask--used {
+  opacity: 0.6;
+}
+
+.flask__icon {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+
+.flask--armed .flask__icon {
+  background: var(--token-water);
+  color: #0d2f4d;
+}
+
+/* The order an armed flask fills in, on its shoulder. */
+.flask__order {
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--gold);
+  color: var(--on-gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.flask__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.flask__text b {
+  font-size: 0.92rem;
+  color: #f3f6f1;
+}
+
+.flask__text small {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.76rem;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+.flask__state {
+  font-weight: 700;
+}
+
+.flask--armed .flask__state {
+  color: var(--token-water);
+}
+
+.flask--compact {
+  min-height: 42px;
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.flask--compact .flask__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.kit__item--flask {
+  grid-column: 1 / -1;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.kit__item--flask .flask {
+  min-height: 50px;
+  height: 100%;
+  background: var(--surface);
+}
+
+.kit__item--flask .flask--armed {
+  background: color-mix(in srgb, var(--token-water) 14%, var(--surface));
+}
+
+/* The nudge after a first season with full flasks. */
+.nudge-scrim {
+  z-index: 55;
+}
+
+.nudge {
+  width: min(460px, 100%);
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--token-water);
+  box-shadow: var(--shadow-big);
+}
+
+.nudge__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--token-water);
+  color: #0d2f4d;
+  animation: nudge-tip 1.6s ease-in-out 2;
+}
+
+@keyframes nudge-tip {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-28deg);
+  }
+  60% {
+    transform: rotate(-28deg) translateY(2px);
+  }
+}
+
+.nudge__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nudge__body h2 {
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.nudge__body p {
+  font-size: 0.92rem;
+  color: #c7d6ca;
+}
+
+.nudge__buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ------------------------------------------------- what everyone collected */
+
+/* Toasts in the corner, newest at the bottom, out of the way of the panels' buttons. */
+.gain-toasts {
+  position: fixed;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 45;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.gain-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px 5px 12px;
+  border-radius: 999px;
+  background: rgba(27, 36, 31, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  animation:
+    toast-in 260ms ease-out,
+    toast-out 400ms ease-in 2800ms forwards;
+}
+
+.gain-toast__tokens {
+  display: inline-flex;
+  font-weight: 800;
+  animation: tokens-fly 700ms cubic-bezier(0.2, 0.8, 0.2, 1.2);
+}
+
+.gain-toast__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gain-toast__name {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The tokens are sent across to the Pokémon, landing with a little bounce. */
+@keyframes tokens-fly {
+  0% {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.6);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(4px) scale(1.12);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}

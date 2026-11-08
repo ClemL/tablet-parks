@@ -41,7 +41,7 @@ const PLAYER_COLORS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(
 export const CPU_SEATS: { name: string; personality: AiPersonality }[] = [
   { name: 'Pikachu', personality: 'collector' },
   { name: 'Eevee', personality: 'photographer' },
-  { name: 'Charizard', personality: 'blazer' },
+  { name: 'Vulpix', personality: 'blazer' },
   { name: 'Snorlax', personality: 'collector' },
 ];
 
@@ -59,7 +59,7 @@ export interface NewGameOptions {
 export const DEFAULT_EXPANSIONS: ExpansionFlags = { nightfall: true, wildlife: true };
 
 /** Reserving the deck's top card is the published rule, so it starts on. */
-export const DEFAULT_HOUSE_RULES: HouseRules = { blindReserve: true, rangerFirst: false, deckGear: false };
+export const DEFAULT_HOUSE_RULES: HouseRules = { blindReserve: true, rangerFirst: false, deckGear: false, startReserve: false };
 
 export function createGame(options: NewGameOptions = {}): GameState {
   const seed = options.seed ?? (Date.now() & 0x7fffffff);
@@ -114,6 +114,8 @@ export function createGame(options: NewGameOptions = {}): GameState {
     resources: { sun: 0, water: 0, forest: 0, mountain: 0, wild: expansions.nightfall ? 1 : 0 },
     waterThisTurn: 0,
     bottles: [{ id: `p${index}b0`, kind: bottleDeck[index] ?? 'sun-flask', used: false }],
+    flaskOrder: [],
+    flasksUsed: 0,
     campfires: CAMPFIRES_PER_SEASON,
     campfireRelit: false,
     photos: 0,
@@ -129,6 +131,17 @@ export function createGame(options: NewGameOptions = {}): GameState {
     bonusCards: bonusDeck.slice(index * 2, index * 2 + 2).map((b) => b.id),
     reserved: [],
   }));
+
+  // The starting-reserve house rule deals each player one park face down,
+  // after the row is laid, so the row is the same with the rule on or off.
+  const parkRow = parkDeck.slice(0, PARK_ROW_SIZE);
+  const parksLeft = parkDeck.slice(PARK_ROW_SIZE);
+  if (houseRules.startReserve) {
+    for (const player of players) {
+      const park = parksLeft.shift();
+      if (park) player.reserved.push(park);
+    }
+  }
 
   const [trail, r6] = buildTrail(1, advancedOrder, rng, seats);
   rng = r6;
@@ -157,8 +170,8 @@ export function createGame(options: NewGameOptions = {}): GameState {
     gearDiscountsLeft: gearDiscountsForPlayers(players.length),
     firstPlayerTokenClaimed: false,
     seasonPhotoOffered: false,
-    parkRow: parkDeck.slice(0, PARK_ROW_SIZE),
-    parkDeck: parkDeck.slice(PARK_ROW_SIZE),
+    parkRow,
+    parkDeck: parksLeft,
     gearRow: gearDeck.slice(0, GEAR_ROW_SIZE),
     gearDeck: gearDeck.slice(GEAR_ROW_SIZE),
     bottleDeck: bottleDeck.slice(players.length),
@@ -166,6 +179,7 @@ export function createGame(options: NewGameOptions = {}): GameState {
     phase: 'playing',
     log: [
       {
+        id: 1,
         season: 1,
         player: -1,
         text:
@@ -218,9 +232,14 @@ export function buildTrail(
  * by an older build still runs rather than turning its counters into NaN.
  */
 export function hydrate(state: GameState): GameState {
-  for (const player of state.players) player.waterThisTurn ??= 0;
+  for (const player of state.players) {
+    player.waterThisTurn ??= 0;
+    player.flaskOrder ??= [];
+    player.flasksUsed ??= 0;
+  }
   state.houseRules ??= { ...DEFAULT_HOUSE_RULES };
   state.houseRules.deckGear ??= false;
+  state.houseRules.startReserve ??= false;
   state.seasonPhotoOffered ??= false;
   return state;
 }

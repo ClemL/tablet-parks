@@ -1,4 +1,4 @@
-import type { GameState, Player, Resource, ResourceBag } from '../types';
+import type { GameState, LogEntry, Player, Resource, ResourceBag } from '../types';
 import { RESOURCES } from '../types';
 
 /** Small shared helpers: bags of resources, logging and spending. */
@@ -36,7 +36,25 @@ export function spend(player: Player, resource: Resource, count = 1): boolean {
   return true;
 }
 
-export function log(state: GameState, player: number, text: string): void {
-  state.log.push({ season: state.season, player, text });
+export function log(
+  state: GameState,
+  player: number,
+  text: string,
+  extra: { delta?: ResourceBag; event?: LogEntry['event'] } = {},
+): void {
+  const last = state.log[state.log.length - 1];
+  const id = (last?.id ?? state.log.length) + 1;
+  const delta = extra.delta && RESOURCES.some((r) => (extra.delta![r] ?? 0) !== 0) ? extra.delta : undefined;
+  state.log.push({ id, season: state.season, player, text, ...(delta ? { delta } : {}), ...(extra.event ? { event: extra.event } : {}) });
   if (state.log.length > 200) state.log.splice(0, state.log.length - 200);
+}
+
+/** What a player's pack changed by since `before`, leaving out the resources that did not move. */
+export function packDelta(before: ResourceBag, player: Player): ResourceBag {
+  const delta: ResourceBag = {};
+  for (const r of RESOURCES) {
+    const n = (player.resources[r] ?? 0) - (before[r] ?? 0);
+    if (n !== 0) delta[r] = n;
+  }
+  return delta;
 }

@@ -6,6 +6,7 @@
 import {
   COST_RESOURCES,
   RESOURCES,
+  type Bottle,
   type BottleKind,
   type DecisionKind,
   type GameAction,
@@ -21,7 +22,7 @@ import { SITES, TOKEN_LIMIT, gearDiscountsForPlayers, trailLength } from './data
 import { campsiteCapacity } from './data/campsites';
 import { scoreGame } from './scoring';
 import { BONUS_CARDS } from './data/bonuses';
-import { bag, clone, label, log, spend, tokenCount } from './engine/primitives';
+import { bag, clone, label, log, packDelta, spend, tokenCount } from './engine/primitives';
 import {
   applyPayment,
   campfireAllowance,
@@ -221,18 +222,45 @@ export function previewAction(state: GameState, action: GameAction): ActionPrevi
 function useBottle(state: GameState, bottleId: string): void {
   const player = state.players[state.current];
   const bottle = player.bottles.find((b) => b.id === bottleId);
-  if (!bottle || bottle.used) return;
+  if (bottle) fillFlask(state, player, bottle);
+}
+
+/**
+ * Fills one flask from the water just collected and empties it into what it
+ * makes. False when it cannot: used already this season, or no fresh water.
+ */
+function fillFlask(state: GameState, player: Player, bottle: Bottle): boolean {
+  if (bottle.used) return false;
   const def = BOTTLES[bottle.kind];
   const cost = def.cost.water ?? 0;
   // A flask takes freshly drawn water only, never what is already in the pack.
-  if (player.waterThisTurn < cost) return;
-  if (!spend(player, 'water', cost)) return;
+  if (player.waterThisTurn < cost) return false;
+  const before = { ...player.resources };
+  if (!spend(player, 'water', cost)) return false;
   player.waterThisTurn -= cost;
 
   const gained: string[] = [];
   gainResources(player, def.gain, gained);
   bottle.used = true;
-  log(state, player.index, `emptied a ${def.name}: 1 water became ${gained.join(', ')}`);
+  player.flasksUsed = (player.flasksUsed ?? 0) + 1;
+  log(state, player.index, `emptied a ${def.name}: 1 water became ${gained.join(', ')}`, {
+    delta: packDelta(before, player),
+    event: 'flask',
+  });
+  return true;
+}
+
+/**
+ * The flasks a player armed fill themselves, in the order they were armed,
+ * from whatever fresh water is left as the turn closes — after the player's
+ * own choices at the stop, so an armed flask never takes water they spent.
+ */
+function fillArmedFlasks(state: GameState, player: Player): void {
+  for (const id of player.flaskOrder ?? []) {
+    const bottle = player.bottles.find((b) => b.id === id);
+    if (!bottle || bottle.used) continue;
+    if (!fillFlask(state, player, bottle)) break;
+  }
 }
 
 
@@ -257,7 +285,7 @@ function move(state: GameState, hikerId: string, to: number, useCampfire: boolea
 
   if (useCampfire) {
     player.campfires -= 1;
-    log(state, player.index, 'spent a campfire to share a site');
+    log(state, player.index, 'spent a campfire to share a site', { event: 'campfire' });
   }
 
   // Walking on makes the last stop's water stale: a flask can only be filled
@@ -308,6 +336,7 @@ function resolveTent(state: GameState, option: 'site' | 'camp', campsiteId?: str
 
   campsite.tents.push(player.index);
   const gained: string[] = [];
+  const before = { ...player.resources };
   let ok = true;
 
   switch (def.effect.kind) {
@@ -364,7 +393,7 @@ function resolveTent(state: GameState, option: 'site' | 'camp', campsiteId?: str
       state.gearRow = state.gearDeck.splice(0, GEAR_ROW_SIZE);
       // The card says "take one": the camper picks it from the fresh row.
       if (state.gearRow.some((g) => !player.gear.some((o) => o.id === g.id))) {
-        log(state, player.index, `camped at ${def.name}, paid ${cost} sun and dealt a fresh gear row`);
+        log(state, player.index, `camped at ${def.name}, paid ${cost} sun and dealt a fresh gear row`, { delta: packDelta(before, player) });
         state.pending = { ...pending, kind: 'outfitter' };
         return;
       }
@@ -378,6 +407,7 @@ function resolveTent(state: GameState, option: 'site' | 'camp', campsiteId?: str
     ok
       ? `camped at ${def.name}${gained.length ? ` and gained ${gained.join(', ')}` : ''}`
       : `camped at ${def.name} but could not pay for it`,
+    { delta: packDelta(before, player) },
   );
   finishDecision(state);
 }
@@ -417,6 +447,7 @@ function resolveSite(
   const kind = state.trail[index];
   const site = SITES[kind];
   const gained: string[] = [];
+  const before = { ...player.resources };
   if (site.gain) gainAtSite(state, player, site.gain, gained);
 
   // Wildlife expansion sites resolve immediately, with no decision to make.
@@ -487,6 +518,7 @@ function resolveSite(
     state,
     player.index,
     `${copied ? 'copied' : 'moved to'} ${site.name}${gained.length ? ` and gained ${gained.join(', ')}` : ''}`,
+    { delta: packDelta(before, player) },
   );
 
   if (site.choice) {
@@ -545,6 +577,7 @@ function finishDecision(state: GameState): void {
  * so a player over it chooses what to hand back before play moves on.
  */
 function closeTurn(state: GameState, player: Player, siteIndex: number, hikerId: string): void {
+  fillArmedFlasks(state, player);
   if (tokensOverLimit(state, player.index) > 0) {
     state.pending = { player: player.index, hikerId, siteIndex, kind: 'discard' };
     return;
@@ -674,10 +707,11 @@ function resolveSwapGive(state: GameState, resource: Resource): void {
   if (!COST_RESOURCES.includes(resource) || (player.resources[resource] ?? 0) < 1) return;
 
   if (pending.kind === 'wild-swap') {
+    const before = { ...player.resources };
     spend(player, resource);
     const gained: string[] = [];
     gainResources(player, { wild: 1 }, gained);
-    log(state, player.index, `traded 1 ${label(resource)} for ${gained.join(', ')}`);
+    log(state, player.index, `traded 1 ${label(resource)} for ${gained.join(', ')}`, { delta: packDelta(before, player) });
     finishDecision(state);
     return;
   }
@@ -692,8 +726,11 @@ function resolveSwapGet(state: GameState, resource: Resource): void {
   if (!COST_RESOURCES.includes(resource) || resource === pending.give) return;
   const player = state.players[pending.player];
 
+  const had = player.resources[resource] ?? 0;
   gainResources(player, { [resource]: 1 }, []);
-  log(state, player.index, `traded 1 ${label(pending.give)} for 1 ${label(resource)}`);
+  // The given token left the pack at the give step; the log counts the whole trade.
+  const delta = { [pending.give]: -1, [resource]: (player.resources[resource] ?? 0) - had };
+  log(state, player.index, `traded 1 ${label(pending.give)} for 1 ${label(resource)}`, { delta });
 
   const swapsLeft = (pending.swapsLeft ?? 1) - 1;
   if (swapsLeft > 0 && COST_RESOURCES.some((r) => (player.resources[r] ?? 0) > 0)) {
@@ -775,10 +812,11 @@ function resolveBison(state: GameState, give?: Resource): void {
   const player = state.players[pending.player];
 
   if (give && COST_RESOURCES.includes(give) && (player.resources[give] ?? 0) > 0) {
+    const before = { ...player.resources };
     spend(player, give);
     const gained: string[] = [];
     gainResources(player, { wild: 1 }, gained);
-    log(state, player.index, `traded 1 ${label(give)} to the bison for ${gained.join(', ')}`);
+    log(state, player.index, `traded 1 ${label(give)} to the bison for ${gained.join(', ')}`, { delta: packDelta(before, player) });
   }
   moveBisonOn(state, player);
 

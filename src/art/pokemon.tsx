@@ -83,26 +83,6 @@ const LOOKS: Record<string, Look> = {
       </>
     ),
   },
-  Charizard: {
-    back: (
-      <Pair>
-        <path d="M20 33 Q8 26 2 12 Q14 18 26 28 Z" fill="#ec8a35" />
-      </Pair>
-    ),
-    head: (
-      <>
-        <ellipse cx="32" cy="38" rx="16" ry="14" fill="#ec8a35" />
-        <ellipse cx="32" cy="48" rx="13" ry="9.5" fill="#ec8a35" />
-        <path d="M20 38 q4 -3 8 1" fill="none" />
-        <path d="M44 38 q-4 -3 -8 1" fill="none" />
-        <circle cx="24.5" cy="40" r="2.4" fill="#2f7f8e" stroke="none" />
-        <circle cx="39.5" cy="40" r="2.4" fill="#2f7f8e" stroke="none" />
-        <circle cx="28.5" cy="47" r="0.9" fill={INK} />
-        <circle cx="35.5" cy="47" r="0.9" fill={INK} />
-        <path d="M22 51 q10 6 20 0" fill="none" />
-      </>
-    ),
-  },
   Snorlax: {
     back: (
       <Pair>
@@ -139,22 +119,6 @@ const LOOKS: Record<string, Look> = {
         <circle cx="39.4" cy="42.6" r="2.3" fill="#c8362f" stroke="none" />
         <path d="M20 38.5 l7 1.5 M44 38.5 l-7 1.5" fill="none" />
         <path d="M24 50 q8 5 16 0" fill="none" />
-      </>
-    ),
-  },
-  Charmander: {
-    head: (
-      <>
-        <ellipse cx="32" cy="41" rx="17" ry="18" fill="#f08c3a" />
-        <ellipse cx="25" cy="39" rx="3.2" ry="3.8" fill="#fff" stroke="none" />
-        <ellipse cx="39" cy="39" rx="3.2" ry="3.8" fill="#fff" stroke="none" />
-        <circle cx="25.6" cy="39.6" r="2.4" fill="#2d5f9a" stroke="none" />
-        <circle cx="38.4" cy="39.6" r="2.4" fill="#2d5f9a" stroke="none" />
-        <circle cx="25.6" cy="39.6" r="1" fill="#141414" stroke="none" />
-        <circle cx="38.4" cy="39.6" r="1" fill="#141414" stroke="none" />
-        <circle cx="29.5" cy="45" r="0.8" fill={INK} />
-        <circle cx="34.5" cy="45" r="0.8" fill={INK} />
-        <path d="M24 48 q8 7 16 0 q-8 3 -16 0 z" fill="#c3462a" />
       </>
     ),
   },
@@ -230,21 +194,6 @@ const LOOKS: Record<string, Look> = {
     ),
     front: <path d="M29 9 q-2 -5 -5 -6 M32 8 v-6 M35 9 q2 -5 5 -6" fill="none" strokeWidth="1.8" strokeLinecap="round" />,
   },
-  Gengar: {
-    back: (
-      <Pair>
-        <path d="M14 36 L4 30 L13 31 L5 22 L16 28 L12 16 L23 27 Z" fill="#6c4f9e" />
-      </Pair>
-    ),
-    head: (
-      <>
-        <ellipse cx="32" cy="42" rx="20" ry="17" fill="#6c4f9e" />
-        <path d="M18 38 l9 2 l-1.5 4 q-5 0 -7.5 -6 z M46 38 l-9 2 l1.5 4 q5 0 7.5 -6 z" fill="#e0383c" />
-        <path d="M18 47 q14 14 28 0 q-14 5 -28 0 z" fill="#fff" />
-        <path d="M21 49 l2 3 l2 -2.5 l2.5 3 l2.5 -2.8 l2 3 l2.5 -3 l2.5 2.8 l2 -3 l2.5 2.5" fill="none" strokeWidth="1" />
-      </>
-    ),
-  },
   Clefairy: {
     back: (
       <Pair>
@@ -319,22 +268,94 @@ const LOOKS: Record<string, Look> = {
       </>
     ),
   },
-  Mewtwo: {
-    back: (
+  Poliwag: {
+    head: (
       <>
-        <path d="M44 38 q12 6 10 22" fill="none" stroke="#8a6fb0" strokeWidth="5" strokeLinecap="round" />
-        <Pair>
-          <path d="M19 31 q-6 -6 -5 -12 q6 4 9 9 z" fill="#c9bfd8" />
-        </Pair>
+        <circle cx="32" cy="41" r="19" fill="#4f7fd0" />
+        <circle cx="32" cy="50" r="10.5" fill="#f6f4ee" />
+        <path d="M41 50 A9 9 0 0 0 23 50 A7 7 0 0 0 37 50 A5 5 0 0 0 27 50 A3 3 0 0 0 33 50 A1.4 1.4 0 0 0 30.2 50" fill="none" strokeWidth="1.7" strokeLinecap="round" />
+        <ellipse cx="24.5" cy="34" rx="4.6" ry="5" fill="#fff" />
+        <ellipse cx="39.5" cy="34" rx="4.6" ry="5" fill="#fff" />
+        <circle cx="25.4" cy="35" r="2.5" fill="#111" stroke="none" />
+        <circle cx="38.6" cy="35" r="2.5" fill="#111" stroke="none" />
+        <ellipse cx="32" cy="39.6" rx="2.6" ry="1.5" fill="#f2a1b2" strokeWidth="1" />
       </>
+    ),
+  },
+  Togepi: {
+    back: (
+      <Pair>
+        <path d="M19 37 L11 33 L19 32 Z" fill="#f7f0d4" />
+      </Pair>
     ),
     head: (
       <>
-        <ellipse cx="32" cy="41" rx="15.5" ry="17" fill="#c9bfd8" />
-        <path d="M21 39 q4 -2 8 1 q-4 3 -8 -1 z M43 39 q-4 -2 -8 1 q4 3 8 -1 z" fill="#6b3fa0" strokeWidth="1" />
-        <path d="M28.5 50 h7" fill="none" />
+        <circle cx="32" cy="37" r="14" fill="#f7f0d4" />
+        <path d="M13 47 l4.5 -5 l4.5 5 l5 -5 l5 5 l5 -5 l5 5 l4.5 -5 l4.5 5 v4 q0 11 -19 11 q-19 0 -19 -11 z" fill="#ffffff" />
+        <path d="M20 52 l3 4 h-6 z" fill="#e2483d" stroke="none" />
+        <path d="M30 55 l3 4 h-6 z" fill="#3b77c2" stroke="none" />
+        <path d="M41 52 l3 4 h-6 z" fill="#e2483d" stroke="none" />
+        <ellipse cx="27" cy="37" rx="1.8" ry="2.6" fill="#1c1714" stroke="none" />
+        <ellipse cx="37" cy="37" rx="1.8" ry="2.6" fill="#1c1714" stroke="none" />
+        <path d="M29 42 q3 2.6 6 0" fill="none" />
       </>
     ),
+  },
+  Marill: {
+    back: (
+      <Pair>
+        <circle cx="15" cy="27" r="7.5" fill="#4aa3e0" />
+        <circle cx="15" cy="27" r="4" fill="#cfe9f8" stroke="none" />
+      </Pair>
+    ),
+    head: (
+      <>
+        <circle cx="32" cy="41" r="17.5" fill="#4aa3e0" />
+        <ellipse cx="32" cy="48" rx="9" ry="6.5" fill="#cfe9f8" stroke="none" />
+        <ellipse cx="25.5" cy="40" rx="2.6" ry="3.4" fill="#1c1714" stroke="none" />
+        <ellipse cx="38.5" cy="40" rx="2.6" ry="3.4" fill="#1c1714" stroke="none" />
+        <circle cx="24.8" cy="38.8" r="0.9" fill="#fff" stroke="none" />
+        <circle cx="37.8" cy="38.8" r="0.9" fill="#fff" stroke="none" />
+        <ellipse cx="32" cy="45" rx="1.8" ry="1.3" fill="#7a2f3a" stroke="none" />
+        <path d="M29.5 48 q2.5 2 5 0" fill="none" strokeWidth="1.2" />
+      </>
+    ),
+  },
+  Piplup: {
+    head: (
+      <>
+        <circle cx="32" cy="41" r="18" fill="#2f66b8" />
+        <path d="M19 44 q0 -9 7 -10 q6 3 6 3 q0 0 6 -3 q7 1 7 10 q-3 12 -13 12 q-10 0 -13 -12 z" fill="#8cc4ee" />
+        <circle cx="25" cy="40" r="3.3" fill="#1c1714" stroke="none" />
+        <circle cx="39" cy="40" r="3.3" fill="#1c1714" stroke="none" />
+        <circle cx="24" cy="38.8" r="1.2" fill="#fff" stroke="none" />
+        <circle cx="38" cy="38.8" r="1.2" fill="#fff" stroke="none" />
+        <circle cx="21" cy="47" r="1.6" fill="#fff" stroke="none" />
+        <circle cx="43" cy="47" r="1.6" fill="#fff" stroke="none" />
+        <path d="M26.5 45 q5.5 -2 11 0 q-1.5 4.5 -5.5 5 q-4 -0.5 -5.5 -5 z" fill="#f3c13a" />
+      </>
+    ),
+  },
+  Mudkip: {
+    back: (
+      <Pair>
+        <path d="M15 44 l-8 -5 l6 0 l-6 -6 l8 3 l-1 -7 l6 8 z" fill="#f08a3a" />
+      </Pair>
+    ),
+    head: (
+      <>
+        <ellipse cx="32" cy="42" rx="18" ry="16" fill="#62b7e8" />
+        <ellipse cx="32" cy="49" rx="10" ry="6.5" fill="#d8eef9" stroke="none" />
+        <circle cx="25" cy="40" r="2.6" fill="#1c1714" stroke="none" />
+        <circle cx="39" cy="40" r="2.6" fill="#1c1714" stroke="none" />
+        <circle cx="24.2" cy="39" r="0.9" fill="#fff" stroke="none" />
+        <circle cx="38.2" cy="39" r="0.9" fill="#fff" stroke="none" />
+        <circle cx="30" cy="46" r="0.7" fill="#1c1714" />
+        <circle cx="34" cy="46" r="0.7" fill="#1c1714" />
+        <path d="M27 50 q5 3.5 10 0" fill="none" />
+      </>
+    ),
+    front: <path d="M30 13 q-2 -9 6 -12 q-1 7 2 11 z" fill="#62b7e8" strokeWidth="1.4" />,
   },
   Ditto: {
     head: (
@@ -362,30 +383,6 @@ const LOOKS: Record<string, Look> = {
         <Eyes y={42} dx={7} r={2.8} fill="#2a1a10" />
         <ellipse cx="32" cy="47.5" rx="2.4" ry="1.7" fill={INK} />
         <path d="M29 51 q3 2 6 0" fill="none" />
-      </>
-    ),
-  },
-  Dragonite: {
-    back: (
-      <Pair>
-        <path d="M18 33 q-4 -5 -3 -9 q4 2 7 6 z" fill="#f1b04c" />
-      </Pair>
-    ),
-    head: (
-      <>
-        <ellipse cx="32" cy="41" rx="16.5" ry="16" fill="#f1b04c" />
-        <ellipse cx="32" cy="49" rx="11" ry="7" fill="#f4dfa8" />
-        <Eyes y={40} dx={7} r={2.7} fill="#2a1d10" />
-        <circle cx="29.5" cy="47" r="0.8" fill={INK} />
-        <circle cx="34.5" cy="47" r="0.8" fill={INK} />
-        <path d="M26 51 q6 4 12 0" fill="none" />
-      </>
-    ),
-    front: (
-      <>
-        <path d="M27 14 q-6 -6 -4 -12 M37 14 q6 -6 4 -12" fill="none" strokeWidth="1.6" strokeLinecap="round" />
-        <circle cx="23" cy="2.6" r="1.8" fill="#f1b04c" />
-        <circle cx="41" cy="2.6" r="1.8" fill="#f1b04c" />
       </>
     ),
   },

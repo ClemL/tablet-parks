@@ -20,6 +20,7 @@ const RULES: { key: keyof HouseRules; label: string; hint: string }[] = [
   { key: 'blindReserve', label: 'Reserve from the deck', hint: 'A reserve may take the unseen top park' },
   { key: 'rangerFirst', label: 'Ranger Station first', hint: 'Spring’s advanced site is the Ranger Station' },
   { key: 'deckGear', label: 'Gear from the deck', hint: 'With 3+ sun, buy the top gear card unseen, 1 sun off' },
+  { key: 'startReserve', label: 'A park in hand', hint: 'Everyone starts with one park reserved, face down' },
 ];
 
 /**
@@ -70,6 +71,14 @@ export function SetupSettings({
             onChange={(on) => set({ houseRules: { ...value.houseRules, [rule.key]: on } })}
           />
         ))}
+        <Chip
+          label="Pokémon at REI"
+          hint="Squirtle’s Water Filter and friends; looks only"
+          kind="Table"
+          checked={value.pokemonGear}
+          disabled={disabled}
+          onChange={(pokemonGear) => set({ pokemonGear })}
+        />
       </div>
       <div className="basecamp-settings__row">
         <div className="basecamp-settings__seg">

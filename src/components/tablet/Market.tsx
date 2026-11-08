@@ -8,10 +8,11 @@ import type { GameState } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
 import { Pawn } from '../bits';
-import { Icon } from '../Icon';
 import { GearCard } from '../GearCard';
 import { ParkCard, ParkDeck } from '../ParkCard';
 import type { InfoSubject } from './InfoSheet';
+import { useGearName } from '../gearTheme';
+import { TentArt } from '@/art/tent';
 
 /**
  * The cards on offer while hikers walk: the park row and deck, and the gear
@@ -22,6 +23,7 @@ import type { InfoSubject } from './InfoSheet';
 export function Market({ state, seats, onInfo }: { state: GameState; seats: PublicSeat[]; onInfo: (subject: InfoSubject) => void }) {
   const bison = bisonPark(state)?.id;
   const holders = state.players.filter((p) => reservedCount(state, p.index) > 0);
+  const nameOf = useGearName();
   return (
     <div className="market">
       <section className="market__parks" aria-label="Parks">
@@ -61,7 +63,7 @@ export function Market({ state, seats, onInfo }: { state: GameState; seats: Publ
         </h3>
         <div className="market__row">
           {state.gearRow.map((card) => (
-            <button key={card.id} type="button" className="card-btn" aria-label={`Rules for ${card.name}`} onClick={() => onInfo({ kind: 'gear', id: card.id })}>
+            <button key={card.id} type="button" className="card-btn" aria-label={`Rules for ${nameOf(card)}`} onClick={() => onInfo({ kind: 'gear', id: card.id })}>
               <GearCard card={card} price={gearCost(state, card)} />
             </button>
           ))}
@@ -79,7 +81,7 @@ export function Campsites({ state, seats, onInfo }: { state: GameState; seats: P
     <section className="camps" aria-label="Campsites">
       <span className="camps__title">
         <span className="camps__badge">
-          <Icon name="tent" size={14} />
+          <TentArt size={30} />
         </span>
         <b>Campsites</b>
         <span className="muted">from tent sites</span>

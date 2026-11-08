@@ -21,6 +21,7 @@ import { Icon } from '../Icon';
 import { Token } from '../Token';
 import { parkPlace } from '../ParkCard';
 import { costCheck } from '../shopping';
+import { GearIcon, useGearName } from '../gearTheme';
 
 /** The park decision this phone's player stands at, if any. */
 export type Shopping = 'trail-end' | 'park-or-gear' | null;
@@ -158,6 +159,7 @@ export function GearPanel({
   const player = state.players[seat];
   const buyable = new Set(shopping === 'trail-end' ? affordableGear(state, seat).map((g) => g.id) : []);
   const sun = player.resources.sun ?? 0;
+  const nameOf = useGearName();
   const discounts = state.gearDiscountsLeft > 0 ? ` ${state.gearDiscountsLeft} early-buyer discount${state.gearDiscountsLeft === 1 ? '' : 's'} left this season.` : '';
   return (
     <div className="shopping">
@@ -188,13 +190,11 @@ export function GearPanel({
             <article
               key={card.id}
               className={`gear-offer${short ? ' gear-offer--short' : ''}`}
-              aria-label={`${card.name}, ${price} sun${short ? `, ${price - sun} sun short` : ''}`}
+              aria-label={`${nameOf(card)}, ${price} sun${short ? `, ${price - sun} sun short` : ''}`}
             >
-              <span className="gear-offer__icon" aria-hidden="true">
-                {card.icon}
-              </span>
+              <GearIcon card={card} className="gear-offer__icon" />
               <div className="gear-offer__text">
-                <h3>{card.name}</h3>
+                <h3>{nameOf(card)}</h3>
                 <p>{card.text}</p>
                 <span className="gear-offer__price">
                   {price} <Token r="sun" size="xs" decorative /> sun

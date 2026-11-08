@@ -1,32 +1,32 @@
 import { CPU_SEATS } from '@/game/engine';
 
 /**
- * Twenty well-known first-generation Pokémon, each with a head that takes a
- * ranger's hat. Every seat wears one as its pawn; a person who joins without
+ * Twenty well-known Pokémon, each with a round head that takes a ranger's
+ * hat and reads at a pawn's size. Every seat wears one as its pawn; a person who joins without
  * typing a name is called after theirs. The computers' stock names are in
  * here too, so a computer's pawn is the Pokémon it is named after.
  */
 export const POKEMON = [
   'Pikachu',
   'Eevee',
-  'Charizard',
+  'Vulpix',
   'Snorlax',
   'Bulbasaur',
-  'Charmander',
   'Squirtle',
   'Jigglypuff',
   'Meowth',
   'Psyduck',
-  'Gengar',
   'Clefairy',
-  'Vulpix',
   'Slowpoke',
   'Mew',
-  'Mewtwo',
   'Ditto',
   'Growlithe',
-  'Dragonite',
   'Diglett',
+  'Poliwag',
+  'Togepi',
+  'Marill',
+  'Piplup',
+  'Mudkip',
 ] as const;
 
 export type Pokemon = (typeof POKEMON)[number];

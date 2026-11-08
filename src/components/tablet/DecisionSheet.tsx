@@ -9,6 +9,7 @@ import { Pawn, bagSize, tokensText } from '../bits';
 import { Icon } from '../Icon';
 import { TokenPicker } from '../TokenPicker';
 import { Outcome, decisionChoices, decisionText } from '../decisions';
+import { useGearName } from '../gearTheme';
 
 /** The decisions a stop opens that are not about buying parks or gear (those are on the board). */
 export function needsSheet(state: GameState): boolean {
@@ -48,7 +49,8 @@ export function DecisionSheet({
   }, [pickerKey]);
 
   const { title, note } = decisionText(state);
-  const choices = decisionChoices(state);
+  const nameOf = useGearName();
+  const choices = decisionChoices(state, nameOf);
 
   const photoPicker = (type: 'camera-photo' | 'season-photo', decline: string) => (
     <TokenPicker
