@@ -97,7 +97,7 @@ export const SITES: Record<SiteKind, SiteDef> = {
     kind: 'adv-bison',
     name: 'Bison Meadow',
     icon: '🦬',
-    text: 'Trade 1 resource for a wildcard, then move the bison on one park.',
+    text: 'Trade 1 resource for a wildcard, then move Tauros on one park.',
     tier: 'advanced',
   },
   'adv-lookout': {

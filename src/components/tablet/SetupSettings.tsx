@@ -55,7 +55,7 @@ export function SetupSettings({
         />
         <Chip
           label="Wildlife"
-          hint="Four advanced sites, the bison"
+          hint="Four advanced sites and Tauros"
           kind="Expansion"
           checked={value.expansions.wildlife}
           disabled={disabled}

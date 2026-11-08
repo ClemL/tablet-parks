@@ -115,7 +115,7 @@ function Body({ state, seats, subject }: { state: GameState; seats: PublicSeat[]
             Visiting costs <TokenBag bag={park.cost} size="sm" /> <span className="muted">({costLabel(park.cost)})</span>. A wildcard stands in for any one
             resource{state.expansions.nightfall ? ', or two' : ''}.
           </p>
-          {bisonPark(state)?.id === park.id ? <p className="info__note">The bison is here: visiting it offers a wildcard trade.</p> : null}
+          {bisonPark(state)?.id === park.id ? <p className="info__note">Tauros is here: visiting it offers a wildcard trade.</p> : null}
         </div>
       );
     }

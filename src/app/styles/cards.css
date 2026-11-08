@@ -149,6 +149,7 @@
   --poster-name: 0.8rem;
   --vp: 32px;
   --visitor: 40px;
+  --tauros: 50px;
 }
 
 .park--compact {
@@ -156,6 +157,7 @@
   --poster-name: 0.72rem;
   --vp: 28px;
   --visitor: 34px;
+  --tauros: 42px;
 }
 
 .poster {
@@ -277,13 +279,27 @@
   text-transform: uppercase;
 }
 
-.poster__bison {
+/*
+ * The Wildlife bison's token, drawn as Tauros, standing in the middle of the
+ * poster between the visitor and the medallion. It decides which park offers
+ * the wildcard trade, so it is sized to be spotted from across the table.
+ */
+.poster__tauros {
   position: absolute;
+  z-index: 1;
   left: 50%;
-  bottom: 3px;
+  bottom: 5px;
+  width: var(--tauros, 52px);
+  height: var(--tauros, 52px);
   transform: translateX(-50%);
-  font-size: 1.15rem;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+
+.poster__tauros svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
 }
 
 /* ---------------------------------------------------------- REI price tags */

@@ -353,6 +353,7 @@
   --poster-name: 0.88rem;
   --vp: 36px;
   --visitor: 46px;
+  --tauros: 58px;
   display: flex;
   flex-direction: column;
   background: var(--card);

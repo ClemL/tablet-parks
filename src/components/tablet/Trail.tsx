@@ -27,7 +27,7 @@ const SHORT: Partial<Record<SiteKind, string>> = {
   'adv-park': 'Visit or reserve a park',
   'adv-copy': 'Copy a site for 1 water',
   'adv-memory': 'A photo for 1 of each',
-  'adv-bison': 'Swap 1 for a wild; bison moves',
+  'adv-bison': 'Swap 1 for a wild; Tauros moves',
   'adv-lookout': '1 sun per hiker ahead',
   'adv-talk': 'Reserve the top park',
 };

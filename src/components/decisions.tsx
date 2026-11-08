@@ -59,7 +59,7 @@ export function decisionText(state: GameState): { title: string; note: string } 
     case 'tent':
       return { title: 'Pitch a tent?', note: 'This site carries a tent. Take its own action, or camp instead — camping skips the site’s action and its season token.' };
     case 'bison':
-      return { title: 'The bison is here', note: 'Trade one resource for a wildcard, then the bison moves on to the next park.' };
+      return { title: 'Tauros is here', note: 'Trade one resource for a wildcard, then Tauros moves on to the next park.' };
     case 'wild-swap':
       return { title: 'Wildlife Hide', note: 'Hand over one resource for a wildcard, which pays for any resource.' };
     case 'token-swap': {
@@ -187,7 +187,7 @@ const THEN: Partial<Record<DecisionKind, string>> = {
   'park-or-gear': 'then the Ranger Station',
   'wild-swap': 'then a trade for a wildcard',
   'copy-site': 'then a site to copy',
-  bison: 'then the bison',
+  bison: 'then Tauros',
   outfitter: 'then pick a gear card',
 };
 
