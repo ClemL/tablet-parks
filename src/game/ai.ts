@@ -86,7 +86,7 @@ const PROFILES: Record<AiPersonality, Weights> = {
     gearAppetite: 1.6,
     sunBias: 1.45,
   },
-  // Charizard: tempo and denial - takes the site and the token you wanted.
+  // Vulpix: tempo and denial - takes the site and the token you wanted.
   blazer: {
     parkClaim: 2.6,
     reserve: 2.6,

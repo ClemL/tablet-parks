@@ -191,7 +191,7 @@ describe('seats', () => {
 
   it('keeps the stock computer names for the computers', () => {
     for (let seed = 0; seed < 200; seed++) {
-      expect(['Pikachu', 'Eevee', 'Charizard', 'Snorlax']).not.toContain(pickPokemon(seed, 0, []));
+      expect(['Pikachu', 'Eevee', 'Vulpix', 'Snorlax']).not.toContain(pickPokemon(seed, 0, []));
     }
   });
 
@@ -251,8 +251,8 @@ describe('seats', () => {
     const room = lobby(2);
     joinSeat(room, 0, 'a', 'psyduck');
     expect(room.seats[0].avatar).toBe('Psyduck');
-    renameSeat(room, 0, 'Gengar');
-    expect(room.seats[0].avatar).toBe('Gengar');
+    renameSeat(room, 0, 'Mudkip');
+    expect(room.seats[0].avatar).toBe('Mudkip');
   });
 
   it('trades a pawn for any Pokémon nobody else wears, and refuses the rest', () => {
@@ -268,10 +268,10 @@ describe('seats', () => {
     expect(room.seats[0].name).toBe('Kris');
     // A name that was the old Pokémon's follows the pawn, in the game too.
     startGame(room, T0);
-    setAvatar(room, 1, 'Gengar');
-    expect(room.seats[1].name).toBe('Gengar');
-    expect(room.state!.players[1].name).toBe('Gengar');
-    expect(seatView(room, 1, T0).seats[1].hikers.every((h) => h.startsWith('Gengar '))).toBe(true);
+    setAvatar(room, 1, 'Mudkip');
+    expect(room.seats[1].name).toBe('Mudkip');
+    expect(room.state!.players[1].name).toBe('Mudkip');
+    expect(seatView(room, 1, T0).seats[1].hikers.every((h) => h.startsWith('Mudkip '))).toBe(true);
   });
 
   it('frees a person\'s Pokémon when they leave the lobby', () => {

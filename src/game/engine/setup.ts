@@ -41,7 +41,7 @@ const PLAYER_COLORS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(
 export const CPU_SEATS: { name: string; personality: AiPersonality }[] = [
   { name: 'Pikachu', personality: 'collector' },
   { name: 'Eevee', personality: 'photographer' },
-  { name: 'Charizard', personality: 'blazer' },
+  { name: 'Vulpix', personality: 'blazer' },
   { name: 'Snorlax', personality: 'collector' },
 ];
 

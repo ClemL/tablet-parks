@@ -336,7 +336,7 @@ function freeAvatar(room: Room, seat: number, preferred: string | null | undefin
 /**
  * A phone trading its seat's pawn for another Pokémon nobody else wears. A
  * name that was the old Pokémon's follows it, so "Psyduck" does not end up
- * wearing Gengar.
+ * wearing Mudkip.
  */
 export function setAvatar(room: Room, seat: number, avatar: unknown): void {
   const record = room.seats[seat];

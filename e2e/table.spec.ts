@@ -173,7 +173,7 @@ test.describe('round the tablet', () => {
 
     // Another person's sheet is locked; the computer's is open.
     await expect(kris.getByRole('button', { name: /Srini/ })).toBeDisabled();
-    await expect(kris.getByRole('button', { name: /Pikachu|Eevee|Charizard|Snorlax/ })).toBeEnabled();
+    await expect(kris.getByRole('button', { name: /Pikachu|Eevee|Vulpix|Snorlax/ })).toBeEnabled();
 
     // The tablet plays the people's turns until the log has moved on a good way.
     let played = 0;
