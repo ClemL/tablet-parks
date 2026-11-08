@@ -14,9 +14,9 @@ Guidance for Claude Code (and anyone else) working in this repository.
   * `npm test`
   * `npm run build`
   * `npm run test:e2e` — against that build (needs `redis-server` on the PATH)
-* **Add a line to `public/updates.txt` when you ship a user-visible change.** One entry per line,
-  oldest first, formatted `<ISO timestamp> - <what changed>`. The settings screen's footer shows the
-  last line.
+* **Add a line to `public/updates.txt` when you ship a user-visible change.** Newest last; the footer
+  reads the file and shows the final line. Internal changes (refactors, tests, tooling) do not get a
+  line. Format: `YYYY-MM-DDTHH:MM:00Z - What changed` (`date -u +%Y-%m-%dT%H:%M:00Z`).
 * **Post the links at the end of every response:** the repo, https://github.com/ClemL/tablet-parks,
   and the Vercel app and pipeline once the project is imported.
 * **Comments explain *why*, not *what*.**

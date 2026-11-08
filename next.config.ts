@@ -7,8 +7,12 @@ import pkg from './package.json';
  * anything generated here is pinned on the first evaluation through
  * process.env and reused by the rest — otherwise the server and client could
  * disagree on the build time, and two route bundles on the sealing key.
+ *
+ * The build time is stamped ready to show, `YYYY-MM-DD HH:MM UTC`: formatting a
+ * date while rendering would differ between the server and a browser in another
+ * timezone, and break hydration.
  */
-const BUILD_TIME = (process.env.NEXT_PUBLIC_BUILD_TIME ??= new Date().toISOString());
+const BUILD_TIME = (process.env.NEXT_PUBLIC_BUILD_TIME ??= `${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
 
 /**
  * The fallback sealing key when TABLE_SECRET is not set: random per build, and
