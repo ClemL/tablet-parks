@@ -430,3 +430,42 @@ export function PokemonHead({ name, className = '' }: { name: string; className?
     </svg>
   );
 }
+
+/**
+ * The Wildlife expansion's bison token, drawn as Tauros on a round wooden
+ * token. No ranger hat: it is a piece on the cards, not a seat's pawn, and its
+ * horns and mane are what make it readable at a glance.
+ */
+export function TaurosToken({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`tauros${className ? ` ${className}` : ''}`} viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <g stroke={INK} strokeWidth="1.5" strokeLinejoin="round">
+        <circle cx="32" cy="32" r="30.5" fill="#6b4423" />
+        <circle cx="32" cy="32" r="27" fill="#e8c993" stroke="none" />
+        <circle cx="32" cy="32" r="23.5" fill="none" stroke="#d6b077" strokeWidth="1" />
+        <g transform="translate(32 34) scale(1.1) translate(-32 -35)">
+          <Pair>
+            {/* A horn sweeping out and curling back in, then an ear below it. */}
+            <path d="M23 31 Q11 32 8.5 22 Q8 14 13.5 9.5 Q12.5 17.5 15.5 22 Q18.5 26 24.5 26 Z" fill="#d3cdc1" />
+            <ellipse cx="16.5" cy="36" rx="5" ry="2.6" transform="rotate(-18 16.5 36)" fill="#b9874e" />
+          </Pair>
+          <ellipse cx="32" cy="39" rx="14" ry="13.5" fill="#b9874e" />
+          {/* The shaggy mane over the brow, with Tauros's three grey bumps in it. */}
+          <path d="M19 34 q-1 -8 5 -10.5 q2 -4.5 8 -3.5 q6 -1 8 3.5 q6 2.5 5 10.5 q-3 -3 -5 -2 q-1 -3 -4 -2 q-2 -2.5 -4 -0.5 q-2 -2 -4 0.5 q-3 -1 -4 2 q-2 -1 -5 2 z" fill="#5b3a22" />
+          <circle cx="26.5" cy="27" r="2" fill="#a29c90" />
+          <circle cx="32" cy="25" r="2.2" fill="#a29c90" />
+          <circle cx="37.5" cy="27" r="2" fill="#a29c90" />
+          <path d="M22.5 35 L28.5 37 M41.5 35 L35.5 37" fill="none" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="26" cy="39.5" r="2" fill="#1c1714" stroke="none" />
+          <circle cx="38" cy="39.5" r="2" fill="#1c1714" stroke="none" />
+          <circle cx="25.4" cy="38.8" r="0.7" fill="#fff" stroke="none" />
+          <circle cx="37.4" cy="38.8" r="0.7" fill="#fff" stroke="none" />
+          <ellipse cx="32" cy="47" rx="8.5" ry="6" fill="#dcb780" />
+          <ellipse cx="29" cy="46.5" rx="1.1" ry="1.7" fill={INK} stroke="none" />
+          <ellipse cx="35" cy="46.5" rx="1.1" ry="1.7" fill={INK} stroke="none" />
+          <path d="M29.5 50.5 q2.5 1.4 5 0" fill="none" strokeWidth="1.2" />
+        </g>
+      </g>
+    </svg>
+  );
+}

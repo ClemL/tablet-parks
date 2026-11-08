@@ -473,11 +473,11 @@ function resolveSite(
         gainAtSite(state, player, { wild: 1 }, gained);
         gained.push(`for 1 ${label(give)}`);
       } else {
-        gained.push('nothing to trade the bison');
+        gained.push('nothing to trade Tauros');
       }
       if (state.bison !== null && state.parkRow.length > 0) {
         state.bison = (state.bison + 1) % state.parkRow.length;
-        gained.push('and moved the bison on');
+        gained.push('and moved Tauros on');
       }
       break;
     }
@@ -801,7 +801,7 @@ function moveBisonOn(state: GameState, player: Player): void {
       state.gearDeck.push(replaced);
       const fresh = state.gearDeck.shift();
       if (fresh) state.gearRow[0] = fresh;
-      log(state, player.index, `the bison looped back and refreshed the gear row`);
+      log(state, player.index, `Tauros looped back and refreshed the gear row`);
     }
   } else {
     state.bison = next;
@@ -818,7 +818,7 @@ function resolveBison(state: GameState, give?: Resource): void {
     spend(player, give);
     const gained: string[] = [];
     gainResources(player, { wild: 1 }, gained);
-    log(state, player.index, `traded 1 ${label(give)} to the bison for ${gained.join(', ')}`, { delta: packDelta(before, player) });
+    log(state, player.index, `traded 1 ${label(give)} to Tauros for ${gained.join(', ')}`, { delta: packDelta(before, player) });
   }
   moveBisonOn(state, player);
 

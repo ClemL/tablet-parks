@@ -2,13 +2,14 @@ import type { ParkCard, ParkTag } from '@/game/types';
 import { parkFact } from '@/game/data/parkFacts';
 import type { Pokemon } from '@/room/names';
 import { IllustratedParkArt } from '@/art/illustrated';
-import { PokemonHead } from '@/art/pokemon';
+import { PokemonHead, TaurosToken } from '@/art/pokemon';
 
 /*
  * The top of every park card, drawn as a trail poster: the park's own
  * illustration edge to edge, its name across a dark banner with the state and
  * the year it became a national park, a points medallion on the bottom edge,
- * and a Pokémon visiting from the bottom-left corner.
+ * and a Pokémon visiting from the bottom-left corner. The park the Wildlife
+ * expansion's bison stands on also carries its token, drawn as Tauros.
  */
 
 /** Who visits which kind of park, by the park's first tag. */
@@ -24,6 +25,8 @@ const VISITORS: Record<ParkTag, Pokemon[]> = {
 };
 
 const FALLBACK: Pokemon[] = ['Ditto', 'Mew', 'Jigglypuff'];
+
+const TAUROS_HERE = 'Tauros is here: visiting this park offers a wildcard trade';
 
 /**
  * The Pokémon visiting a park: one suited to its first tag, picked from the
@@ -54,8 +57,8 @@ export function ParkPoster({ park, badge, bison = false }: { park: ParkCard; bad
         </span>
       </div>
       {bison ? (
-        <span className="poster__bison" title="The bison is here: visiting offers a wildcard trade">
-          🦬
+        <span className="poster__tauros" role="img" aria-label={TAUROS_HERE} title={TAUROS_HERE}>
+          <TaurosToken />
         </span>
       ) : null}
       {badge ? <span className="poster__badge">{badge}</span> : null}

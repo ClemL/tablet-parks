@@ -36,6 +36,8 @@ seat nobody scans into is played by the computer.
   to edge, its name on a dark banner with the state and the year it became a national park, a
   points medallion, and a Pokémon visiting from the corner — one suited to the park (water parks
   get Squirtle or Psyduck, deserts Diglett or Vulpix), always the same one for the same park.
+  With Wildlife, the park the bison stands on carries its token, drawn as Tauros and sized to be
+  spotted across the table; the trade and the cards call it Tauros too.
 - **REI's cards are price tags** (`src/components/PriceTag.tsx`): kraft card with a punched hole
   and string, the price on a round sticker (struck through when a discount applies), upright on
   the phone and in the drawer and on their side in the tablet's shop, where the sticker is the

@@ -18,7 +18,7 @@ const DECISION: Partial<Record<DecisionKind, string>> = {
   'token-swap': 'Swap a token, up to twice',
   'park-or-gear': 'Visit or reserve a park',
   'copy-site': 'Copy a site for 1 water',
-  bison: 'Trade with the bison',
+  bison: 'Trade with Tauros',
 };
 
 /**

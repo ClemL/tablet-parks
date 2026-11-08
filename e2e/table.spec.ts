@@ -559,7 +559,7 @@ test.describe('round the tablet', () => {
     await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
   });
 
-  test('every park card is a trail poster with a Pokémon visiting', async ({ browser }) => {
+  test('every park card is a trail poster with a Pokémon visiting, and Tauros marks the bison’s park', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
@@ -575,9 +575,15 @@ test.describe('round the tablet', () => {
       await expect(poster.locator('.poster__visitor svg')).toBeAttached();
       await expect(poster.locator('.poster__vp b')).toHaveText(/^\d$/);
     }
+    // Wildlife is on by default, so one park carries the bison's token, drawn as Tauros and big enough to see.
+    const tauros = kris.locator('#panel-parks .offer .poster__tauros');
+    await expect(tauros).toHaveCount(1);
+    await expect(kris.getByRole('img', { name: /^Tauros is here/ })).toBeVisible();
+    expect((await tauros.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(48);
     // The tablet's drawer shows the same posters.
     await tablet.getByRole('button', { name: 'Parks & gear' }).click();
     await expect(tablet.locator('#market-drawer .park .poster')).toHaveCount(3);
+    await expect(tablet.locator('#market-drawer .park .poster__tauros svg')).toHaveCount(1);
     await expect(tablet.locator('#market-drawer .market__row .tag').first()).toBeVisible();
   });
 
