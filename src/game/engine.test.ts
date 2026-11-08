@@ -1360,6 +1360,31 @@ describe('Wildlife expansion', () => {
     expect(declined.bison).toBe(1);
   });
 
+  it('logs Tauros’s trade and its walk for the devices to animate', () => {
+    const state = createGame({ seed: 91, expansions: { nightfall: false, wildlife: true } });
+    const park = bisonPark(state)!;
+    state.players[0].resources = { sun: 1, water: 4, forest: 4, mountain: 4, wild: 0 };
+    let next = arriveAtEnd(state);
+    next = applyAction(next, { type: 'trail-end', option: 'claim-park', parkId: park.id });
+    const since = next.log[next.log.length - 1].id!;
+
+    const traded = applyAction(next, { type: 'bison', give: 'sun' });
+    const fresh = traded.log.filter((e) => e.id! > since);
+    const trade = fresh.find((e) => e.event === 'tauros');
+    expect(trade).toMatchObject({ player: 0, delta: { sun: -1, wild: 1 } });
+    const walk = fresh.find((e) => e.event === 'tauros-walk');
+    expect(walk).toMatchObject({ player: 0, walk: { from: 0, to: 1 } });
+    expect(walk!.text).toContain(traded.parkRow[1].name);
+    // The trade comes first, so the board can play it before Tauros leaves.
+    expect(fresh.indexOf(trade!)).toBeLessThan(fresh.indexOf(walk!));
+
+    // Watching it go is a walk without a trade.
+    const declined = applyAction(next, { type: 'bison' });
+    const quiet = declined.log.filter((e) => e.id! > since);
+    expect(quiet.some((e) => e.event === 'tauros')).toBe(false);
+    expect(quiet.find((e) => e.event === 'tauros-walk')?.walk).toEqual({ from: 0, to: 1 });
+  });
+
   it('refreshes a gear card when the bison loops back around', () => {
     const state = createGame({ seed: 92, expansions: { nightfall: false, wildlife: true } });
     state.bison = state.parkRow.length - 1;
@@ -1372,6 +1397,8 @@ describe('Wildlife expansion', () => {
     next = applyAction(next, { type: 'bison' });
     expect(next.bison).toBe(0);
     expect(next.gearRow[0].id).not.toBe(gearBefore);
+    // It walks back to the first slot, which the devices show as a walk the other way.
+    expect(next.log.find((e) => e.event === 'tauros-walk')?.walk).toEqual({ from: state.parkRow.length - 1, to: 0 });
   });
 
   it('adds its four advanced sites to the pool and none without the expansion', () => {
@@ -1425,6 +1452,10 @@ describe('Wildlife expansion', () => {
     expect(next.players[0].resources.wild).toBe(1);
     expect(next.players[0].resources.sun).toBe(1);
     expect(next.bison).toBe(1);
+    // The stop's own entry carries the trade; the walk follows it.
+    const stop = next.log.find((e) => e.text.includes('Bison Meadow'));
+    expect(stop).toMatchObject({ event: 'tauros', delta: { sun: -1, wild: 1 } });
+    expect(next.log[next.log.indexOf(stop!) + 1]).toMatchObject({ event: 'tauros-walk', walk: { from: 0, to: 1 } });
   });
 
   it('Ranger Talk reserves the top park card unseen', () => {

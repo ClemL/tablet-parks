@@ -6,6 +6,7 @@ import { RESOURCES } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { Pawn } from '../bits';
 import { TokenBag } from '../Token';
+import { TaurosToken } from '@/art/pokemon';
 
 /** How long each toast stays. */
 const TOAST_MS = 3200;
@@ -14,13 +15,16 @@ interface Toast {
   key: string;
   seat: number;
   bag: ResourceBag;
+  /** Tauros handed over a wildcard in this step, so it is shown passing it across. */
+  tauros: boolean;
 }
 
 /**
  * What everyone collects, as it happens: each turn that hands a player
  * resources sends a small toast to the corner of every phone — their Pokémon,
- * with the tokens flying in. Read from the game log, which every device is
- * sent anyway, so it says nothing a phone could not already read.
+ * with the tokens flying in; a wildcard from Tauros comes with Tauros passing
+ * it over. Read from the game log, which every device is sent anyway, so it
+ * says nothing a phone could not already read.
  */
 export function GainToasts({ log, seats }: { log: readonly LogEntry[]; seats: readonly PublicSeat[] }) {
   const seen = useRef<number | null>(null);
@@ -38,6 +42,7 @@ export function GainToasts({ log, seats }: { log: readonly LogEntry[]; seats: re
     seen.current = newest;
     // A stop and the flask that filled from it land together: add each player's steps up.
     const bySeat = new Map<number, ResourceBag>();
+    const traded = new Set(fresh.filter((e) => e.event === 'tauros').map((e) => e.player));
     for (const entry of fresh) {
       if (entry.player < 0 || !entry.delta) continue;
       const sum = bySeat.get(entry.player) ?? {};
@@ -48,7 +53,7 @@ export function GainToasts({ log, seats }: { log: readonly LogEntry[]; seats: re
     for (const [seat, sum] of bySeat) {
       const gained: ResourceBag = {};
       for (const r of RESOURCES) if ((sum[r] ?? 0) > 0) gained[r] = sum[r];
-      if (Object.keys(gained).length > 0) next.push({ key: `${newest}-${seat}`, seat, bag: gained });
+      if (Object.keys(gained).length > 0) next.push({ key: `${newest}-${seat}`, seat, bag: gained, tauros: traded.has(seat) });
     }
     if (next.length > 0) setToasts((now) => [...now, ...next].slice(-3));
     // Keyed on the newest entry: every poll hands over a new array.
@@ -67,7 +72,12 @@ export function GainToasts({ log, seats }: { log: readonly LogEntry[]; seats: re
         const seat = seats[toast.seat];
         if (!seat) return null;
         return (
-          <li key={toast.key} className="gain-toast">
+          <li key={toast.key} className={`gain-toast${toast.tauros ? ' gain-toast--tauros' : ''}`}>
+            {toast.tauros ? (
+              <span className="gain-toast__giver" role="img" aria-label="From Tauros">
+                <TaurosToken />
+              </span>
+            ) : null}
             <span className="gain-toast__tokens">
               <TokenBag bag={toast.bag} sign size="sm" />
             </span>

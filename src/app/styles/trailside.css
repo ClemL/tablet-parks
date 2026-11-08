@@ -1014,6 +1014,103 @@
   animation: gain-pop 1.1s cubic-bezier(0.2, 0.8, 0.2, 1.3) calc(var(--fx-delay, 0ms) + 900ms) both;
 }
 
+/*
+ * Tauros's trade: it stomps onto the stop, what the player gave it drops in,
+ * and a wildcard pops back out to them. Twice the flask's moment, since a
+ * trade is two things changing hands (FX_MS.tauros in motion.tsx).
+ */
+.fx--tauros {
+  animation-duration: 2.6s;
+}
+
+.fx__tauros {
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  transform-origin: 50% 90%;
+  animation: tauros-stomp 2.6s ease-out var(--fx-delay, 0ms) both;
+}
+
+.fx__tauros svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+@keyframes tauros-stomp {
+  0% {
+    transform: translateY(-60px) scale(0.5);
+  }
+  14% {
+    transform: translateY(0) scale(1.12, 0.86);
+  }
+  22% {
+    transform: scale(1);
+  }
+  52% {
+    transform: rotate(-6deg);
+  }
+  60% {
+    transform: rotate(6deg) scale(1.06);
+  }
+  68%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* What the player gave drops in from the hiker's side and is swallowed up. */
+.fx__give {
+  position: absolute;
+  left: -34px;
+  top: -10px;
+  animation: tauros-give 0.8s ease-in calc(var(--fx-delay, 0ms) + 450ms) both;
+}
+
+@keyframes tauros-give {
+  0% {
+    opacity: 0;
+    transform: translate(0, -20px) scale(1);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(52px, 40px) scale(0.3);
+  }
+}
+
+/* The wildcard comes back out, up and over to the hiker's side. */
+.fx__wild {
+  position: absolute;
+  animation: tauros-wild 1.2s cubic-bezier(0.2, 0.8, 0.2, 1.2) calc(var(--fx-delay, 0ms) + 1300ms) both;
+}
+
+@keyframes tauros-wild {
+  0% {
+    opacity: 0;
+    transform: translate(0, 10px) scale(0.3);
+  }
+  35% {
+    opacity: 1;
+    transform: translate(-10px, -70px) scale(1.25);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-44px, -40px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-56px, -30px) scale(0.8);
+  }
+}
+
+.fx--tauros .fx__gain {
+  animation-delay: calc(var(--fx-delay, 0ms) + 1500ms);
+}
+
 @keyframes gain-pop {
   0% {
     opacity: 0;
@@ -1022,5 +1119,83 @@
   100% {
     opacity: 1;
     transform: translateY(-6px) scale(1);
+  }
+}
+
+/* ---------------------------------------------- Tauros walking on its own */
+
+/*
+ * The park row rising for Tauros's walk while the drawer is shut
+ * (TaurosTrip.tsx): small posters just above the turn bar, in and out on
+ * their own clock. It takes no taps; the trail stays playable through it.
+ */
+.tauros-trip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 100px);
+  z-index: 7;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 18px;
+  border-radius: 20px;
+  background: rgba(27, 36, 31, 0.95);
+  border: 1px solid var(--line);
+  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  animation:
+    tauros-trip-in 300ms ease-out var(--appear, 0ms) both,
+    tauros-trip-out 300ms ease-in var(--leave, 2400ms) forwards;
+}
+
+.tauros-trip__title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.tauros-trip__title b {
+  color: var(--gold);
+}
+
+.tauros-trip__row {
+  display: flex;
+  gap: 12px;
+}
+
+.tauros-trip__park {
+  --poster-h: 104px;
+  --poster-name: 0.78rem;
+  --vp: 30px;
+  --visitor: 38px;
+  --tauros: 54px;
+  width: 168px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+@keyframes tauros-trip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes tauros-trip-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 24px);
   }
 }

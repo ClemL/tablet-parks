@@ -517,6 +517,27 @@ describe('what each device is sent', () => {
     }
   });
 
+  it('sends every device Tauros’s walks, which name only public park-row slots', () => {
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 3 }), DB, T0, 5);
+    joinSeat(room, 0, 'a', 'Kris');
+    startGame(room, T0);
+    let now = T0;
+    for (let i = 0; i < 4000 && !room.state!.log.some((e) => e.event === 'tauros-walk') && room.phase === 'playing'; i++) {
+      const state = room.state!;
+      const actor = actorOf(state);
+      if (state.phase === 'season-end') nextSeason(room, now);
+      else if (actor !== null && state.players[actor].isHuman) playFor(room, actor, humanChoice(state, actor), now);
+      else drain(room, (now += 2000));
+    }
+    const walks = room.state!.log.filter((e) => e.event === 'tauros-walk');
+    expect(walks.length).toBeGreaterThan(0);
+    for (const view of [tableView(room, now, []).game!, seatView(room, 0, now).game!, seatView(room, 1, now).game!]) {
+      expect(view.log.filter((e) => e.event === 'tauros-walk')).toEqual(walks);
+    }
+    // Only the two slots and the text: nothing about the deck that refilled the row.
+    expect(Object.keys(walks[0].walk!).sort()).toEqual(['from', 'to']);
+  });
+
   it('counts the gear deck for every device without naming a card in it', () => {
     const room = midGame();
     const state = room.state!;

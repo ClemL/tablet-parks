@@ -331,8 +331,17 @@ export interface LogEntry {
    * thing in numbers, for the phones' toasts and the board's effects.
    */
   delta?: ResourceBag;
-  /** A step the board animates: a flask emptied, or a campfire spent to share a site. */
-  event?: 'flask' | 'campfire';
+  /**
+   * A step the board animates: a flask emptied, a campfire spent to share a
+   * site, Tauros (the Wildlife bison) trading a wildcard, or Tauros walking on.
+   */
+  event?: 'flask' | 'campfire' | 'tauros' | 'tauros-walk';
+  /**
+   * For a Tauros walk, the park-row slots it left and reached. The row and
+   * where Tauros stands are public, so this tells no device anything new; it
+   * only lets one that polled after several moves walk each of them.
+   */
+  walk?: { from: number; to: number };
 }
 
 export type GamePhase = 'playing' | 'season-end' | 'game-over';

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { bisonPark, campsiteDef, gearCost } from '@/game/engine';
 import { campsiteCapacity } from '@/game/data/campsites';
 import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
@@ -13,6 +14,7 @@ import { ParkCard, ParkDeck } from '../ParkCard';
 import type { InfoSubject } from './InfoSheet';
 import { useGearName } from '../gearTheme';
 import { TentArt } from '@/art/tent';
+import { TaurosWalker, type TaurosWalk } from '../TaurosWalk';
 
 /**
  * The cards on offer while hikers walk: the park row and deck, and the gear
@@ -20,8 +22,22 @@ import { TentArt } from '@/art/tent';
  * a Ranger Station, the board turns into the shop (see Shop). Tapping a card
  * opens its rules.
  */
-export function Market({ state, seats, onInfo }: { state: GameState; seats: PublicSeat[]; onInfo: (subject: InfoSubject) => void }) {
+export function Market({
+  state,
+  seats,
+  onInfo,
+  walk = null,
+  onWalked,
+}: {
+  state: GameState;
+  seats: PublicSeat[];
+  onInfo: (subject: InfoSubject) => void;
+  /** Tauros walking on to its next park, while the drawer is open to see it. */
+  walk?: TaurosWalk | null;
+  onWalked?: (key: string) => void;
+}) {
   const bison = bisonPark(state)?.id;
+  const parksRow = useRef<HTMLDivElement>(null);
   const holders = state.players.filter((p) => reservedCount(state, p.index) > 0);
   const nameOf = useGearName();
   return (
@@ -41,7 +57,8 @@ export function Market({ state, seats, onInfo }: { state: GameState; seats: Publ
             </span>
           ) : null}
         </h3>
-        <div className="market__row">
+        <div className="market__row market__row--parks" ref={parksRow}>
+          {walk && onWalked ? <TaurosWalker key={walk.key} walk={walk} within={parksRow} onDone={onWalked} /> : null}
           {state.parkRow.map((park) => (
             <button key={park.id} type="button" className="card-btn" aria-label={`Rules for ${park.name}`} onClick={() => onInfo({ kind: 'park', id: park.id })}>
               <ParkCard park={park} bison={park.id === bison} />

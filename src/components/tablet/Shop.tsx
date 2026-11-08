@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   affordableGear,
   bisonPark,
@@ -23,6 +24,7 @@ import { useLongPress } from '@/client/useLongPress';
 import type { InfoSubject } from './InfoSheet';
 import { GearIcon, useGearName } from '../gearTheme';
 import { PriceTag } from '../PriceTag';
+import { TaurosWalker, type TaurosWalk } from '../TaurosWalk';
 
 type ShopKind = 'trail-end' | 'park-or-gear';
 type Option = Extract<GameAction, { type: 'trail-end' }>['option'];
@@ -40,6 +42,8 @@ export function Shop({
   busy,
   onAction,
   onInfo,
+  walk = null,
+  onWalked,
 }: {
   state: GameState;
   shopper: number;
@@ -47,8 +51,12 @@ export function Shop({
   busy: boolean;
   onAction: (action: GameAction) => void;
   onInfo: (subject: InfoSubject) => void;
+  /** Tauros walking on to its next park, as a visit to its park sends it. */
+  walk?: TaurosWalk | null;
+  onWalked?: (key: string) => void;
 }) {
   const hold = useLongPress();
+  const parksRow = useRef<HTMLDivElement>(null);
   const nameOf = useGearName();
   const player = state.players[shopper];
   const claimable = new Set(claimableParks(state, shopper).map((p) => p.id));
@@ -71,7 +79,8 @@ export function Shop({
             <span className="muted">The first reserve this season takes the first player token</span>
           ) : null}
         </header>
-        <div className="shop__row">
+        <div className="shop__row" ref={parksRow}>
+          {walk && onWalked ? <TaurosWalker key={walk.key} walk={walk} within={parksRow} onDone={onWalked} /> : null}
           {state.parkRow.map((park) => (
             <ShopPark
               key={park.id}

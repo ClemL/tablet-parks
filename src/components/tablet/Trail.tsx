@@ -10,7 +10,8 @@ import { Icon } from '../Icon';
 import { Token, TokenBag, TokenRow } from '../Token';
 import { useLongPress } from '@/client/useLongPress';
 import { trailLayout } from './trailLayout';
-import { Traveller, useBoardMotion } from './motion';
+import { Traveller, type BoardMotion } from './motion';
+import { TaurosToken } from '@/art/pokemon';
 import { TentArt } from '@/art/tent';
 
 /**
@@ -59,6 +60,7 @@ export function Trail({
   busy,
   onMove,
   onInfo,
+  motion,
 }: {
   state: GameState;
   seats: PublicSeat[];
@@ -67,6 +69,8 @@ export function Trail({
   busy: boolean;
   onMove: (move: MoveOption) => void;
   onInfo: (index: number) => void;
+  /** The trips and effects to play, from the board (which also hands Tauros's walks to the parks). */
+  motion: BoardMotion;
 }) {
   const hold = useLongPress();
   const moves = canMove !== null ? legalMoves(state) : [];
@@ -76,7 +80,6 @@ export function Trail({
   const lit = useArrivals(state);
   const [box, size] = useSize<HTMLElement>();
   const layout = trailLayout(state.trail.length, size.width, size.height);
-  const motion = useBoardMotion(state);
   // Only a hiker still standing where its trip ends waits hidden for it.
   const standing = new Map(state.players.flatMap((p) => p.hikers.map((h) => [h.id, h.position] as const)));
   const away = new Set(motion.travels.filter((t) => standing.get(t.hikerId) === t.to).map((t) => t.hikerId));
@@ -239,6 +242,24 @@ export function Trail({
                     <i className="fx__ember" />
                     <i className="fx__ember" />
                     <i className="fx__ember" />
+                  </>
+                ) : fx.kind === 'tauros' ? (
+                  // Tauros stomps onto the stop, takes what it was given and hands back a wildcard.
+                  <>
+                    <span className="fx__tauros">
+                      <TaurosToken />
+                    </span>
+                    {fx.gave ? (
+                      <span className="fx__give">
+                        <Token r={fx.gave} size="lg" decorative />
+                      </span>
+                    ) : null}
+                    <span className="fx__wild">
+                      <Token r="wild" size="lg" decorative />
+                    </span>
+                    <span className="fx__gain">
+                      <TokenBag bag={fx.gain ?? { wild: 1 }} sign size="sm" />
+                    </span>
                   </>
                 ) : (
                   <>

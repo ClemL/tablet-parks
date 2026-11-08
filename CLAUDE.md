@@ -70,9 +70,10 @@ public/updates.txt Changelog, oldest first
   choices, its Pokémon (`/avatar`) and the order its flasks are armed in (`/flasks`). Otherwise
   the phones read, join and leave.
 * **The log is public and carries numbers.** Each `LogEntry` has an increasing `id`, the pack
-  `delta` the step made and an `event` (`flask`, `campfire`) the board animates. The phones'
-  toasts and the tablet's effects read only these, never a hidden sheet; a step that changes a
-  pack should log its delta (`packDelta`).
+  `delta` the step made and an `event` (`flask`, `campfire`, `tauros`, `tauros-walk` with its
+  park-row slots in `walk`) the board animates. The phones' toasts and walks and the tablet's
+  effects read only these, never a hidden sheet; a step that changes a pack should log its delta
+  (`packDelta`).
 * **A house rule is off unless the table turns it on.** It lives in `HouseRules` with a default in
   `DEFAULT_HOUSE_RULES`, is normalized in `normalizeSettings` (unknown values read as off), and gets
   a switch in `SetupSettings`; `hydrate` fills it in for games saved before it existed.

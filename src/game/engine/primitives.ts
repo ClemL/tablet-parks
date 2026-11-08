@@ -40,12 +40,20 @@ export function log(
   state: GameState,
   player: number,
   text: string,
-  extra: { delta?: ResourceBag; event?: LogEntry['event'] } = {},
+  extra: { delta?: ResourceBag; event?: LogEntry['event']; walk?: LogEntry['walk'] } = {},
 ): void {
   const last = state.log[state.log.length - 1];
   const id = (last?.id ?? state.log.length) + 1;
   const delta = extra.delta && RESOURCES.some((r) => (extra.delta![r] ?? 0) !== 0) ? extra.delta : undefined;
-  state.log.push({ id, season: state.season, player, text, ...(delta ? { delta } : {}), ...(extra.event ? { event: extra.event } : {}) });
+  state.log.push({
+    id,
+    season: state.season,
+    player,
+    text,
+    ...(delta ? { delta } : {}),
+    ...(extra.event ? { event: extra.event } : {}),
+    ...(extra.walk ? { walk: extra.walk } : {}),
+  });
   if (state.log.length > 200) state.log.splice(0, state.log.length - 200);
 }
 
