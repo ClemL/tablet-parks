@@ -7,6 +7,7 @@ import type { TableCommand } from '@/server/service';
 import { ApiError, api } from '@/client/api';
 import { HOST_KEY, local } from '@/client/storage';
 import { usePoll } from '@/client/usePoll';
+import { useDisplay } from '@/client/display';
 import { DraftTable, Lobby } from './Lobby';
 import { Board } from './Board';
 
@@ -25,6 +26,8 @@ export function TabletApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initial, setInitial] = useState<RoomSettings>(DEFAULT_SETTINGS);
+  // This tablet's own text size and scale, from the table menu.
+  useDisplay();
 
   useEffect(() => {
     setToken(local.get(HOST_KEY));

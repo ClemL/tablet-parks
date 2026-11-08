@@ -17,8 +17,7 @@ export type InfoSubject =
   | { kind: 'site'; index: number }
   | { kind: 'camp'; id: string }
   | { kind: 'park'; id: string }
-  | { kind: 'gear'; id: string }
-  | { kind: 'all' };
+  | { kind: 'gear'; id: string };
 
 /**
  * The full text of whatever was tapped or held, which the tiles leave out to
@@ -88,8 +87,6 @@ function title(state: GameState, subject: InfoSubject): string {
       return [...state.parkRow, ...state.players.flatMap((p) => p.reserved)].find((p) => p.id === subject.id)?.name ?? 'Park';
     case 'gear':
       return state.gearRow.find((g) => g.id === subject.id)?.name ?? 'Gear';
-    case 'all':
-      return 'Everything on the board';
   }
 }
 
@@ -137,8 +134,6 @@ function Body({ state, seats, subject }: { state: GameState; seats: PublicSeat[]
         </div>
       );
     }
-    case 'all':
-      return <AllRules state={state} seats={seats} />;
   }
 }
 
@@ -204,59 +199,6 @@ function CampRules({ state, seats, id }: { state: GameState; seats: PublicSeat[]
           <Pawn key={i} seat={seats[who]} size="sm" />
         ))}
       </p>
-    </div>
-  );
-}
-
-/** Every rule on the board at once: the season, each site in trail order, the campsites and the gear. */
-function AllRules({ state }: { state: GameState; seats: PublicSeat[] }) {
-  const seen = new Set<string>();
-  const sites = state.trail.filter((kind) => !seen.has(kind) && seen.add(kind));
-  return (
-    <div className="info__all">
-      {state.seasonCard ? (
-        <section>
-          <h3>{state.seasonCard.name}</h3>
-          <p>{state.seasonCard.text}</p>
-        </section>
-      ) : null}
-      <section>
-        <h3>The trail</h3>
-        <dl>
-          {sites.map((kind) => (
-            <div key={kind}>
-              <dt>{siteDef(kind).name}</dt>
-              <dd>{siteDef(kind).text}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-      {state.campsites.length > 0 ? (
-        <section>
-          <h3>Campsites</h3>
-          <dl>
-            {state.campsites.map((camp) => (
-              <div key={camp.id}>
-                <dt>{campsiteDef(camp.id).name}</dt>
-                <dd>{campsiteDef(camp.id).text}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
-      <section>
-        <h3>Gear shop</h3>
-        <dl>
-          {state.gearRow.map((card) => (
-            <div key={card.id}>
-              <dt>
-                {card.name} · {gearCost(state, card)} sun
-              </dt>
-              <dd>{card.text}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
     </div>
   );
 }

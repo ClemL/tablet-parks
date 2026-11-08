@@ -690,6 +690,16 @@ function parkOrGearChoice(state: GameState, player: Player, withGear: boolean): 
   return options[0]?.choice ?? null;
 }
 
+/** Outfitter Camp: the free card from the fresh row this CPU values most. */
+function outfitterDecision(state: GameState, player: Player): GameAction | null {
+  const values = resourceValues(state, player);
+  const best = state.gearRow
+    .filter((g) => !player.gear.some((o) => o.id === g.id))
+    .map((g) => ({ g, score: gearValue(state, player, g, values) }))
+    .sort((a, b) => b.score - a.score)[0];
+  return best ? { type: 'outfitter', gearId: best.g.id } : null;
+}
+
 /** The Trail End: one park action or gear, or pass when none is worth it. */
 function trailEndDecision(state: GameState, player: Player): GameAction {
   const choice = parkOrGearChoice(state, player, true);
@@ -753,6 +763,8 @@ export function aiAction(state: GameState): GameAction | null {
       case 'season-photo':
         // A closing photo is a point for a single token or two; take it.
         return { type: 'season-photo', take: canAffordPhoto(state, player.index) };
+      case 'outfitter':
+        return outfitterDecision(state, player);
       default:
         break;
     }

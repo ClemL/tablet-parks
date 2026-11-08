@@ -9,6 +9,7 @@ import { RedisStore, GAME_TTL_SECONDS } from './store';
 import {
   RoomError,
   abandonGame,
+  chooseAvatar,
   choosePark,
   controlGame,
   createGame,
@@ -130,6 +131,20 @@ describe.skipIf(!redisAvailable)('a game round a tablet, each in its own databas
     const second = await joinGame(view.tickets[1], '');
     expect(full(await readGame(second.seat)).seats[1].name).toBe('Srini');
     await rejects(readGame(first.seat), 403);
+  });
+
+  it('lets only a seat\'s own phone trade its Pokémon', async () => {
+    const { host, view } = await createGame({ seats: 2 });
+    const kris = await joinGame(view.tickets[0], 'Kris');
+    const srini = await joinGame(view.tickets[1], 'Srini');
+    const taken = full(await readGame(srini.seat)).seats[1].avatar!;
+    const next = await chooseAvatar(kris.seat, 'Ditto');
+    expect(next.seats[0].avatar).toBe('Ditto');
+    // Another seat's Pokémon is refused, and the tablet and a QR code cannot trade at all.
+    await rejects(chooseAvatar(kris.seat, taken), 409);
+    await rejects(chooseAvatar(host, 'Mew'), 401);
+    await rejects(chooseAvatar(view.tickets[0], 'Mew'), 401);
+    expect((full(await readGame(host)) as TableView).seats[0].avatar).toBe('Ditto');
   });
 
   it('lets a phone answer its own park decision, and only that', async () => {

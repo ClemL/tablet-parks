@@ -293,9 +293,12 @@ test.describe('round the tablet', () => {
     if (sun >= 3) await expect(buy).toBeEnabled();
     else await expect(buy).toBeDisabled();
 
-    // On the phone: the same offer, in the Gear panel.
-    await kris.getByRole('tab', { name: /^Gear/ }).click();
+    // On the phone: the same offer, in the REI panel, side by side with the row's three cards.
+    await kris.getByRole('tab', { name: /^REI/ }).click();
     await expect(kris.locator('#panel-gear .gear-offer--deck')).toContainText('Top of the gear deck');
+    const tops = await kris.locator('#panel-gear .gear-offer').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    expect(tops).toHaveLength(4);
+    expect(new Set(tops).size).toBe(1);
     await act(tablet, () => tablet.getByRole('button', { name: 'Pass', exact: true }).click());
   });
 
@@ -316,8 +319,11 @@ test.describe('round the tablet', () => {
     await rules.getByRole('button', { name: 'Close the rules' }).click();
     await expect(rules).toHaveCount(0);
 
-    await tablet.getByRole('button', { name: 'Rules', exact: true }).click();
-    await expect(tablet.getByRole('dialog', { name: 'Everything on the board' })).toContainText('Trail End');
+    // The rules of the whole board live on each phone's menu, not on the tablet; and the
+    // tablet's menu carries no table code, nor the players' homecoming counts.
+    await expect(tablet.getByRole('button', { name: 'Rules', exact: true })).toHaveCount(0);
+    await expect(tablet.getByRole('button', { name: 'Table menu' })).toHaveText('');
+    await expect(tablet.locator('.order')).not.toContainText(/home|held/);
   });
 
   test('a mis-tap can be taken back for a few seconds, and the next seat is marked', async ({ browser }) => {
@@ -384,13 +390,83 @@ test.describe('round the tablet', () => {
     // The phone turns to the parks by itself, with the decision's buttons live.
     await expect(kris.getByRole('tab', { name: /^Parks/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
     await expect(kris.locator('#panel-parks').getByRole('button', { name: /^Reserve/ }).first()).toBeEnabled();
-    await kris.getByRole('tab', { name: /^Gear/ }).click();
+    await kris.getByRole('tab', { name: /^REI/ }).click();
     await expect(kris.locator('#panel-gear').getByRole('button', { name: 'Buy' }).first()).toBeVisible();
 
     // Passing on the phone answers the stop: the tablet's turn bar moves on.
     await kris.locator('#panel-gear').getByRole('button', { name: 'Pass', exact: true }).click();
     await expect(tablet.locator('.turnbar')).not.toContainText('At the Trail End', { timeout: 10_000 });
     await expect(kris.locator('#panel-parks .offer-btn')).toHaveCount(0);
+  });
+
+  test('the phone’s menu trades its Pokémon, sizes the text, and reads the rules', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+
+    // A typed name keeps the name and still wears a Pokémon, on the phone and the tablet alike.
+    const card = tablet.locator('.seat-card', { hasText: 'Kris' });
+    const first = (await kris.locator('.pk-picker__name').innerText()).trim();
+    await expect(card.locator('.pawn')).toHaveAttribute('aria-label', `Kris (${first})`);
+    await kris.getByRole('button', { name: /Next unused/ }).click();
+    await expect(kris.locator('.pk-picker__name')).not.toHaveText(first);
+    const second = (await kris.locator('.pk-picker__name').innerText()).trim();
+    await expect(card.locator('.pawn')).toHaveAttribute('aria-label', `Kris (${second})`, { timeout: 10_000 });
+
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+    // The hikers on the board are that Pokémon, ♂ and ♀.
+    await expect(tablet.getByRole('img', { name: `${second} ♂ (Kris)` }).first()).toBeAttached();
+
+    await kris.getByRole('tab', { name: 'Menu' }).click();
+    const menu = kris.locator('#panel-menu');
+    await expect(menu.getByRole('heading', { name: 'Rules' })).toBeVisible();
+    await expect(menu.locator('.rules-list')).toContainText('Trail End');
+    await menu.getByRole('radio', { name: 'Larger' }).click();
+    await expect.poll(() => kris.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe('20px');
+    // Remembered on this phone through a reload.
+    await kris.reload();
+    await expect.poll(() => kris.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe('20px');
+    await expect(kris.locator('.play__bar')).not.toContainText('Table');
+  });
+
+  test('the parks panel shows the pack, and its note closes for good', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+
+    await kris.getByRole('tab', { name: 'Parks' }).click();
+    const parks = kris.locator('#panel-parks');
+    await expect(parks.getByRole('list', { name: 'Your pack' })).toBeVisible();
+    await expect(parks.locator('.pack-strip__item')).toHaveCount(5);
+    await expect(parks).not.toContainText('Your pack covers it');
+
+    await parks.getByRole('button', { name: 'Close the Parks note' }).click();
+    await expect(parks.getByRole('heading', { name: 'Parks' })).toHaveCount(0);
+    await kris.reload();
+    await expect(kris.locator('#panel-parks').getByRole('heading', { name: 'Parks' })).toHaveCount(0);
+    // The menu brings it back.
+    await kris.getByRole('tab', { name: 'Menu' }).click();
+    await kris.getByRole('button', { name: 'Show the Parks and REI notes again' }).click();
+    await expect(kris.locator('#panel-parks').getByRole('heading', { name: 'Parks' })).toHaveCount(1);
+  });
+
+  test('a notice about an old game sits clear of the seat cards', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await tablet.goto('/');
+    // A handle the server cannot open, as from an older build.
+    await tablet.evaluate(() => localStorage.setItem('tablet-parks.host', 'not-a-handle'));
+    await tablet.reload();
+    const notice = tablet.getByText('That game was opened by a different version of the app. Set up a new one.');
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    const a = (await notice.boundingBox())!;
+    const b = (await tablet.getByRole('heading', { name: 'Who’s hiking?' }).boundingBox())!;
+    const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+    expect(overlap).toBe(false);
   });
 
   test('a blank name becomes a Pokémon, and the deal shows everyone who is who', async ({ browser }) => {

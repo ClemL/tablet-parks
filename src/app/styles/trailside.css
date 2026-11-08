@@ -5,7 +5,7 @@
  */
 
 .trailside {
-  height: 100dvh;
+  height: var(--full-h);
   display: flex;
   flex-direction: column;
   gap: 8px;

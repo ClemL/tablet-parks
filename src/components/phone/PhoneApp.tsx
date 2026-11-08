@@ -8,11 +8,13 @@ import type { SeatPreview } from '@/server/service';
 import { ApiError, api } from '@/client/api';
 import { local, seatKey } from '@/client/storage';
 import { usePoll } from '@/client/usePoll';
+import { useDisplay } from '@/client/display';
 import { Pawn, SEASON_NAMES, seasonName, seatStyle } from '../bits';
 import { SiteArt } from '@/art/siteArt';
 import { Icon } from '../Icon';
 import { Footer } from '../Footer';
 import { PhoneGame } from './PhoneGame';
+import { PokemonPicker } from './PokemonPicker';
 
 function ticketFromHash(): string | null {
   const match = /(?:^#|&)t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
@@ -30,6 +32,8 @@ export function PhoneApp() {
   const [token, setToken] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // This phone's own text size and scale, from its menu.
+  useDisplay();
 
   useEffect(() => {
     const found = ticketFromHash();
@@ -253,6 +257,7 @@ function Seat({
       <section className="phone__waiting">
         <h2>You’re in.</h2>
         <p>Waiting for the tablet to start the game. Open seats will be played by the computer.</p>
+        <PokemonPicker view={view} token={token} onView={onView} />
         <p className="phone__sideways">
           <Icon name="phone" size={18} /> Once the game is dealt, turn your phone sideways: it is played in landscape.
         </p>
@@ -283,7 +288,7 @@ function PhoneHead({ view }: { view: SeatView }) {
       <div className="phone__who">
         <h1>{me.name}</h1>
         <p className="muted">
-          Seat {view.seat + 1} · Table {view.id}
+          Seat {view.seat + 1}
           {game ? ` · ${seasonName(game.season)}, ${game.season} of ${SEASONS}` : ''}
         </p>
       </div>

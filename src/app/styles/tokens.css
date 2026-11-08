@@ -66,6 +66,14 @@
   --fire: #f3a56f;
   --rail: 68px;
 
+  /*
+   * The device's chosen scale (CSS zoom on the root, set from the menu). A
+   * zoomed viewport unit grows with the zoom, so full-screen lengths divide by it.
+   */
+  --zoom: 1;
+  --full-h: calc(100dvh / var(--zoom));
+  --full-w: calc(100vw / var(--zoom));
+
   --scrim: rgba(10, 14, 11, 0.72);
   --shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   --shadow-big: 0 20px 50px rgba(0, 0, 0, 0.5);

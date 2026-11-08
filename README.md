@@ -11,12 +11,21 @@ seat nobody scans into is played by the computer.
   and gear are bought on the buyer's own phone or in that drawer.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
   gear, parks visited and reserved — and the two secret objectives, with a **Hide** button. Once
-  the game is dealt the phone is held sideways, with three panels a swipe apart: the sheet, the
-  parks and the gear shop. When one of your hikers stops at the Trail End or a Ranger Station the
-  parks come up by themselves, and you can visit, reserve, buy or pass from the phone.
+  the game is dealt the phone is held sideways, with five panels a swipe apart: the sheet, the
+  moves, the parks, the gear shop (**REI**) and the menu (☰). The parks and REI show your pack
+  above the cards, grey out gear you are short of sun for, and their notes close with a ✕. When
+  one of your hikers stops at the Trail End or a Ranger Station the parks come up by themselves,
+  and you can visit, reserve, buy or pass from the phone. Visiting a park — and tapping one on a
+  sheet — tells you where it is, when it became a national park, and one fact about it.
   On your turn it also lists where your hikers can go and what each stop would hand you, and at a
   decision what each answer would do; each objective shows how far along it is. A phone can also
-  open the computer players' sheets (or every sheet, if the table allows it).
+  open the computer players' sheets (or every sheet, if the table allows it). The menu holds your
+  Pokémon, the text size and scale for that phone, the rules of the board in play, and **Leave
+  seat**.
+- **Every seat's pawn is a Pokémon in a ranger's hat** — one of twenty, never two alike at a
+  table, drawn in `src/art/pokemon.tsx` — with the seat's letters on a tag. Whoever joins gets one
+  at random and can step through the unused ones from their phone; a seat's two hikers are that
+  Pokémon, ♂ and ♀. A blank name takes the Pokémon's name.
 - **Every game gets a fresh Upstash Redis database**, provisioned on the spot through Upstash's
   `start-redis` endpoint (no account, no API key), and used until the game is over or abandoned.
 
@@ -45,16 +54,17 @@ seat nobody scans into is played by the computer.
    says to choose on the phone, or to open **Parks & gear**, where each park checks its cost
    against the player's pack, with **Visit / Reserve / Buy** right on the cards; **Pass** is on the
    turn bar. The phone of whoever is up buzzes, and lists what each reachable stop would pay them.
-   - **Rules:** tap a stop you cannot walk to, or hold any stop or card, for its full rules;
-     **Rules** in the top bar lists everything on the board.
+   - **Rules:** tap a stop you cannot walk to, or hold any stop or card, for its full rules; each
+     phone's menu lists everything on the board.
    - **Undo:** for eight seconds after a tap on the tablet, the turn bar offers to take it back,
      along with any computer moves since — unless a card has come to light in the meantime (a
      refilled park or gear row, a bottle, a new season).
 6. **Seasons and scoring.** The tablet turns the page between seasons. After winter, the final
    scores — with every objective revealed — show on the tablet and every phone.
 
-The table menu (☰) during play changes the pace and the peek rule, shows any seat's code again for
-a late or replacement phone, hands a seat to the computer, and abandons the game.
+The table menu (☰) during play changes the pace and the peek rule, sets the tablet's text size and
+scale, shows any seat's code again for a late or replacement phone, hands a seat to the computer,
+and abandons the game.
 
 ### Rules
 

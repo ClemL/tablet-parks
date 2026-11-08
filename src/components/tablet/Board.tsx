@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SEASONS, nextPlayer, type MoveOption } from '@/game/engine';
-import { reservedCount } from '@/game/view';
-import type { GameAction, GameState } from '@/game/types';
+import type { GameAction, GameState, ParkCard } from '@/game/types';
 import type { TableView } from '@/room/room';
 import type { TableCommand } from '@/server/service';
 import { Pawn, seasonName, seatStyle } from '../bits';
@@ -16,6 +15,10 @@ import { DecisionSheet, needsSheet } from './DecisionSheet';
 import { FinalScores, SeasonBreak } from './Overlays';
 import { TableMenu } from './TableMenu';
 import { InfoSheet, type InfoSubject } from './InfoSheet';
+import { ParkFactSheet } from '../ParkFactSheet';
+
+/** How long a park's story stays up on the tablet if nobody closes it. */
+const FACT_MS = 20_000;
 
 /**
  * The tablet during play, read upright from one side. It shows the board and
@@ -52,7 +55,15 @@ export function Board({
   const moving = person !== null && !state.pending ? person : null;
   const pendingKind = state.pending?.kind;
   const shopKind = person !== null && (pendingKind === 'trail-end' || pendingKind === 'park-or-gear') ? pendingKind : null;
-  const act = (action: GameAction) => person !== null && onAction(person, action);
+  const visit = useVisitWatch(state);
+  const act = (action: GameAction) => {
+    if (person === null) return;
+    // A park visited from the drawer tells its story here, as it does on the visitor's phone.
+    if ((action.type === 'trail-end' || action.type === 'park-or-gear') && (action.option === 'claim-park' || action.option === 'chance-park')) {
+      visit.watch(person);
+    }
+    onAction(person, action);
+  };
   const allComputers = view.seats.every((s) => s.kind === 'cpu');
   const coming = state.phase === 'playing' ? nextPlayer(state) : null;
   const upNext = coming !== actor ? coming : null;
@@ -60,7 +71,7 @@ export function Board({
 
   return (
     <main className="trailside">
-      <TopBar state={state} view={view} upNext={upNext} onMenu={() => setMenu(true)} onRules={() => setInfo({ kind: 'all' })} />
+      <TopBar state={state} view={view} upNext={upNext} onMenu={() => setMenu(true)} />
 
       <Trail
         state={state}
@@ -110,6 +121,9 @@ export function Board({
       {state.phase === 'game-over' ? <FinalScores state={state} seats={view.seats} onNewGame={onNewGame} /> : null}
       {info ? <InfoSheet state={state} seats={view.seats} subject={info} edge="bottom" upright onClose={() => setInfo(null)} /> : null}
       {menu ? <TableMenu view={view} busy={busy} onCommand={onCommand} onAbandon={onAbandon} onClose={() => setMenu(false)} /> : null}
+      {visit.park ? (
+        <ParkFactSheet park={visit.park} eyebrow={`${state.players[visit.park.seat]?.name ?? 'A hiker'} visited`} closeAfterMs={FACT_MS} onClose={visit.dismiss} />
+      ) : null}
     </main>
   );
 }
@@ -117,21 +131,10 @@ export function Board({
 /**
  * The season and its card, then everyone in turn order from the first player:
  * who is on the clock, who is up next, who is home, and who holds the camera
- * and the first player token.
+ * and the first player token. The rules live on each phone's menu, so the
+ * board keeps only its own menu here.
  */
-function TopBar({
-  state,
-  view,
-  upNext,
-  onMenu,
-  onRules,
-}: {
-  state: GameState;
-  view: TableView;
-  upNext: number | null;
-  onMenu: () => void;
-  onRules: () => void;
-}) {
+function TopBar({ state, view, upNext, onMenu }: { state: GameState; view: TableView; upNext: number | null; onMenu: () => void }) {
   const count = view.seats.length;
   const order = Array.from({ length: count }, (_, i) => (state.firstPlayer + i) % count);
   return (
@@ -157,7 +160,6 @@ function TopBar({
           const home = player.hikers.filter((h) => h.finished).length;
           const on = view.actor === index;
           const status = on ? (view.cpuThinking ? 'Thinking' : 'Turn') : upNext === index ? 'Up next' : home === player.hikers.length ? 'Home' : seat.kind === 'cpu' ? 'Computer' : null;
-          const held = reservedCount(state, index);
           return (
             <li
               key={index}
@@ -170,8 +172,6 @@ function TopBar({
                 <span className="order__name">{seat.name}</span>
                 <span className="order__facts">
                   {status ? <span className={`order__chip${upNext === index ? ' order__chip--next' : ''}`}>{status}</span> : null}
-                  <span>{home}/2 home</span>
-                  {held > 0 ? <span>{held} held</span> : null}
                 </span>
               </span>
               <span className="order__tokens">
@@ -192,17 +192,41 @@ function TopBar({
       </ol>
 
       <div className="topbar__tools">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onRules}>
-          <Icon name="book" size={18} />
-          Rules
-        </button>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onMenu} aria-label={`Table menu, table ${view.id}`}>
-          <Icon name="menu" size={18} />
-          {view.id}
+        <button type="button" className="btn btn--ghost btn--sm topbar__menu" onClick={onMenu} aria-label="Table menu">
+          <Icon name="menu" size={20} />
         </button>
       </div>
     </header>
   );
+}
+
+/**
+ * Watches a seat after the tablet asked to visit a park for it, and hands back
+ * the park that turns up on that seat's sheet. The park is not known when the
+ * tap is made — the deck's top card is visited unseen — so it is read off the
+ * sheet once the move lands.
+ */
+function useVisitWatch(state: GameState) {
+  const watching = useRef<{ seat: number; before: Set<string> } | null>(null);
+  const [park, setPark] = useState<(ParkCard & { seat: number }) | null>(null);
+  const key = state.players.map((p) => p.parks.length).join(',');
+  useEffect(() => {
+    const w = watching.current;
+    if (!w) return;
+    const found = state.players[w.seat]?.parks.find((p) => !w.before.has(p.id));
+    if (found) {
+      watching.current = null;
+      setPark({ ...found, seat: w.seat });
+    }
+    // Only a change in someone's park count can bring the visit in.
+  }, [key]);
+  return {
+    park,
+    watch: (seat: number) => {
+      watching.current = { seat, before: new Set(state.players[seat].parks.map((p) => p.id)) };
+    },
+    dismiss: () => setPark(null),
+  };
 }
 
 /**

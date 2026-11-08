@@ -21,7 +21,10 @@ import {
   playFor,
   playForPhone,
   renameSeat,
+  revealsNothing,
   seatTags,
+  setAvatar,
+  hydrateRoom,
   seatView,
   startGame,
   tableView,
@@ -203,17 +206,20 @@ describe('seats', () => {
     expect(isPokemon(room.seats[0].name)).toBe(true);
   });
 
-  it('calls a Pokémon seat\'s hikers ♂ and ♀, anyone else\'s Hiker 1 and 2', () => {
+  it('names every seat\'s hikers after its Pokémon, one ♂ and one ♀', () => {
     const room = lobby(3);
     joinSeat(room, 0, 'a', '');
     joinSeat(room, 1, 'b', 'Kris');
     startGame(room, T0);
     const seats = tableView(room, T0, []).seats;
     const name = seats[0].name;
+    expect(seats[0].avatar).toBe(name);
     expect([...seats[0].hikers].sort()).toEqual([`${name} ♀`, `${name} ♂`]);
-    expect(seats[1].hikers).toEqual(['Hiker 1', 'Hiker 2']);
-    // The computer's stock name is a Pokémon too.
-    expect(seats[2].hikers.every((h) => /[♂♀]$/.test(h))).toBe(true);
+    // A typed name keeps the person's name but still dresses the pawn, and the hikers, as a Pokémon.
+    expect(seats[1].name).toBe('Kris');
+    expect([...seats[1].hikers].sort()).toEqual([`${seats[1].avatar} ♀`, `${seats[1].avatar} ♂`]);
+    // The computer wears the Pokémon it is named after.
+    expect(seats[2].avatar).toBe(seats[2].name);
     // Which hiker is which is fixed for the game, not re-rolled on every view.
     expect(seatView(room, 0, T0 + 5000).seats[0].hikers).toEqual(seats[0].hikers);
   });
@@ -221,7 +227,69 @@ describe('seats', () => {
   it('mixes which hiker is ♂ across seats and games', () => {
     const firsts = new Set(Array.from({ length: 40 }, (_, seed) => hikerNames('Mew', seed, 0)[0]));
     expect(firsts).toEqual(new Set(['Mew ♂', 'Mew ♀']));
-    expect(POKEMON.length).toBeGreaterThan(20);
+    expect(POKEMON).toHaveLength(20);
+    expect(hikerNames('Kris', 1, 0)).toEqual(['Hiker 1', 'Hiker 2']);
+  });
+
+  it('gives each person a Pokémon pawn on joining, none worn twice', () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const room = lobby(5, seed);
+      joinSeat(room, 0, 'a', 'Kris');
+      joinSeat(room, 1, 'b', 'Srini');
+      joinSeat(room, 2, 'c', '');
+      startGame(room, T0);
+      const avatars = tableView(room, T0, []).seats.map((s) => s.avatar);
+      expect(avatars.every((a) => a !== null && isPokemon(a))).toBe(true);
+      expect(new Set(avatars).size).toBe(5);
+      // People are not handed a computer's stock Pokémon, so the computers can wear their own names.
+      for (const seat of [3, 4]) expect(room.seats[seat].avatar).toBe(room.seats[seat].name);
+    }
+  });
+
+  it('dresses a person who types a Pokémon name as that Pokémon', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'psyduck');
+    expect(room.seats[0].avatar).toBe('Psyduck');
+    renameSeat(room, 0, 'Gengar');
+    expect(room.seats[0].avatar).toBe('Gengar');
+  });
+
+  it('trades a pawn for any Pokémon nobody else wears, and refuses the rest', () => {
+    const room = lobby(3);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Psyduck');
+    expect(() => setAvatar(room, 0, 'Psyduck')).toThrow(/already Psyduck/);
+    expect(() => setAvatar(room, 0, 'Agumon')).toThrow(RoomError);
+    expect(() => setAvatar(room, 0, { name: 'Mew' })).toThrow(RoomError);
+    setAvatar(room, 0, 'mew');
+    expect(room.seats[0].avatar).toBe('Mew');
+    // A typed name stays put when the pawn changes.
+    expect(room.seats[0].name).toBe('Kris');
+    // A name that was the old Pokémon's follows the pawn, in the game too.
+    startGame(room, T0);
+    setAvatar(room, 1, 'Gengar');
+    expect(room.seats[1].name).toBe('Gengar');
+    expect(room.state!.players[1].name).toBe('Gengar');
+    expect(seatView(room, 1, T0).seats[1].hikers.every((h) => h.startsWith('Gengar '))).toBe(true);
+  });
+
+  it('frees a person\'s Pokémon when they leave the lobby', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Mew');
+    leaveSeat(room, 0);
+    expect(room.seats[0].avatar).toBeUndefined();
+    expect(tableView(room, T0, []).seats[0].avatar).toBeNull();
+  });
+
+  it('gives a game saved before pawns wore Pokémon one per seat', () => {
+    const room = lobby(3);
+    joinSeat(room, 0, 'a', 'Kris');
+    startGame(room, T0);
+    for (const record of room.seats) delete record.avatar;
+    const back = hydrateRoom(JSON.parse(JSON.stringify(room)) as Room);
+    const avatars = back.seats.map((s) => s.avatar);
+    expect(avatars.every((a) => a && isPokemon(a))).toBe(true);
+    expect(new Set(avatars).size).toBe(3);
   });
 
   it('gives every pawn a distinct tag', () => {
@@ -516,6 +584,19 @@ describe('taking a tap back', () => {
     expect(room.state!.parkDeck.length).toBe(deck - 1);
     expect(tableView(room, T0 + 20, []).undo).toBeNull();
     expect(() => undoLast(room, T0 + 20)).toThrow(/Too late/);
+  });
+
+  it('counts a gear row dealt afresh as a revealed card, even with the deck the same size', () => {
+    const room = lobby(2);
+    startGame(room, T0);
+    const before = room.state!;
+    const after = structuredClone(before);
+    // What the Outfitter Camp does: the row goes under the deck and three new cards come up.
+    after.gearDeck.push(...after.gearRow);
+    after.gearRow = after.gearDeck.splice(0, after.gearRow.length);
+    expect(after.gearDeck).toHaveLength(before.gearDeck.length);
+    expect(revealsNothing(before, after)).toBe(false);
+    expect(revealsNothing(before, structuredClone(before))).toBe(true);
   });
 
   it('forgets the take-back when a seat changes hands', () => {

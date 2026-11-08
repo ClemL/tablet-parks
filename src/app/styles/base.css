@@ -138,6 +138,61 @@ p {
   }
 }
 
+/* ------------------------------------------------- display and Pokémon pickers */
+
+.display-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.display-settings__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.display-settings__row > span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.display-settings .segmented button {
+  min-width: 44px;
+  padding: 0.3rem 0.7rem;
+}
+
+.display-settings__note {
+  font-size: 0.8rem;
+}
+
+.pk-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pk-picker__text {
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.86rem;
+}
+
+.pk-picker__name {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  color: var(--card);
+}
+
+.pk-picker__buttons {
+  display: flex;
+  gap: 6px;
+}
+
 /* -------------------------------------------------------------- form pieces */
 
 .segmented {
@@ -231,7 +286,7 @@ input:not([type]),
 }
 
 .loading {
-  min-height: 100dvh;
+  min-height: var(--full-h);
   display: grid;
   place-content: center;
   gap: 1rem;
@@ -260,20 +315,75 @@ input:not([type]),
 }
 
 .pawn--xs {
-  --size: 20px;
+  --size: 24px;
   border-width: 1px;
 }
 
 .pawn--sm {
-  --size: 24px;
+  --size: 30px;
+}
+
+.pawn--md {
+  --size: 34px;
 }
 
 .pawn--lg {
-  --size: 40px;
+  --size: 48px;
 }
 
 .pawn--xl {
-  --size: 54px;
+  --size: 64px;
+}
+
+/* A Pokémon pawn: the head fills the disc and its hat and ears may rise past the rim. */
+.pawn--pk {
+  position: relative;
+  overflow: visible;
+}
+
+.pawn__pk {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  overflow: visible;
+}
+
+.pk__band {
+  fill: var(--seat);
+}
+
+/* The seat's letters on a tag at the pawn's lower left, opposite the hiker's mark. */
+.pawn__tag {
+  position: absolute;
+  left: -5px;
+  bottom: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--seat);
+  color: var(--on-seat, var(--on-pawn));
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.pawn--md .pawn__tag {
+  min-width: 14px;
+  height: 14px;
+  font-size: 9px;
+}
+
+.pawn--xl .pawn__tag {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
 .pawn--ring {

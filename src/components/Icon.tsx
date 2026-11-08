@@ -31,6 +31,8 @@ const PATHS = {
   ),
   flask: <path d="M10 3h4M10.5 3v5.2L6 17.4A2.4 2.4 0 0 0 8.2 21h7.6a2.4 2.4 0 0 0 2.2-3.6l-4.5-9.2V3M8 15h8" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  back: <path d="M15 5l-7 7 7 7" />,
+  next: <path d="M9 5l7 7-7 7" />,
   phone: (
     <>
       <rect x="7" y="2.5" width="10" height="19" rx="2.5" />

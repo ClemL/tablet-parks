@@ -17,6 +17,7 @@ import {
   normalizeSettings,
   playFor,
   renameSeat,
+  setAvatar,
   seatView,
   startGame,
   tableView,
@@ -274,6 +275,17 @@ export async function choosePark(token: string | null, action: GameAction): Prom
   const { room, now } = await mutate(handle, (r, at) => {
     checkSeat(r, handle);
     playForPhone(r, handle.s, action, at);
+  });
+  return seatView(room, handle.s, now);
+}
+
+/** A phone trading its seat's pawn for another unused Pokémon, in the lobby or mid-game. */
+export async function chooseAvatar(token: string | null, avatar: unknown): Promise<SeatView> {
+  const handle = requireHandle(token, ['s']);
+  if (handle.k !== 's') throw new RoomError('Not a seat', 401);
+  const { room, now } = await mutate(handle, (r) => {
+    checkSeat(r, handle);
+    setAvatar(r, handle.s, avatar);
   });
   return seatView(room, handle.s, now);
 }
