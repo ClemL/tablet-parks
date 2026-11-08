@@ -4,9 +4,11 @@ The [PARKS-style hiking game](https://github.com/ClemL/parks-game), rebuilt for 
 middle of the table and a phone in every player's hand. Up to five seats (four by default); every
 seat nobody scans into is played by the computer.
 
-- **The tablet is the board.** It shows the hiking trail — a switchback in two rows, out along the
-  top and back along the bottom to the Trail End — the parks on offer, the gear shop and the
-  campsites. Hikers are walked here; parks and gear are bought here or on the buyer's own phone.
+- **The tablet is the board**, read upright from one side. It draws the hiking trail as a path
+  winding across the screen, a large round stop for each site, out along the top row and back
+  along the next to the Trail End. Hikers are walked here. The parks on offer, the gear shop and
+  the campsites wait in a drawer, closed until someone opens it: each phone shows them, and parks
+  and gear are bought on the buyer's own phone or in that drawer.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
   gear, parks visited and reserved — and the two secret objectives, with a **Hide** button. Once
   the game is dealt the phone is held sideways, with three panels a swipe apart: the sheet, the
@@ -23,33 +25,31 @@ seat nobody scans into is played by the computer.
 
 ## How a game goes
 
-1. **Set the table.** The tablet opens on one screen that lasts until the deal: the settings in
-   the middle — seats (2–5), the Nightfall and Wildlife expansions, two house rules, how fast the
-   computers move, whose sheets a phone may open, and whether the tags face each seat — and a
-   **name tag for each seat** on the edge of the tablet nearest whoever sits there, turned to
-   face them.
+1. **Set the table.** The tablet opens on one screen that lasts until the deal: a band of the
+   trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
+   dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
+   three house rules, how fast the computers move, and whose sheets a phone may open.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
-   code** appears on every tag. The settings stay where they are, still editable, and **Start**
-   takes Open's place. Names can be typed on the tablet or on the phone.
+   code** appears on every seat's card, so everyone can scan at once. The settings stay where they
+   are, still editable, and **Start** takes Open's place. Names can be typed on the tablet or on
+   the phone.
 3. **Phones scan in.** Scanning a seat's code opens that seat on the phone. Scanning it again from
    another phone moves the seat there (the first phone is told), so a dead phone is never stuck.
 4. **Start.** Open seats become computer players, each with its own name and playing style.
-5. **Play.** Each seat has a rail along its own edge of the tablet. Whoever is on the clock has
-   their rail light up with what to do and their pack, and walks a hiker on the tablet: tap the
-   hiker (the rear one is picked to begin with), then any lit site. A move onto an occupied site
-   asks before spending the campfire. Decisions — the camera, trades, tents, the bison, the token
-   limit — open a sheet turned toward that player's edge. At the Trail End or a Ranger Station
-   the cards take the middle of the board, each park checking its cost against the player's pack,
-   with **Visit / Reserve / Buy** right on them; **Pass** is on the player's rail. Each answer on a
-   decision sheet says what it would do to the player's sheet. The rail of whoever moves next is
-   marked **Up next**. The phone of whoever is up buzzes, and lists what each reachable site would
-   pay them.
-   - **Rules:** tap a site you cannot walk to, or hold any tile or card, for its full rules; **Rules**
-     in the header lists everything on the board. The sheet faces whoever is on the clock and turns
-     to any other seat.
-   - **Undo:** for eight seconds after a tap on the tablet, that player's rail offers to take it
-     back, along with any computer moves since — unless a card has come to light in the meantime
-     (a refilled park or gear row, a bottle, a new season).
+5. **Play.** The players run along the top in turn order, with whoever moves next marked **Up
+   next**. Whoever is on the clock gets the turn bar along the bottom — what to do, and their pack —
+   and walks a hiker on the tablet: tap the hiker (the rear one is picked to begin with), then any
+   lit stop. A move onto an occupied stop asks before spending the campfire. Decisions — the
+   camera, trades, tents, the bison, the token limit — open a sheet over the board, and each answer
+   says what it would do to the player's sheet. At the Trail End or a Ranger Station the turn bar
+   says to choose on the phone, or to open **Parks & gear**, where each park checks its cost
+   against the player's pack, with **Visit / Reserve / Buy** right on the cards; **Pass** is on the
+   turn bar. The phone of whoever is up buzzes, and lists what each reachable stop would pay them.
+   - **Rules:** tap a stop you cannot walk to, or hold any stop or card, for its full rules;
+     **Rules** in the top bar lists everything on the board.
+   - **Undo:** for eight seconds after a tap on the tablet, the turn bar offers to take it back,
+     along with any computer moves since — unless a card has come to light in the meantime (a
+     refilled park or gear row, a bottle, a new season).
 6. **Seasons and scoring.** The tablet turns the page between seasons. After winter, the final
    scores — with every objective revealed — show on the tablet and every phone.
 
@@ -63,6 +63,11 @@ apply unchanged — the engine in `src/game/` is that repository's, with two cor
 porting: a view no longer carries the season cards and advanced sites still to come, and the log no
 longer names a park reserved face down from the deck.
 
+Three optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
+unseen top park; on by default), **Ranger Station first** (spring's advanced site is always the
+Ranger Station) and **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
+card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it).
+
 What differs is who sees what, which is the point of the table:
 
 | Information | Tablet | Your phone | Another phone |
@@ -72,9 +77,20 @@ What differs is who sees what, which is the point of the table:
 | A computer player's sheet | — | ✓ | ✓ |
 | Your secret objectives | never | ✓ (hideable) | never |
 | Parks you reserved | while you stand at a park decision | ✓ | count only |
-| Park deck order, upcoming seasons, RNG | never | never | never |
+| Park and gear deck order, upcoming seasons, RNG | never | never | never |
 
 At the final scoring everything except the deck is revealed.
+
+## Changelog
+
+`public/updates.txt` is the changelog: one entry per line, **oldest first**, so shipping one is a
+one-line append. Each line reads `YYYY-MM-DDTHH:MM:00Z - What changed, as a plain sentence`
+(`date -u +%Y-%m-%dT%H:%M:00Z` prints the timestamp). Only user-visible changes get a line.
+
+The footer on the setup screen and on the phone's join and waiting pages shows the app's version,
+when it was built and the newest entry; tapping the entry opens every entry, newest first. The file
+is fetched, not bundled, so editing it needs no code change; if it is missing or empty the footer
+shows the build info alone.
 
 ## How it is wired
 

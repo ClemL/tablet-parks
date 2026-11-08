@@ -11,6 +11,7 @@ import { usePoll } from '@/client/usePoll';
 import { Pawn, SEASON_NAMES, seasonName, seatStyle } from '../bits';
 import { SiteArt } from '@/art/siteArt';
 import { Icon } from '../Icon';
+import { Footer } from '../Footer';
 import { PhoneGame } from './PhoneGame';
 
 function ticketFromHash(): string | null {
@@ -61,6 +62,7 @@ export function PhoneApp() {
       <main className="phone phone--empty">
         <h1>Trailside Seasons</h1>
         <p>Scan the code by your seat on the tablet to join the game.</p>
+        <Footer />
       </main>
     );
   }
@@ -223,6 +225,7 @@ function Join({ ticket, notice, onJoined }: { ticket: string; notice: string | n
           {problem}
         </p>
       ) : null}
+      <Footer />
     </main>
   );
 }
@@ -265,6 +268,7 @@ function Seat({
           Leave this seat
         </button>
       </section>
+      <Footer />
     </main>
   );
 }
