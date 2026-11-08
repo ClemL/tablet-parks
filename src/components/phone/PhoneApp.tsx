@@ -251,7 +251,7 @@ function Seat({
   const me = view.seats[view.seat];
   if (view.phase !== 'lobby' && view.game) {
     return (
-      <GearThemeProvider value={view.settings.pokemonGear !== false}>
+      <GearThemeProvider value={view.settings.pokemonGear === true}>
         <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />
       </GearThemeProvider>
     );

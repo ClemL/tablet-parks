@@ -14,15 +14,15 @@ import {
 import { parkDeckLeft } from '@/game/view';
 import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
 import type { GameAction, GameState, ParkCard, Player } from '@/game/types';
-import { IllustratedParkArt } from '@/art/illustrated';
+import { ParkPoster } from '../ParkPoster';
 import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token } from '../Token';
-import { parkPlace } from '../ParkCard';
 import { costCheck } from '../shopping';
 import { useLongPress } from '@/client/useLongPress';
 import type { InfoSubject } from './InfoSheet';
 import { GearIcon, useGearName } from '../gearTheme';
+import { PriceTag } from '../PriceTag';
 
 type ShopKind = 'trail-end' | 'park-or-gear';
 type Option = Extract<GameAction, { type: 'trail-end' }>['option'];
@@ -146,47 +146,49 @@ export function Shop({
               const price = gearCost(state, card);
               const short = (player.resources.sun ?? 0) < price;
               return (
-                <article key={card.id} className={`shop-gear${short ? ' shop-gear--short' : ''}`}>
-                  <GearIcon card={card} className="shop-gear__icon" />
-                  <div className="shop-gear__text pressable" {...hold(() => onInfo({ kind: 'gear', id: card.id }))}>
-                    <h3>{nameOf(card)}</h3>
-                    <p>{card.text}</p>
+                <PriceTag key={card.id} sideways className="shop-gear" short={short}>
+                  <GearIcon card={card} className="tag__art" />
+                  <div className="tag__words pressable" {...hold(() => onInfo({ kind: 'gear', id: card.id }))}>
+                    <h3 className="tag__name">{nameOf(card)}</h3>
+                    <p className="tag__text">{card.text}</p>
                   </div>
+                  {/* The price sticker is the button: tapping the price buys it. */}
                   <button
                     type="button"
-                    className="shop-btn shop-btn--go shop-gear__buy"
+                    className="tag__price tag__price--button shop-gear__buy"
                     disabled={!buyable.has(card.id) || busy}
                     aria-label={`Buy ${nameOf(card)} for ${price} sun`}
                     onClick={() => act('buy-gear', { gearId: card.id })}
                   >
-                    {price}
-                    <Token r="sun" size="sm" decorative />
+                    <b>{price}</b>
+                    <Token r="sun" size="xs" decorative />
                     {price !== card.cost ? <s>{card.cost}</s> : null}
                   </button>
-                </article>
+                </PriceTag>
               );
             })}
             {state.houseRules.deckGear ? (
-              <article className={`shop-gear shop-gear--deck${(player.resources.sun ?? 0) < DECK_GEAR_MIN_SUN ? ' shop-gear--short' : ''}`}>
-                <span className="shop-gear__icon" aria-hidden="true">
-                  <Icon name="deck" size={26} />
+              <PriceTag sideways className="shop-gear shop-gear--deck" short={(player.resources.sun ?? 0) < DECK_GEAR_MIN_SUN}>
+                <span className="tag__art tag__art--deck" aria-hidden="true">
+                  <Icon name="deck" size={34} />
                 </span>
-                <div className="shop-gear__text">
-                  <h3>Top of the gear deck</h3>
-                  <p>
+                <div className="tag__words">
+                  <h3 className="tag__name">Top of the gear deck</h3>
+                  <p className="tag__text">
                     Unseen, {gearDeckCount(state)} left. Its usual price less 1 sun — with {DECK_GEAR_MIN_SUN} or more sun.
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="shop-btn shop-btn--go shop-gear__buy"
+                  className="tag__price tag__price--button shop-gear__buy"
                   disabled={!canBuyTopGear(state, shopper) || busy}
                   aria-label="Buy the top card of the gear deck unseen, for 1 sun less"
                   onClick={() => act('buy-top-gear')}
                 >
-                  Buy unseen
+                  <b>−1</b>
+                  <Token r="sun" size="xs" decorative />
                 </button>
-              </article>
+              </PriceTag>
             ) : null}
           </div>
         </section>
@@ -225,23 +227,11 @@ function ShopPark({
   return (
     <article className={`shop-park${mine ? ' shop-park--mine' : ''}${canVisit ? ' shop-park--can' : ''}`} aria-label={`${park.name}, ${park.vp} points${mine ? ', your reservation' : ''}`}>
       <div className="shop-park__art pressable" {...holdProps}>
-        <IllustratedParkArt park={park} />
-        <span className="shop-park__vp" aria-hidden="true">
-          {park.vp}
-        </span>
-        {mine ? <span className="shop-park__mine">Reserved</span> : null}
-        {bison ? (
-          <span className="shop-park__bison" title="The bison is here: visiting offers a wildcard trade">
-            🦬
-          </span>
-        ) : null}
+        <ParkPoster park={park} badge={mine ? 'Reserved' : undefined} bison={bison} />
       </div>
       <div className="shop-park__body">
-        <h3>{park.name}</h3>
         <span className="shop-park__place">
-          {parkPlace(park)}
-          <br />
-          {park.tags.join(', ')}
+          {park.region} · {park.tags.join(', ')}
         </span>
         <ul className="shop-park__check">
           {rows.map(({ r, need, have, status }) => (

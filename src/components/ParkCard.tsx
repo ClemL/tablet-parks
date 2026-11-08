@@ -1,6 +1,6 @@
 import type { ParkCard as Park } from '@/game/types';
-import { IllustratedParkArt } from '@/art/illustrated';
 import { TokenBag } from './Token';
+import { ParkPoster } from './ParkPoster';
 
 /** "Utah · Southwest", or just "Alaska" where the state is the region. */
 export function parkPlace(park: Park): string {
@@ -8,8 +8,9 @@ export function parkPlace(park: Park): string {
 }
 
 /**
- * A park as printed: its picture, its points, its name and what it costs to
- * visit — and its tags and region, which several objectives score.
+ * A park as printed: the trail poster on top (picture, name, state and year,
+ * points, its visiting Pokémon), then what it costs to visit — and its tags
+ * and region, which several objectives score.
  */
 export function ParkCard({
   park,
@@ -31,21 +32,10 @@ export function ParkCard({
 }) {
   return (
     <article className={`park${dim ? ' park--dim' : ''}${compact ? ' park--compact' : ''}`} aria-label={`${park.name}, ${park.vp} points`}>
-      <div className="park__art">
-        <IllustratedParkArt park={park} />
-        <span className="park__vp" aria-hidden="true">
-          {park.vp}
-        </span>
-        {bison ? (
-          <span className="park__bison" title="The bison is here: visiting offers a wildcard trade">
-            🦬
-          </span>
-        ) : null}
-      </div>
+      <ParkPoster park={park} bison={bison} />
       <div className="park__body">
-        <h4 className="park__name">{park.name}</h4>
-        {!compact ? <span className="park__state">{parkPlace(park)}</span> : null}
         <TokenBag bag={cost ?? park.cost} size={compact ? 'xs' : 'sm'} />
+        {!compact ? <span className="park__state">{park.region}</span> : null}
         {!compact ? <span className="park__tags">{park.tags.join(' · ')}</span> : null}
         {note ? <span className="park__note">{note}</span> : null}
       </div>

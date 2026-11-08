@@ -47,7 +47,11 @@ export interface RoomSettings {
   houseRules: HouseRules;
   pace: Pace;
   peek: Peek;
-  /** REI's goods dressed as Pokémon gear (Squirtle’s Water Filter). Looks only; on unless turned off. */
+  /**
+   * REI's goods dressed as Pokémon gear (Squirtle’s Water Filter, with Squirtle
+   * beside it). Looks only; off unless the table turns it on, since REI's price
+   * tags read best plain.
+   */
   pokemonGear: boolean;
 }
 
@@ -112,7 +116,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   houseRules: { ...DEFAULT_HOUSE_RULES },
   pace: 'normal',
   peek: 'cpu',
-  pokemonGear: true,
+  pokemonGear: false,
 };
 
 /** Seat colours by index; the stylesheet defines them so a theme can restyle the table. */
@@ -143,7 +147,7 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',
-    pokemonGear: input?.pokemonGear !== false,
+    pokemonGear: input?.pokemonGear === true,
   };
 }
 

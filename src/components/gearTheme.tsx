@@ -29,7 +29,7 @@ export const GEAR_POKEMON: Record<string, { pokemon: Pokemon; name: string }> = 
   daypack: { pokemon: 'Psyduck', name: 'Psyduck’s Daypack' },
 };
 
-const GearTheme = createContext(true);
+const GearTheme = createContext(false);
 
 /** Set once per screen from the table's setting; every gear card below reads it. */
 export const GearThemeProvider = GearTheme.Provider;

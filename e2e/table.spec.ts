@@ -520,7 +520,7 @@ test.describe('round the tablet', () => {
     const held = parks.locator('.offers-held');
     await expect(held.getByRole('heading', { name: /Reserved/ })).toBeVisible();
     await expect(held.locator('.offer')).toHaveCount(1);
-    await expect(held.locator('.offer__mine')).toHaveText('Reserved');
+    await expect(held.locator('.poster__badge')).toHaveText('Reserved');
     const rowBottom = (await parks.locator('.offers').first().boundingBox())!;
     const heldTop = (await held.boundingBox())!;
     expect(heldTop.y).toBeGreaterThanOrEqual(rowBottom.y + rowBottom.height - 1);
@@ -535,7 +535,7 @@ test.describe('round the tablet', () => {
     await expect(chain).toHaveAttribute('aria-checked', 'true');
   });
 
-  test('REI sells Pokémon gear, and the table can turn it back to plain', async ({ browser }) => {
+  test('REI sells plain gear on price tags, and the table can dress it as Pokémon gear', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
@@ -543,14 +543,42 @@ test.describe('round the tablet', () => {
     await kris.setViewportSize(SIDEWAYS);
     await dismissRoster(kris);
     await kris.getByRole('tab', { name: /^REI/ }).click();
-    const names = kris.locator('#panel-gear .gear-offer:not(.gear-offer--deck) h3');
-    await expect(names.first()).toContainText('’s ');
-    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
+    const tags = kris.locator('#panel-gear .gear-offer.tag:not(.gear-offer--deck)');
+    await expect(tags).toHaveCount(3);
+    // Each tag carries its drawn item, its hole and its price sticker.
+    await expect(tags.first().locator('.gear-art')).toBeVisible();
+    await expect(tags.first().locator('.tag__hole')).toBeAttached();
+    await expect(tags.first().locator('.tag__price')).toBeVisible();
+    const names = tags.locator('h3');
+    await expect(names.first()).not.toContainText('’s ');
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(0);
 
     await tablet.getByRole('button', { name: 'Table menu' }).click();
-    await tablet.getByRole('radio', { name: 'Plain gear' }).click();
-    await expect(names.first()).not.toContainText('’s ', { timeout: 10_000 });
-    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(0);
+    await tablet.getByRole('radio', { name: 'Pokémon gear' }).click();
+    await expect(names.first()).toContainText('’s ', { timeout: 10_000 });
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
+  });
+
+  test('every park card is a trail poster with a Pokémon visiting', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+    await kris.getByRole('tab', { name: 'Parks' }).click();
+    const posters = kris.locator('#panel-parks .offer .poster');
+    await expect(posters).toHaveCount(3);
+    for (const poster of await posters.all()) {
+      await expect(poster.locator('.poster__name')).not.toBeEmpty();
+      await expect(poster.locator('.poster__where')).toContainText(/Est\. \d{4}/);
+      await expect(poster.locator('.poster__visitor svg')).toBeAttached();
+      await expect(poster.locator('.poster__vp b')).toHaveText(/^\d$/);
+    }
+    // The tablet's drawer shows the same posters.
+    await tablet.getByRole('button', { name: 'Parks & gear' }).click();
+    await expect(tablet.locator('#market-drawer .park .poster')).toHaveCount(3);
+    await expect(tablet.locator('#market-drawer .market__row .tag').first()).toBeVisible();
   });
 
   test('a hiker walks to its stop on the tablet, and every phone hears what it collected', async ({ browser }) => {

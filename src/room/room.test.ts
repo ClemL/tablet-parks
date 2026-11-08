@@ -678,13 +678,14 @@ describe('taking a tap back', () => {
     expect(room.state!.pending?.kind).not.toBe('trail-end');
   });
 
-  it('dresses REI as Pokémon gear unless the table turns it off, even mid-game', () => {
-    expect(normalizeSettings(undefined).pokemonGear).toBe(true);
-    expect(normalizeSettings({ pokemonGear: false }).pokemonGear).toBe(false);
+  it('keeps REI plain unless the table dresses it as Pokémon gear, even mid-game', () => {
+    expect(normalizeSettings(undefined).pokemonGear).toBe(false);
+    expect(normalizeSettings({ pokemonGear: 'yes' } as never).pokemonGear).toBe(false);
+    expect(normalizeSettings({ pokemonGear: true }).pokemonGear).toBe(true);
     const room = lobby(2);
     startGame(room, T0);
-    changeSettings(room, { pokemonGear: false, seats: 5 });
-    expect(room.settings.pokemonGear).toBe(false);
+    changeSettings(room, { pokemonGear: true, seats: 5 });
+    expect(room.settings.pokemonGear).toBe(true);
     expect(room.settings.seats).toBe(2);
   });
 

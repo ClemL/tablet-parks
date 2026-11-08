@@ -132,7 +132,7 @@ export function TabletApp() {
     );
   }
   return (
-    <GearThemeProvider value={view.settings.pokemonGear !== false}>
+    <GearThemeProvider value={view.settings.pokemonGear === true}>
       <Board
         view={view}
         busy={busy}

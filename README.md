@@ -32,10 +32,18 @@ seat nobody scans into is played by the computer.
   table, drawn in `src/art/pokemon.tsx` — with the seat's letters on a tag. Whoever joins gets one
   at random and can step through the unused ones from their phone; a seat's two hikers are that
   Pokémon, ♂ and ♀. A blank name takes the Pokémon's name.
-- **REI sells Pokémon gear** unless the table turns it off (at setup or in the table menu):
+- **Park cards are trail posters** (`src/components/ParkPoster.tsx`): the park's illustration edge
+  to edge, its name on a dark banner with the state and the year it became a national park, a
+  points medallion, and a Pokémon visiting from the corner — one suited to the park (water parks
+  get Squirtle or Psyduck, deserts Diglett or Vulpix), always the same one for the same park.
+- **REI's cards are price tags** (`src/components/PriceTag.tsx`): kraft card with a punched hole
+  and string, the price on a round sticker (struck through when a discount applies), upright on
+  the phone and in the drawer and on their side in the tablet's shop, where the sticker is the
+  buy button. The table can dress the gear as **Pokémon gear** (at setup or in the table menu):
   Squirtle’s Water Filter, Snorlax’s Sleeping Bag and the rest, each with its Pokémon beside it,
-  and Ditto for anything without an obvious owner. Looks only; the rules are the same. Every item
-  is drawn (`src/art/gear.tsx`) rather than an emoji, so it looks the same on every device.
+  and Ditto for anything without an obvious owner. It is off unless turned on; looks only, the
+  rules are the same. Every item is drawn (`src/art/gear.tsx`) rather than an emoji, so it looks
+  the same on every device.
 - **Reserved parks sit in their own row**, marked Reserved, under the three parks and the deck,
   on the phone and in the tablet's shop.
 - **The board moves.** A hiker walks from stop to stop along the trail to where it is going — on a
@@ -53,8 +61,8 @@ seat nobody scans into is played by the computer.
 1. **Set the table.** The tablet opens on one screen that lasts until the deal: a band of the
    trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
    dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
-   four house rules, Pokémon gear at REI, how fast the computers move, and whose sheets a phone
-   may open.
+   four house rules, optional Pokémon gear at REI, how fast the computers move, and whose sheets
+   a phone may open.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
    code** appears on every seat's card, so everyone can scan at once. The settings stay where they
    are, still editable, and **Start** takes Open's place. Names can be typed on the tablet or on
