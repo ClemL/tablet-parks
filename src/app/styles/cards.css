@@ -302,6 +302,37 @@
   overflow: visible;
 }
 
+/*
+ * Tauros walking on (TaurosWalk.tsx): every row of park cards it can cross
+ * holds its walker, and the token it is walking to stays hidden until it
+ * gets there, so there is only ever one Tauros on the table.
+ */
+.offers,
+.market__row--parks,
+.shop__row,
+.tauros-trip__row {
+  position: relative;
+}
+
+.tauros-walking .poster__tauros {
+  visibility: hidden;
+}
+
+.tauros-walker {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.55));
+  will-change: transform;
+}
+
+.tauros-walker svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
 /* ---------------------------------------------------------- REI price tags */
 
 /*

@@ -16,6 +16,8 @@ import { FinalScores, SeasonBreak } from './Overlays';
 import { TableMenu } from './TableMenu';
 import { InfoSheet, type InfoSubject } from './InfoSheet';
 import { ParkFactSheet } from '../ParkFactSheet';
+import { useBoardMotion } from './motion';
+import { TaurosTrip } from './TaurosTrip';
 
 /** How long a park's story stays up on the tablet if nobody closes it. */
 const FACT_MS = 20_000;
@@ -56,6 +58,9 @@ export function Board({
   const pendingKind = state.pending?.kind;
   const shopKind = person !== null && (pendingKind === 'trail-end' || pendingKind === 'park-or-gear') ? pendingKind : null;
   const visit = useVisitWatch(state);
+  const motion = useBoardMotion(state);
+  // Tauros walks on in the drawer when it is open, or on a strip of cards that rises for it.
+  const walk = drawer ? motion.walk : null;
   const act = (action: GameAction) => {
     if (person === null) return;
     // A park visited from the drawer tells its story here, as it does on the visitor's phone.
@@ -80,6 +85,7 @@ export function Board({
         busy={busy}
         onMove={(move: MoveOption) => act({ type: 'move', ...move })}
         onInfo={(index) => setInfo({ kind: 'site', index })}
+        motion={motion}
       />
 
       <section id="market-drawer" className="drawer" aria-label="Parks and gear" hidden={!drawer}>
@@ -95,17 +101,18 @@ export function Board({
         </header>
         <div className="drawer__body">
           {shopKind && person !== null ? (
-            <Shop state={state} shopper={person} kind={shopKind} busy={busy} onAction={act} onInfo={setInfo} />
+            <Shop state={state} shopper={person} kind={shopKind} busy={busy} onAction={act} onInfo={setInfo} walk={walk} onWalked={motion.walked} />
           ) : (
             <>
               <Campsites state={state} seats={view.seats} onInfo={setInfo} />
-              <Market state={state} seats={view.seats} onInfo={setInfo} />
+              <Market state={state} seats={view.seats} onInfo={setInfo} walk={walk} onWalked={motion.walked} />
             </>
           )}
         </div>
       </section>
 
       <TurnBar view={view} busy={busy} onAction={act} undo={undo} drawerOpen={drawer} onDrawer={() => setDrawer((open) => !open)} />
+      {!drawer && motion.walk ? <TaurosTrip key={motion.walk.key} state={state} walk={motion.walk} onDone={motion.walked} /> : null}
 
       {error ? (
         <p className="toast" role="alert">

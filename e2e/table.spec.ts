@@ -587,6 +587,30 @@ test.describe('round the tablet', () => {
     await expect(tablet.locator('#market-drawer .market__row .tag').first()).toBeVisible();
   });
 
+  test('Tauros trades on the trail and walks on to its next park where the whole table can see it', async ({ browser }) => {
+    test.setTimeout(240_000);
+    const tablet = await newTablet(browser);
+    // Four computers on the brisk clock reach the Trail End and Bison Meadow often; Wildlife is on by default.
+    await openTable(tablet, { seats: 4, brisk: true });
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    const seen = { trade: false, walk: false };
+    // Each moment lasts a few seconds, so look often and remember what has shown.
+    await expect
+      .poll(
+        async () => {
+          if (!seen.trade) seen.trade = (await tablet.locator('.fx--tauros .fx__tauros svg').count()) > 0;
+          if (!seen.walk) seen.walk = (await tablet.locator('.tauros-trip .tauros-walker svg').count()) > 0;
+          const breakBtn = tablet.getByRole('button', { name: /^(Next season|Start (the )?season)/ });
+          if (await breakBtn.count()) await breakBtn.first().click().catch(() => {});
+          return seen.trade && seen.walk;
+        },
+        { timeout: 220_000, intervals: [100] },
+      )
+      .toBe(true);
+    // The strip is passing: it takes no taps and sinks again once Tauros has arrived.
+    await expect(tablet.locator('.tauros-trip')).toHaveCount(0, { timeout: 15_000 });
+  });
+
   test('a hiker walks to its stop on the tablet, and every phone hears what it collected', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true, base: true });

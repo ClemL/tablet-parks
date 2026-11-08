@@ -50,8 +50,11 @@ seat nobody scans into is played by the computer.
   on the phone and in the tablet's shop.
 - **The board moves.** A hiker walks from stop to stop along the trail to where it is going — on a
   long trip it may hop, skip or roll instead — a campfire spent to share a stop flares on that
-  stop, and an emptied flask tips out and shows what it made. Tent sites carry a drawn tent. None
-  of it plays under *reduce motion*.
+  stop, and an emptied flask tips out and shows what it made. When Tauros trades, it stomps onto
+  the stop, takes what it was given and hands a wildcard back; then it walks across the park
+  cards to its next park, in the drawer if it is open or on a strip of cards that rises above the
+  turn bar for it, and on any phone showing its Parks panel. Every phone's toast shows Tauros
+  passing the wildcard over. Tent sites carry a drawn tent. None of it plays under *reduce motion*.
 - **Every game gets a fresh Upstash Redis database**, provisioned on the spot through Upstash's
   `start-redis` endpoint (no account, no API key), and used until the game is over or abandoned.
 

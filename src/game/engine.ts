@@ -450,6 +450,9 @@ function resolveSite(
   const site = SITES[kind];
   const gained: string[] = [];
   const before = { ...player.resources };
+  // Bison Meadow's trade and walk, for the board to play once the stop is logged.
+  let traded = false;
+  let walked: { from: number; to: number } | null = null;
   if (site.gain) gainAtSite(state, player, site.gain, gained);
 
   // Wildlife expansion sites resolve immediately, with no decision to make.
@@ -472,12 +475,15 @@ function resolveSite(
         spend(player, give);
         gainAtSite(state, player, { wild: 1 }, gained);
         gained.push(`for 1 ${label(give)}`);
+        traded = true;
       } else {
         gained.push('nothing to trade Tauros');
       }
       if (state.bison !== null && state.parkRow.length > 0) {
+        const from = state.bison;
         state.bison = (state.bison + 1) % state.parkRow.length;
         gained.push('and moved Tauros on');
+        walked = { from, to: state.bison };
       }
       break;
     }
@@ -520,8 +526,9 @@ function resolveSite(
     state,
     player.index,
     `${copied ? 'copied' : 'moved to'} ${site.name}${gained.length ? ` and gained ${gained.join(', ')}` : ''}`,
-    { delta: packDelta(before, player) },
+    { delta: packDelta(before, player), ...(traded ? { event: 'tauros' as const } : {}) },
   );
+  if (walked) logTaurosWalk(state, player, walked.from, walked.to);
 
   if (site.choice) {
     state.pending = {
@@ -793,9 +800,11 @@ function resolveParkOrGear(
  */
 function moveBisonOn(state: GameState, player: Player): void {
   if (state.bison === null) return;
+  const from = state.bison;
   const next = state.bison + 1;
   if (next >= Math.max(1, state.parkRow.length)) {
     state.bison = 0;
+    logTaurosWalk(state, player, from, 0);
     const replaced = state.gearRow[0];
     if (replaced) {
       state.gearDeck.push(replaced);
@@ -805,7 +814,15 @@ function moveBisonOn(state: GameState, player: Player): void {
     }
   } else {
     state.bison = next;
+    logTaurosWalk(state, player, from, next);
   }
+}
+
+/** Logs Tauros walking from one park-row slot to another, which the devices animate. */
+function logTaurosWalk(state: GameState, player: Player, from: number, to: number): void {
+  if (from === to) return;
+  const park = state.parkRow[to];
+  log(state, player.index, `sent Tauros on to ${park ? park.name : 'the next park'}`, { event: 'tauros-walk', walk: { from, to } });
 }
 
 function resolveBison(state: GameState, give?: Resource): void {
@@ -818,7 +835,7 @@ function resolveBison(state: GameState, give?: Resource): void {
     spend(player, give);
     const gained: string[] = [];
     gainResources(player, { wild: 1 }, gained);
-    log(state, player.index, `traded 1 ${label(give)} to Tauros for ${gained.join(', ')}`, { delta: packDelta(before, player) });
+    log(state, player.index, `traded 1 ${label(give)} to Tauros for ${gained.join(', ')}`, { delta: packDelta(before, player), event: 'tauros' });
   }
   moveBisonOn(state, player);
 

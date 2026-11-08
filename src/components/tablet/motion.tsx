@@ -1,15 +1,19 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { GameState, ResourceBag } from '@/game/types';
+import type { GameState, Resource, ResourceBag } from '@/game/types';
 import { RESOURCES } from '@/game/types';
+import { walkSince, type TaurosWalk } from '../TaurosWalk';
 import type { StopPlace } from './trailLayout';
 
 /*
  * The board in motion: a hiker who moves walks along the trail from stop to
- * stop instead of blinking across it, and the two things that happen on the
- * way — a campfire spent to share a stop, a flask emptied — get a moment of
- * their own over the stop where they happened. Everything here is read off
+ * stop instead of blinking across it, and the things that happen on the way —
+ * a campfire spent to share a stop, a flask emptied, Tauros trading a
+ * wildcard — get a moment of their own over the stop where they happened.
+ * When Tauros then walks on to its next park, that walk is handed to whatever
+ * shows the parks (the drawer, or a strip of cards that rises for it).
+ * Everything here is read off
  * the change from one view of the game to the next, so the computers' moves
  * and the tablet's own taps look the same. Nothing moves under
  * prefers-reduced-motion.
@@ -30,12 +34,17 @@ export interface Travel {
 
 export interface Fx {
   key: string;
-  kind: 'fire' | 'flask';
+  kind: 'fire' | 'flask' | 'tauros';
   at: number;
-  /** What a flask turned the water into. */
+  /** What a flask turned the water into, or what Tauros handed over. */
   gain?: ResourceBag;
+  /** What the player handed Tauros for it. */
+  gave?: Resource;
   delay: number;
 }
+
+/** How long each effect plays once it starts; the stylesheet's animations match. */
+export const FX_MS: Record<Fx['kind'], number> = { fire: 1900, flask: 1900, tauros: 2600 };
 
 const STEP_MS: Record<Gait, number> = { walk: 420, hop: 380, skip: 360, roll: 320 };
 const MAX_TRIP_MS = 3200;
@@ -62,11 +71,21 @@ function stillPreferred(): boolean {
  * trips to walk and the effects to play. A new season, a take-back (hikers
  * moving backwards) and the first look all start quietly.
  */
-export function useBoardMotion(state: GameState): { travels: Travel[]; fx: Fx[]; arrived: (key: string) => void } {
+export interface BoardMotion {
+  travels: Travel[];
+  fx: Fx[];
+  arrived: (key: string) => void;
+  /** Tauros walking on to its next park, once the trip and the trade before it have played. */
+  walk: TaurosWalk | null;
+  walked: (key: string) => void;
+}
+
+export function useBoardMotion(state: GameState): BoardMotion {
   const before = useRef<{ season: number; positions: Map<string, number>; logId: number } | null>(null);
   const lastStop = useRef(new Map<number, number>());
   const [travels, setTravels] = useState<Travel[]>([]);
   const [fx, setFx] = useState<Fx[]>([]);
+  const [walk, setWalk] = useState<TaurosWalk | null>(null);
   const logId = state.log[state.log.length - 1]?.id ?? state.log.length;
   const key = `${state.season}|${logId}|${state.players.map((p) => p.hikers.map((h) => h.position).join('.')).join('|')}`;
 
@@ -92,26 +111,48 @@ export function useBoardMotion(state: GameState): { travels: Travel[]; fx: Fx[];
 
     const effects: Fx[] = [];
     for (const entry of state.log) {
-      if ((entry.id ?? 0) <= was.logId || !entry.event) continue;
+      if ((entry.id ?? 0) <= was.logId || !entry.event || entry.event === 'tauros-walk') continue;
       const trip = trips.find((t) => t.owner === entry.player);
-      const at = trip?.to ?? lastStop.current.get(entry.player);
+      // Tauros trades at the Trail End too, after the trip there was walked in an earlier poll.
+      const furthest = entry.event === 'tauros' ? Math.max(...(state.players[entry.player]?.hikers.map((h) => h.position) ?? [])) : undefined;
+      const at = trip?.to ?? lastStop.current.get(entry.player) ?? (Number.isFinite(furthest) ? furthest : undefined);
       if (at === undefined) continue;
       const delay = (trip?.ms ?? 0) + (entry.event === 'flask' && effects.some((e) => e.at === at) ? 500 : 0);
       const gain: ResourceBag = {};
       for (const r of RESOURCES) if ((entry.delta?.[r] ?? 0) > 0) gain[r] = entry.delta![r];
-      effects.push({ key: `${entry.id}`, kind: entry.event === 'campfire' ? 'fire' : 'flask', at, gain, delay });
+      if (entry.event === 'tauros') {
+        const gave = RESOURCES.find((r) => (entry.delta?.[r] ?? 0) < 0);
+        effects.push({ key: `${entry.id}`, kind: 'tauros', at, gain: { wild: gain.wild ?? 1 }, gave, delay });
+      } else {
+        effects.push({ key: `${entry.id}`, kind: entry.event === 'campfire' ? 'fire' : 'flask', at, gain, delay });
+      }
+    }
+
+    // Tauros walks on once its trade has played, or once the hiker that sent it on its way has arrived.
+    const walked = walkSince(state.log, was.logId);
+    if (walked) {
+      const trade = effects.find((e) => e.kind === 'tauros' && e.at !== undefined);
+      const trip = trips.find((t) => t.owner === walked.player);
+      const delay = trade ? trade.delay + FX_MS.tauros - 300 : trip ? trip.ms + 300 : 250;
+      setWalk({ key: `${walked.id}`, from: walked.from, to: walked.to, delay });
     }
 
     if (trips.length > 0) setTravels((now) => [...now.filter((t) => !trips.some((n) => n.hikerId === t.hikerId)), ...trips]);
     if (effects.length > 0) {
       setFx((now) => [...now, ...effects]);
-      const longest = Math.max(...effects.map((e) => e.delay)) + 2200;
+      const longest = Math.max(...effects.map((e) => e.delay + FX_MS[e.kind])) + 300;
       window.setTimeout(() => setFx((now) => now.filter((e) => !effects.includes(e))), longest);
     }
     // Keyed on what moved: every poll hands over a new state object.
   }, [key]);
 
-  return { travels, fx, arrived: (done) => setTravels((now) => now.filter((t) => t.key !== done)) };
+  return {
+    travels,
+    fx,
+    arrived: (done) => setTravels((now) => now.filter((t) => t.key !== done)),
+    walk,
+    walked: (done) => setWalk((now) => (now?.key === done ? null : now)),
+  };
 }
 
 /** Where a pawn's feet are on a stop: the hikers there stand on its top edge, 22px into the disc. */

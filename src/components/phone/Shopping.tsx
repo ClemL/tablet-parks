@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   affordableGear,
   canBuyTopGear,
@@ -22,6 +23,7 @@ import { Token } from '../Token';
 import { costCheck } from '../shopping';
 import { PriceSticker, PriceTag } from '../PriceTag';
 import { GearIcon, useGearName } from '../gearTheme';
+import { TaurosWalker, useTaurosWalk } from '../TaurosWalk';
 
 /** The park decision this phone's player stands at, if any. */
 export type Shopping = 'trail-end' | 'park-or-gear' | null;
@@ -61,6 +63,9 @@ export function ParksPanel({
   const claimable = new Set(claimableParks(state, seat).map((p) => p.id));
   const reservable = new Set(reservableParks(state).map((p) => p.id));
   const bison = bisonPark(state)?.id;
+  // Tauros walks across the cards when it moves on; after a trade, once the toast has shown it handing over.
+  const offers = useRef<HTMLDivElement>(null);
+  const tauros = useTaurosWalk(state.log, 1400);
   const act = (option: Option, extra: { parkId?: string } = {}) => shopping && onChoose({ type: shopping, option, ...extra } as GameAction);
   // The chain-buy house rule: after a visit, only another visit or stopping is open.
   const chain = shopping === 'trail-end' && state.pending?.chain === true;
@@ -82,7 +87,8 @@ export function ParksPanel({
         </Note>
       )}
       <ShoppingBar player={player} shopping={shopping} busy={busy} passLabel={chain ? 'Done' : 'Pass'} onPass={() => act('skip')} />
-      <div className="offers">
+      <div className="offers" ref={offers}>
+        {tauros.walk ? <TaurosWalker key={tauros.walk.key} walk={tauros.walk} within={offers} onDone={tauros.walked} /> : null}
         {state.parkRow.map((park) => (
           <Offer
             key={park.id}
