@@ -1,6 +1,7 @@
 import { campsiteDef, gearCost, siteDef } from '@/game/engine';
 import { TOKEN_LIMIT } from '@/game/data/sites';
 import type { GameState } from '@/game/types';
+import { useGearName } from './gearTheme';
 
 /**
  * The rules on a phone: how a turn goes, then everything on this season's
@@ -9,6 +10,7 @@ import type { GameState } from '@/game/types';
  * clear.
  */
 export function RulesList({ state }: { state: GameState }) {
+  const nameOf = useGearName();
   const seen = new Set<string>();
   const sites = state.trail.filter((kind) => !seen.has(kind) && seen.add(kind));
   return (
@@ -62,7 +64,7 @@ export function RulesList({ state }: { state: GameState }) {
           {state.gearRow.map((card) => (
             <div key={card.id}>
               <dt>
-                {card.name} · {gearCost(state, card)} sun
+                {nameOf(card)} · {gearCost(state, card)} sun
               </dt>
               <dd>{card.text}</dd>
             </div>

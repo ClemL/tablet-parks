@@ -22,6 +22,7 @@ import { parkPlace } from '../ParkCard';
 import { costCheck } from '../shopping';
 import { useLongPress } from '@/client/useLongPress';
 import type { InfoSubject } from './InfoSheet';
+import { GearIcon, useGearName } from '../gearTheme';
 
 type ShopKind = 'trail-end' | 'park-or-gear';
 type Option = Extract<GameAction, { type: 'trail-end' }>['option'];
@@ -48,6 +49,7 @@ export function Shop({
   onInfo: (subject: InfoSubject) => void;
 }) {
   const hold = useLongPress();
+  const nameOf = useGearName();
   const player = state.players[shopper];
   const claimable = new Set(claimableParks(state, shopper).map((p) => p.id));
   const reservable = new Set(reservableParks(state).map((p) => p.id));
@@ -130,18 +132,16 @@ export function Shop({
               const short = (player.resources.sun ?? 0) < price;
               return (
                 <article key={card.id} className={`shop-gear${short ? ' shop-gear--short' : ''}`}>
-                  <span className="shop-gear__icon" aria-hidden="true">
-                    {card.icon}
-                  </span>
+                  <GearIcon card={card} className="shop-gear__icon" />
                   <div className="shop-gear__text pressable" {...hold(() => onInfo({ kind: 'gear', id: card.id }))}>
-                    <h3>{card.name}</h3>
+                    <h3>{nameOf(card)}</h3>
                     <p>{card.text}</p>
                   </div>
                   <button
                     type="button"
                     className="shop-btn shop-btn--go shop-gear__buy"
                     disabled={!buyable.has(card.id) || busy}
-                    aria-label={`Buy ${card.name} for ${price} sun`}
+                    aria-label={`Buy ${nameOf(card)} for ${price} sun`}
                     onClick={() => act('buy-gear', { gearId: card.id })}
                   >
                     {price}

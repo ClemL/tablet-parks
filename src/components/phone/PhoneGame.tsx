@@ -11,15 +11,17 @@ import { Pawn, seasonName, seatStyle } from '../bits';
 import { Icon } from '../Icon';
 import { Scoreboard } from '../Scoreboard';
 import { SeatSheet } from './SeatSheet';
-import { TurnPreview } from './TurnPreview';
+import { HikePanel } from './HikePanel';
+import { FlaskReminder, toggleFlask } from './Flasks';
+import { GainToasts } from './GainToasts';
 import { Roster } from './Roster';
 import { GearPanel, ParksPanel, type Shopping } from './Shopping';
 import { MenuPanel } from './MenuPanel';
 import { ParkFactSheet } from '../ParkFactSheet';
 
 const PANELS = [
-  { id: 'sheet', label: 'Sheet' },
-  { id: 'moves', label: 'Moves' },
+  { id: 'sheet', label: 'Status' },
+  { id: 'moves', label: 'Hike' },
   { id: 'parks', label: 'Parks' },
   { id: 'gear', label: 'REI' },
   { id: 'menu', label: 'Menu' },
@@ -29,8 +31,8 @@ const panelIndex = (id: (typeof PANELS)[number]['id']) => PANELS.findIndex((p) =
 
 /**
  * A player's phone once the game is dealt: held sideways, with five panels a
- * swipe apart — their sheet, where their hikers can go, the parks, the gear
- * shop (REI), and the menu. The phone still
+ * swipe apart — their status (the sheet), the hike (where their hikers can
+ * go), the parks, the gear shop (REI), and the menu. The phone still
  * walks no hikers; it answers its own player's park decisions — visit,
  * reserve, buy, or pass — and jumps to the parks when one comes up.
  */
@@ -94,6 +96,18 @@ export function PhoneGame({
 
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // Arming a flask is this phone's own standing choice, so it may happen on anyone's turn.
+  const armFlask = async (id: string) => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      onView(await api.flasks(token, toggleFlask(state.players[view.seat].flaskOrder ?? [], id)));
+    } catch (err) {
+      setProblem(err instanceof ApiError ? err.message : 'That did not go through');
+    } finally {
+      setBusy(false);
+    }
+  };
   const choose = async (action: GameAction) => {
     setBusy(true);
     setProblem(null);
@@ -223,22 +237,12 @@ export function PhoneGame({
                 objectivesHidden={hidden}
                 onToggleObjectives={toggle}
                 onPark={(park) => setFact({ park, visited: false })}
+                flasks={tab === view.seat ? { busy, onToggle: (id) => void armFlask(id) } : undefined}
               />
             </div>
           </section>
           <section id="panel-moves" role="tabpanel" aria-labelledby="tab-moves" className="panel panel--moves">
-            <TurnPreview
-              state={state}
-              seat={view.seat}
-              hikers={me.hikers}
-              fallback={
-                <p className="preview__idle">
-                  {state.phase === 'playing'
-                    ? 'On your turn, this lists where each of your hikers can go and what each stop would hand you.'
-                    : 'Nobody is walking right now.'}
-                </p>
-              }
-            />
+            <HikePanel view={view} busy={busy} onToggleFlask={(id) => void armFlask(id)} />
           </section>
           <section id="panel-parks" role="tabpanel" aria-labelledby="tab-parks" className="panel">
             <ParksPanel
@@ -268,6 +272,15 @@ export function PhoneGame({
         </div>
       </div>
       {fact ? <ParkFactSheet park={fact.park} eyebrow={fact.visited ? 'You visited' : 'About this park'} onClose={() => setFact(null)} /> : null}
+      <FlaskReminder
+        table={view.id}
+        seat={view.seat}
+        player={state.players[view.seat]}
+        season={state.season}
+        seasonOver={state.phase !== 'playing'}
+        onShow={() => go(panelIndex('moves'))}
+      />
+      <GainToasts log={state.log} seats={view.seats} />
     </main>
   );
 }
@@ -304,7 +317,7 @@ function RotatePrompt() {
         <Icon name="phone" size={56} />
       </span>
       <h2>Turn your phone sideways</h2>
-      <p>Once the game is dealt, it is played in landscape: your sheet, your moves, the parks, REI and the menu sit side by side, a swipe apart.</p>
+      <p>Once the game is dealt, it is played in landscape: your status, your hike, the parks, REI and the menu sit side by side, a swipe apart.</p>
       {canTurn ? (
         <button type="button" className="btn btn--primary" onClick={() => void goSideways()}>
           Full screen, sideways

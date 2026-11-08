@@ -24,6 +24,7 @@ import {
   revealsNothing,
   seatTags,
   setAvatar,
+  setFlasks,
   hydrateRoom,
   seatView,
   startGame,
@@ -93,7 +94,7 @@ describe('settings', () => {
   it('keeps the deck-gear house rule off unless the tablet turns it on', () => {
     expect(normalizeSettings(undefined).houseRules.deckGear).toBe(false);
     expect(normalizeSettings({ houseRules: { deckGear: 'yes' } as never }).houseRules.deckGear).toBe(false);
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true } }), DB, T0, 3);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false } }), DB, T0, 3);
     startGame(room, T0);
     expect(room.state!.houseRules.deckGear).toBe(true);
   });
@@ -586,6 +587,81 @@ describe('taking a tap back', () => {
     expect(() => undoLast(room, T0 + 20)).toThrow(/Too late/);
   });
 
+  it('lets a seat arm its own flasks at any time, and checks they are its own', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    expect(() => setFlasks(room, 0, [])).toThrow(/not running/);
+    startGame(room, T0);
+    const mine = room.state!.players[0].bottles.map((b) => b.id);
+    const theirs = room.state!.players[1].bottles.map((b) => b.id);
+    setFlasks(room, 0, mine);
+    expect(room.state!.players[0].flaskOrder).toEqual(mine);
+    expect(() => setFlasks(room, 0, theirs)).toThrow(/not your flasks/);
+    expect(() => setFlasks(room, 0, [...mine, ...mine])).toThrow(RoomError);
+    expect(() => setFlasks(room, 0, 'all')).toThrow(RoomError);
+    setFlasks(room, 0, []);
+    expect(room.state!.players[0].flaskOrder).toEqual([]);
+  });
+
+  it('keeps a phone’s armed flasks through a take-back on the tablet', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const seat = actorOf(room.state!)!;
+    const move = legalMoves(room.state!)[0];
+    playFor(room, seat, { type: 'move', ...move }, T0);
+    const other = 1 - seat;
+    const ids = room.state!.players[other].bottles.map((b) => b.id);
+    setFlasks(room, other, ids);
+    if (room.undo) {
+      undoLast(room, T0 + 100);
+      expect(room.state!.players[other].flaskOrder).toEqual(ids);
+    }
+  });
+
+  it('never shows another person’s armed flasks to a phone the table keeps out', () => {
+    const room = lobby(2);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    setFlasks(room, 1, room.state!.players[1].bottles.map((b) => b.id));
+    room.state!.players[1].flasksUsed = 3;
+    const view = seatView(room, 0, T0);
+    expect(view.game!.players[1].flaskOrder).toEqual([]);
+    expect(view.game!.players[1].flasksUsed).toBe(0);
+    expect(JSON.stringify(view.game!.players[1])).not.toContain(room.state!.players[1].bottles[0].id);
+    // Srini's own phone sees them.
+    expect(seatView(room, 1, T0).game!.players[1].flaskOrder).toHaveLength(1);
+  });
+
+  it('turns the starting-reserve rule on only when asked, and keeps each dealt park secret', () => {
+    expect(normalizeSettings(undefined).houseRules.startReserve).toBe(false);
+    expect(normalizeSettings({ houseRules: { startReserve: 'yes' } as never }).houseRules.startReserve).toBe(false);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { ...normalizeSettings(undefined).houseRules, startReserve: true } }), DB, T0, 5);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const [kris, srini] = room.state!.players.map((p) => p.reserved[0]);
+    expect(kris).toBeDefined();
+    const krisView = seatView(room, 0, T0);
+    expect(krisView.game!.players[0].reserved.map((p) => p.id)).toEqual([kris.id]);
+    expect(JSON.stringify(krisView)).not.toContain(srini.id);
+    expect(krisView.game!.redacted.reservedCount).toEqual([1, 1]);
+    const tablet = tableView(room, T0, []);
+    expect(JSON.stringify(tablet)).not.toContain(room.state!.players[1 - actorOf(room.state!)!].reserved[0].id);
+  });
+
+  it('dresses REI as Pokémon gear unless the table turns it off, even mid-game', () => {
+    expect(normalizeSettings(undefined).pokemonGear).toBe(true);
+    expect(normalizeSettings({ pokemonGear: false }).pokemonGear).toBe(false);
+    const room = lobby(2);
+    startGame(room, T0);
+    changeSettings(room, { pokemonGear: false, seats: 5 });
+    expect(room.settings.pokemonGear).toBe(false);
+    expect(room.settings.seats).toBe(2);
+  });
+
   it('counts a gear row dealt afresh as a revealed card, even with the deck the same size', () => {
     const room = lobby(2);
     startGame(room, T0);
@@ -658,7 +734,7 @@ describe('a phone at a park decision', () => {
   });
 
   it('buys the top of the gear deck from the phone when the house rule is on', () => {
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true } }), DB, T0, 42);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false } }), DB, T0, 42);
     joinSeat(room, 0, 'a', 'Kris');
     joinSeat(room, 1, 'b', 'Srini');
     startGame(room, T0);

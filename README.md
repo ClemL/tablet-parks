@@ -11,14 +11,20 @@ seat nobody scans into is played by the computer.
   and gear are bought on the buyer's own phone or in that drawer.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,
   gear, parks visited and reserved — and the two secret objectives, with a **Hide** button. Once
-  the game is dealt the phone is held sideways, with five panels a swipe apart: the sheet, the
-  moves, the parks, the gear shop (**REI**) and the menu (☰). The parks and REI show your pack
+  the game is dealt the phone is held sideways, with five panels a swipe apart: **Status** (the
+  sheet), **Hike**, the parks, the gear shop (**REI**) and the menu (☰). The parks and REI show your pack
   above the cards, grey out gear you are short of sun for, and their notes close with a ✕. When
   one of your hikers stops at the Trail End or a Ranger Station the parks come up by themselves,
   and you can visit, reserve, buy or pass from the phone. Visiting a park — and tapping one on a
   sheet — tells you where it is, when it became a national park, and one fact about it.
-  On your turn it also lists where your hikers can go and what each stop would hand you, and at a
-  decision what each answer would do; each objective shows how far along it is. A phone can also
+  On your turn Hike lists where your hikers can go and what each stop would hand you — with your
+  campfire lit, the taken stops too, with who holds them — and at a decision what each answer
+  would do; it also shows the Nightfall campsites still open, and your tokens, flasks, camera and
+  campfire down its right side. Each objective shows how far along it is. **Flasks start
+  unarmed:** tap one (on Status or Hike) to arm it, and armed flasks fill themselves, in the order
+  they were armed, from the water a stop pays you at the end of that turn; a player who goes the
+  whole first season without emptying one gets a nudge. Whenever anyone collects resources, a
+  small toast in the corner of every phone shows their Pokémon and what came in. A phone can also
   open the computer players' sheets (or every sheet, if the table allows it). The menu holds your
   Pokémon, the text size and scale for that phone, the rules of the board in play, and **Leave
   seat**.
@@ -26,6 +32,13 @@ seat nobody scans into is played by the computer.
   table, drawn in `src/art/pokemon.tsx` — with the seat's letters on a tag. Whoever joins gets one
   at random and can step through the unused ones from their phone; a seat's two hikers are that
   Pokémon, ♂ and ♀. A blank name takes the Pokémon's name.
+- **REI sells Pokémon gear** unless the table turns it off (at setup or in the table menu):
+  Squirtle’s Water Filter, Snorlax’s Sleeping Bag and the rest, each with its Pokémon beside it,
+  and Ditto for anything without an obvious owner. Looks only; the rules are the same.
+- **The board moves.** A hiker walks from stop to stop along the trail to where it is going — on a
+  long trip it may hop, skip or roll instead — a campfire spent to share a stop flares on that
+  stop, and an emptied flask tips out and shows what it made. Tent sites carry a drawn tent. None
+  of it plays under *reduce motion*.
 - **Every game gets a fresh Upstash Redis database**, provisioned on the spot through Upstash's
   `start-redis` endpoint (no account, no API key), and used until the game is over or abandoned.
 
@@ -37,7 +50,8 @@ seat nobody scans into is played by the computer.
 1. **Set the table.** The tablet opens on one screen that lasts until the deal: a band of the
    trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
    dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
-   three house rules, how fast the computers move, and whose sheets a phone may open.
+   four house rules, Pokémon gear at REI, how fast the computers move, and whose sheets a phone
+   may open.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
    code** appears on every seat's card, so everyone can scan at once. The settings stay where they
    are, still editable, and **Start** takes Open's place. Names can be typed on the tablet or on
@@ -73,10 +87,16 @@ apply unchanged — the engine in `src/game/` is that repository's, with two cor
 porting: a view no longer carries the season cards and advanced sites still to come, and the log no
 longer names a park reserved face down from the deck.
 
-Three optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
+Four optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
 unseen top park; on by default), **Ranger Station first** (spring's advanced site is always the
-Ranger Station) and **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
-card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it).
+Ranger Station), **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
+card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it)
+and **A park in hand** (everyone starts holding one park, dealt face down into their
+reservations; it does not take the first player token).
+
+Two rules differ from parks-game: the **Outfitter Camp** lets the camper choose which card of the
+fresh gear row to take, as its text says, and a player's **armed flasks** fill themselves at the
+end of a turn (a flask can still be emptied by hand on the tablet).
 
 What differs is who sees what, which is the point of the table:
 

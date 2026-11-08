@@ -10,6 +10,7 @@ import {
   RoomError,
   abandonGame,
   chooseAvatar,
+  chooseFlasks,
   choosePark,
   controlGame,
   createGame,
@@ -145,6 +146,20 @@ describe.skipIf(!redisAvailable)('a game round a tablet, each in its own databas
     await rejects(chooseAvatar(host, 'Mew'), 401);
     await rejects(chooseAvatar(view.tickets[0], 'Mew'), 401);
     expect((full(await readGame(host)) as TableView).seats[0].avatar).toBe('Ditto');
+  });
+
+  it('lets only a seat\'s own phone arm its flasks', async () => {
+    const { host, view } = await createGame({ seats: 2 });
+    const kris = await joinGame(view.tickets[0], 'Kris');
+    await joinGame(view.tickets[1], 'Srini');
+    const started = await controlGame(host, { type: 'start' });
+    void started;
+    const mine = full(await readGame(kris.seat)).game!.players[0].bottles.map((b) => b.id);
+    const armed = await chooseFlasks(kris.seat, mine);
+    expect(armed.game!.players[0].flaskOrder).toEqual(mine);
+    await rejects(chooseFlasks(host, mine), 401);
+    await rejects(chooseFlasks(view.tickets[0], mine), 401);
+    await rejects(chooseFlasks(kris.seat, ['p1b0']), 400);
   });
 
   it('lets a phone answer its own park decision, and only that', async () => {

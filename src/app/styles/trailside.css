@@ -416,16 +416,19 @@
     0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
+/* The tent marker: a drawn tent on a night-sky badge, big enough to spot from across the table. */
 .site__tent {
-  right: -4px;
-  width: 32px;
-  height: 32px;
+  right: -10px;
+  top: -10px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #2b3a55;
-  color: #dce6f5;
-  box-shadow: 0 0 0 3px var(--bg);
+  background: radial-gradient(circle at 50% 30%, #3b4f78, #1f2a44 75%);
+  box-shadow:
+    0 0 0 3px var(--bg),
+    0 3px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Hikers stand on the top of their stop, rows stacking upward when it is crowded. */
@@ -820,4 +823,207 @@
 
 .shop-gear--deck .shop-gear__icon {
   color: var(--gold);
+}
+
+/* ------------------------------------------------------------ on the move */
+
+/* A walking hiker's pawn waits, hidden, at the end of the trip; its arrival pop plays when it shows. */
+.hiker--away {
+  visibility: hidden;
+  animation: none;
+}
+
+.trail__motion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Anchored by its feet, which the trip's keyframes carry from stop to stop. */
+.traveller {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  will-change: transform;
+}
+
+.traveller .pawn {
+  box-shadow:
+    0 0 0 2px var(--card),
+    0 8px 14px rgba(0, 0, 0, 0.5);
+}
+
+/* The moments over a stop: each waits for its hiker to arrive (--fx-delay), plays, and goes. */
+.fx {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  animation: fx-life 1.9s ease-out var(--fx-delay, 0ms) both;
+}
+
+@keyframes fx-life {
+  0% {
+    opacity: 0;
+  }
+  10%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.fx__flame {
+  color: var(--fire);
+  filter: drop-shadow(0 0 12px rgba(243, 165, 111, 0.9));
+  transform-origin: 50% 90%;
+  animation: flame 1.9s ease-out var(--fx-delay, 0ms) both;
+}
+
+@keyframes flame {
+  0% {
+    transform: scale(0.2);
+  }
+  25% {
+    transform: scale(1.25) rotate(-4deg);
+  }
+  40% {
+    transform: scale(1) rotate(3deg);
+  }
+  55% {
+    transform: scale(1.12) rotate(-2deg);
+  }
+  70% {
+    transform: scale(1) rotate(2deg);
+  }
+  100% {
+    transform: scale(0.6) translateY(-10px);
+  }
+}
+
+.fx__ember {
+  position: absolute;
+  bottom: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd27a;
+  box-shadow: 0 0 6px #f3a56f;
+  animation: ember 1.6s ease-out calc(var(--fx-delay, 0ms) + 200ms) both;
+}
+
+.fx__ember:nth-of-type(1) {
+  left: 30%;
+}
+
+.fx__ember:nth-of-type(2) {
+  left: 50%;
+  animation-delay: calc(var(--fx-delay, 0ms) + 380ms);
+}
+
+.fx__ember:nth-of-type(3) {
+  left: 68%;
+  animation-delay: calc(var(--fx-delay, 0ms) + 520ms);
+}
+
+@keyframes ember {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(6px, -70px);
+  }
+}
+
+/* A flask tips out its water, and what it made pops up over the stop. */
+.fx__flask {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--token-water);
+  color: #0d2f4d;
+  box-shadow: 0 0 0 3px var(--card), 0 6px 14px rgba(0, 0, 0, 0.5);
+  transform-origin: 50% 70%;
+  animation: flask-tip 1.9s ease-in-out var(--fx-delay, 0ms) both;
+}
+
+@keyframes flask-tip {
+  0% {
+    transform: scale(0.3);
+  }
+  20% {
+    transform: scale(1);
+  }
+  45%,
+  65% {
+    transform: rotate(-55deg);
+  }
+  85%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.fx__drop {
+  position: absolute;
+  left: 40%;
+  top: 60%;
+  width: 8px;
+  height: 11px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: var(--token-water);
+  animation: drop 1s ease-in calc(var(--fx-delay, 0ms) + 700ms) both;
+}
+
+.fx__drop + .fx__drop {
+  left: 28%;
+  animation-delay: calc(var(--fx-delay, 0ms) + 850ms);
+}
+
+@keyframes drop {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-6px, 40px);
+  }
+}
+
+.fx__gain {
+  position: absolute;
+  bottom: 100%;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  animation: gain-pop 1.1s cubic-bezier(0.2, 0.8, 0.2, 1.3) calc(var(--fx-delay, 0ms) + 900ms) both;
+}
+
+@keyframes gain-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1);
+  }
 }

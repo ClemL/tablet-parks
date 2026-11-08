@@ -917,3 +917,34 @@
     display: none;
   }
 }
+
+/* Who already stands on a stop, and the flame when sharing it spends the campfire. */
+.reach__name {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reach__who {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.reach__fire {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fire) 22%, transparent);
+  color: var(--fire);
+}
+
+.reach--fire {
+  border-color: color-mix(in srgb, var(--fire) 45%, transparent);
+}
+
+.reach__note--fire {
+  color: var(--fire);
+}

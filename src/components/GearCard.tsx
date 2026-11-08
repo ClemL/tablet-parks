@@ -1,5 +1,6 @@
 import type { GearCard as Gear } from '@/game/types';
 import { Token } from './Token';
+import { GearIcon, useGearName } from './gearTheme';
 
 export function GearCard({
   card,
@@ -14,13 +15,12 @@ export function GearCard({
   children?: React.ReactNode;
 }) {
   const shown = price ?? card.cost;
+  const nameOf = useGearName();
   return (
-    <article className={`gear${dim ? ' gear--dim' : ''}`} aria-label={`${card.name}, ${shown} sun`}>
+    <article className={`gear${dim ? ' gear--dim' : ''}`} aria-label={`${nameOf(card)}, ${shown} sun`}>
       <div className="gear__head">
-        <span className="gear__icon" aria-hidden="true">
-          {card.icon}
-        </span>
-        <h4 className="gear__name">{card.name}</h4>
+        <GearIcon card={card} className="gear__icon" />
+        <h4 className="gear__name">{nameOf(card)}</h4>
       </div>
       <span className="gear__cost" aria-hidden="true">
         {shown}

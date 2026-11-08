@@ -47,6 +47,8 @@ export interface RoomSettings {
   houseRules: HouseRules;
   pace: Pace;
   peek: Peek;
+  /** REI's goods dressed as Pokémon gear (Squirtle’s Water Filter). Looks only; on unless turned off. */
+  pokemonGear: boolean;
 }
 
 /** Where the game's database came from, for the tablet to say. Never the credentials. */
@@ -110,6 +112,7 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   houseRules: { ...DEFAULT_HOUSE_RULES },
   pace: 'normal',
   peek: 'cpu',
+  pokemonGear: true,
 };
 
 /** Seat colours by index; the stylesheet defines them so a theme can restyle the table. */
@@ -135,9 +138,11 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
       blindReserve: input?.houseRules?.blindReserve !== false,
       rangerFirst: input?.houseRules?.rangerFirst === true,
       deckGear: input?.houseRules?.deckGear === true,
+      startReserve: input?.houseRules?.startReserve === true,
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',
+    pokemonGear: input?.pokemonGear !== false,
   };
 }
 
@@ -182,8 +187,8 @@ export function cleanName(raw: unknown): string {
 export function changeSettings(room: Room, input: Partial<RoomSettings>): void {
   const next = normalizeSettings({ ...room.settings, ...input });
   if (room.phase !== 'lobby') {
-    // Once dealt, only how the table runs may change, never what was dealt.
-    room.settings = { ...room.settings, pace: next.pace, peek: next.peek };
+    // Once dealt, only how the table runs and looks may change, never what was dealt.
+    room.settings = { ...room.settings, pace: next.pace, peek: next.peek, pokemonGear: next.pokemonGear };
     return;
   }
   if (next.seats !== room.seats.length) {
@@ -242,6 +247,27 @@ export function joinSeat(room: Room, seat: number, device: string, name: unknown
     delete player.personality;
     player.name = seatName(room, seat);
   }
+}
+
+/**
+ * A phone arming its seat's flasks, in the order they should fill. Any time,
+ * not only on the seat's turn: it is a standing choice, not a move, and it
+ * changes nothing on the board until the seat next collects water. The
+ * take-back snapshot gets the same order, so undoing a tablet tap never
+ * quietly disarms a phone.
+ */
+export function setFlasks(room: Room, seat: number, order: unknown): void {
+  const state = room.state;
+  if (room.phase !== 'playing' || !state) throw new RoomError('The game is not running', 409);
+  const player = state.players[seat];
+  if (!player) throw new RoomError('No such seat', 404);
+  if (!Array.isArray(order) || order.some((id) => typeof id !== 'string')) throw new RoomError('Not a list of flasks', 400);
+  const ids = order as string[];
+  if (new Set(ids).size !== ids.length || ids.some((id) => !player.bottles.some((b) => b.id === id))) {
+    throw new RoomError('Those are not your flasks', 400);
+  }
+  player.flaskOrder = [...ids];
+  if (room.undo) room.undo.state.players[seat].flaskOrder = [...ids];
 }
 
 /** A phone giving its seat up. The seat keeps playing — from the tablet — until the tablet says otherwise. */

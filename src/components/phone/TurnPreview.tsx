@@ -4,9 +4,12 @@ import { claimableParks, legalMoves, pendingLabel, previewAction, previewMove, s
 import { TOKEN_LIMIT } from '@/game/data/sites';
 import type { ReactNode } from 'react';
 import type { DecisionKind, GameState, Hiker } from '@/game/types';
+import type { PublicSeat } from '@/room/room';
+import { Pawn, hikerName } from '../bits';
 import { Icon } from '../Icon';
 import { TokenBag } from '../Token';
 import { Outcome as ChoiceOutcome, decisionChoices, decisionText } from '../decisions';
+import { useGearName } from '../gearTheme';
 
 /** What a stop asks of the player next, for sites whose worth is a choice rather than a payout. */
 const DECISION: Partial<Record<DecisionKind, string>> = {
@@ -27,23 +30,27 @@ export function TurnPreview({
   state,
   seat,
   hikers: names,
+  seats,
   fallback = null,
 }: {
   state: GameState;
   seat: number;
   /** What this seat calls its two hikers, in the order of the player's hikers. */
   hikers: readonly string[];
+  /** Everyone at the table, to show who already stands where a campfire would share. */
+  seats: readonly PublicSeat[];
   /** Shown when there is nothing of this player's to preview. */
   fallback?: ReactNode;
 }) {
   const me = state.players[seat];
+  const gearName = useGearName();
   if (state.current !== seat || state.phase !== 'playing') return <>{fallback}</>;
 
   if (state.pending) {
     if (state.pending.player !== seat) return <>{fallback}</>;
     const shopping = state.pending.kind === 'trail-end' || state.pending.kind === 'park-or-gear';
     const parks = shopping ? claimableParks(state, seat) : [];
-    const choices = shopping ? null : decisionChoices(state);
+    const choices = shopping ? null : decisionChoices(state, gearName);
     return (
       <section className="preview" aria-labelledby="preview-title">
         <h2 id="preview-title" className="preview__title">
@@ -91,16 +98,38 @@ export function TurnPreview({
           hiker={hiker}
           name={movable.length > hikers.length ? movable.map(nameOf).join(' and ') : nameOf(hiker)}
           rear={i === 0 && hikers.length > 1}
+          seats={seats}
         />
       ))}
     </section>
   );
 }
 
-function HikerOptions({ state, seat, hiker, name, rear }: { state: GameState; seat: number; hiker: Hiker; name: string; rear: boolean }) {
-  const moves = legalMoves(state).filter((m) => m.hikerId === hiker.id);
-  const free = moves.filter((m) => !m.useCampfire);
-  const shared = moves.length - free.length;
+/**
+ * One hiker's reachable stops, nearest first. A stop someone already holds
+ * shows who is there; one that needs the campfire to share says so with a
+ * flame — listed only while the campfire is lit, since only then can the
+ * hiker go there.
+ */
+function HikerOptions({
+  state,
+  seat,
+  hiker,
+  name,
+  rear,
+  seats,
+}: {
+  state: GameState;
+  seat: number;
+  hiker: Hiker;
+  name: string;
+  rear: boolean;
+  seats: readonly PublicSeat[];
+}) {
+  const moves = legalMoves(state)
+    .filter((m) => m.hikerId === hiker.id)
+    .sort((a, b) => a.to - b.to);
+  const end = state.trail.length - 1;
   const from = siteDef(state.trail[hiker.position]).name;
   const parks = claimableParks(state, seat);
   return (
@@ -110,13 +139,34 @@ function HikerOptions({ state, seat, hiker, name, rear }: { state: GameState; se
         {rear ? <span className="muted"> (rear)</span> : null} at the {from}
       </h3>
       <ul className="preview__list">
-        {free.map((move) => {
+        {moves.map((move) => {
           const preview = previewMove(state, move);
           if (!preview) return null;
           const kind = state.trail[move.to];
+          // The Trail End holds everyone; anywhere else, whoever stands there is in the way.
+          const there =
+            move.to === end
+              ? []
+              : state.players.flatMap((p) => p.hikers.filter((h) => !h.finished && h.position === move.to && h.id !== hiker.id));
           return (
-            <li key={move.to} className="reach">
-              <span className="reach__name">{siteDef(kind).name}</span>
+            <li key={`${move.to}${move.useCampfire ? 'f' : ''}`} className={`reach${move.useCampfire ? ' reach--fire' : ''}`}>
+              <span className="reach__name">
+                {siteDef(kind).name}
+                {there.length > 0 ? (
+                  <span className="reach__who" aria-label={`Taken by ${there.map((h) => seats[h.owner]?.name ?? 'a hiker').join(', ')}`}>
+                    {there.map((h) =>
+                      seats[h.owner] ? (
+                        <Pawn key={h.id} seat={seats[h.owner]} size="xs" hiker={hikerName(seats[h.owner], state.players[h.owner].hikers, h.id)} />
+                      ) : null,
+                    )}
+                  </span>
+                ) : null}
+                {move.useCampfire ? (
+                  <span className="reach__fire" title="Spends your campfire to share">
+                    <Icon name="fire" size={15} />
+                  </span>
+                ) : null}
+              </span>
               <span className="reach__what">
                 {kind === 'trail-end' ? (
                   parks.length > 0 ? (
@@ -128,6 +178,7 @@ function HikerOptions({ state, seat, hiker, name, rear }: { state: GameState; se
                   <Outcome preview={preview} />
                 )}
               </span>
+              {move.useCampfire ? <span className="reach__note reach__note--fire">Spends your campfire to share the stop</span> : null}
               {preview.over > 0 ? (
                 <span className="reach__warn">
                   <Icon name="warn" size={14} />
@@ -140,12 +191,6 @@ function HikerOptions({ state, seat, hiker, name, rear }: { state: GameState; se
           );
         })}
       </ul>
-      {shared > 0 ? (
-        <p className="preview__note">
-          <Icon name="fire" size={15} />
-          {shared} more site{shared === 1 ? '' : 's'} if you spend your campfire to share.
-        </p>
-      ) : null}
     </div>
   );
 }

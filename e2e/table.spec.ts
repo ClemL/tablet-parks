@@ -25,7 +25,10 @@ async function device(browser: Browser, options: Parameters<Browser['newContext'
 
 const newTablet = (browser: Browser) => device(browser, { viewport: TABLET });
 
-async function openTable(page: Page, options: { seats?: number; brisk?: boolean; base?: boolean; deckGear?: boolean } = {}): Promise<void> {
+async function openTable(
+  page: Page,
+  options: { seats?: number; brisk?: boolean; base?: boolean; deckGear?: boolean; parkInHand?: boolean } = {},
+): Promise<void> {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Trailside Seasons' })).toBeVisible();
   if (options.seats) await setSeats(page, options.seats);
@@ -38,6 +41,7 @@ async function openTable(page: Page, options: { seats?: number; brisk?: boolean;
     }
   }
   if (options.deckGear) await page.getByRole('switch', { name: 'Gear from the deck' }).click();
+  if (options.parkInHand) await page.getByRole('switch', { name: 'A park in hand' }).click();
   await page.getByRole('button', { name: 'Open the table' }).click();
   await expect(page.getByRole('button', { name: 'Start the game' })).toBeVisible({ timeout: 30_000 });
 }
@@ -234,7 +238,7 @@ test.describe('round the tablet', () => {
     const lit = (await tablet.locator('.site--target .site__name').allInnerTexts()).map((name) => name.replace(/^\d+\s*/, ''));
     // The moves have their own panel, which comes up by itself when the turn does.
     await dismissRoster(kris);
-    await expect(kris.getByRole('tab', { name: /^Moves/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
+    await expect(kris.getByRole('tab', { name: /^Hike/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
     const listed = await kris.locator('#panel-moves .preview__group').first().locator('.reach__name').allInnerTexts();
     expect(listed.length).toBeGreaterThan(0);
     expect(listed).toEqual(lit);
@@ -361,8 +365,8 @@ test.describe('round the tablet', () => {
     await kris.setViewportSize(SIDEWAYS);
     await expect(prompt).toBeHidden();
     await dismissRoster(kris);
-    await kris.getByRole('tab', { name: 'Sheet' }).click();
-    await expect(kris.getByRole('tab', { name: 'Sheet' })).toHaveAttribute('aria-selected', 'true');
+    await kris.getByRole('tab', { name: 'Status' }).click();
+    await expect(kris.getByRole('tab', { name: 'Status' })).toHaveAttribute('aria-selected', 'true');
     // No running score in the header: the sheet carries the details. A score, not the
     // letters: a table code can spell "VP".
     await expect(kris.locator('.play__bar')).not.toContainText(/\d\s*VP\b/);
@@ -467,6 +471,90 @@ test.describe('round the tablet', () => {
     const b = (await tablet.getByRole('heading', { name: 'Who’s hiking?' }).boundingBox())!;
     const overlap = a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
     expect(overlap).toBe(false);
+  });
+
+  test('a flask is armed from the phone, numbered in order, and disarmed again', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+
+    // Every player starts with one flask, unarmed.
+    await kris.getByRole('tab', { name: 'Status' }).click();
+    const flask = kris.locator('#panel-sheet .flask').first();
+    await expect(flask).toHaveAttribute('aria-pressed', 'false');
+    await flask.click();
+    await expect(flask).toHaveAttribute('aria-pressed', 'true');
+    await expect(flask.locator('.flask__order')).toHaveText('1');
+    // Armed on the server, so a reload keeps it; the Hike panel shows the same flask, armed.
+    await kris.reload();
+    await kris.getByRole('tab', { name: /^Hike/ }).click();
+    const hike = kris.locator('#panel-moves');
+    await expect(hike.locator('.hike__flasks h3')).toContainText('1');
+    await expect(hike.locator('.flask').first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(hike.getByRole('list', { name: 'Your pack' }).locator('li')).toHaveCount(5);
+    await hike.locator('.flask').first().click();
+    await expect(hike.locator('.flask').first()).toHaveAttribute('aria-pressed', 'false');
+    await expect(hike.locator('.flask__order')).toHaveCount(0);
+  });
+
+  test('with a park in hand, each phone holds one park the others cannot see', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, parkInHand: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+    await kris.getByRole('tab', { name: 'Status' }).click();
+    const reserved = kris.locator('#panel-sheet .mat__block', { has: kris.getByRole('heading', { name: 'Reserved' }) });
+    await expect(reserved.locator('.mini-park')).toHaveCount(1);
+    const name = (await reserved.locator('.mini-park__name').innerText()).trim();
+    await expect(tablet.locator('body')).not.toContainText(name);
+  });
+
+  test('REI sells Pokémon gear, and the table can turn it back to plain', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+    await kris.getByRole('tab', { name: /^REI/ }).click();
+    const names = kris.locator('#panel-gear .gear-offer:not(.gear-offer--deck) h3');
+    await expect(names.first()).toContainText('’s ');
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
+
+    await tablet.getByRole('button', { name: 'Table menu' }).click();
+    await tablet.getByRole('radio', { name: 'Plain gear' }).click();
+    await expect(names.first()).not.toContainText('’s ', { timeout: 10_000 });
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(0);
+  });
+
+  test('a hiker walks to its stop on the tablet, and every phone hears what it collected', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, base: true });
+    const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await kris.setViewportSize(SIDEWAYS);
+    await dismissRoster(kris);
+
+    // Somebody moves — Kris from the tablet, or the computer — and the pawn travels there.
+    for (let i = 0; i < 40; i++) {
+      if (await tablet.locator('.traveller').count()) break;
+      if (!(await playOnce(tablet))) await tablet.waitForTimeout(250);
+    }
+    await expect(tablet.locator('.traveller').first()).toBeAttached();
+    // A stop that pays shows up on the phones as a toast with who collected it. Not every
+    // stop pays, so the table plays on until one has.
+    let toasted = false;
+    for (let i = 0; i < 60 && !toasted; i++) {
+      toasted = (await kris.locator('.gain-toast').count()) > 0;
+      if (!toasted && !(await playOnce(tablet))) await tablet.waitForTimeout(300);
+    }
+    expect(toasted).toBe(true);
+    await expect(kris.locator('.gain-toast').first().locator('.pawn')).toBeVisible();
   });
 
   test('a blank name becomes a Pokémon, and the deal shows everyone who is who', async ({ browser }) => {

@@ -18,6 +18,7 @@ import {
   playFor,
   renameSeat,
   setAvatar,
+  setFlasks,
   seatView,
   startGame,
   tableView,
@@ -275,6 +276,17 @@ export async function choosePark(token: string | null, action: GameAction): Prom
   const { room, now } = await mutate(handle, (r, at) => {
     checkSeat(r, handle);
     playForPhone(r, handle.s, action, at);
+  });
+  return seatView(room, handle.s, now);
+}
+
+/** A phone arming its seat's flasks, in the order they fill. */
+export async function chooseFlasks(token: string | null, order: unknown): Promise<SeatView> {
+  const handle = requireHandle(token, ['s']);
+  if (handle.k !== 's') throw new RoomError('Not a seat', 401);
+  const { room, now } = await mutate(handle, (r) => {
+    checkSeat(r, handle);
+    setFlasks(r, handle.s, order);
   });
   return seatView(room, handle.s, now);
 }

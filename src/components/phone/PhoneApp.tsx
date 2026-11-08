@@ -15,6 +15,7 @@ import { Icon } from '../Icon';
 import { Footer } from '../Footer';
 import { PhoneGame } from './PhoneGame';
 import { PokemonPicker } from './PokemonPicker';
+import { GearThemeProvider } from '../gearTheme';
 
 function ticketFromHash(): string | null {
   const match = /(?:^#|&)t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
@@ -249,7 +250,11 @@ function Seat({
 }) {
   const me = view.seats[view.seat];
   if (view.phase !== 'lobby' && view.game) {
-    return <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />;
+    return (
+      <GearThemeProvider value={view.settings.pokemonGear !== false}>
+        <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />
+      </GearThemeProvider>
+    );
   }
   return (
     <main className="phone" style={seatStyle(me)}>

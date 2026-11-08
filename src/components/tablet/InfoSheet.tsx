@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { bisonPark, campsiteDef, gearCost, siteDef } from '@/game/engine';
 import { campsiteCapacity } from '@/game/data/campsites';
-import type { GameState } from '@/game/types';
+import type { GameState, GearCard } from '@/game/types';
 import { EDGES, type Edge, type PublicSeat } from '@/room/room';
 import { SiteArt } from '@/art/siteArt';
 import { IllustratedParkArt } from '@/art/illustrated';
@@ -11,6 +11,7 @@ import { Pawn, RESOURCE_LABEL, costLabel, hikerName } from '../bits';
 import { Icon } from '../Icon';
 import { Token, TokenBag, TokenRow } from '../Token';
 import { parkPlace } from '../ParkCard';
+import { GearIcon, useGearName } from '../gearTheme';
 
 /** What the rules sheet is about: one thing on the board, or all of it. */
 export type InfoSubject =
@@ -40,6 +41,7 @@ export function InfoSheet({
   upright: boolean;
   onClose: () => void;
 }) {
+  const nameOf = useGearName();
   const used = EDGES.filter((e) => seats.some((s) => s.edge === e));
   const [edge, setEdge] = useState<Edge>(upright ? 'bottom' : start);
   const panel = useRef<HTMLDivElement>(null);
@@ -59,7 +61,7 @@ export function InfoSheet({
         <header className="sheet__head">
           <div>
             <p className="eyebrow">Rules</p>
-            <h2 id="info-title">{title(state, subject)}</h2>
+            <h2 id="info-title">{title(state, subject, nameOf)}</h2>
           </div>
           {!upright && used.length > 1 ? (
             <button type="button" className="btn btn--ghost btn--sm" onClick={turn} aria-label="Turn this toward the next seat">
@@ -77,7 +79,7 @@ export function InfoSheet({
   );
 }
 
-function title(state: GameState, subject: InfoSubject): string {
+function title(state: GameState, subject: InfoSubject, nameOf: (card: GearCard) => string): string {
   switch (subject.kind) {
     case 'site':
       return siteDef(state.trail[subject.index]).name;
@@ -85,8 +87,10 @@ function title(state: GameState, subject: InfoSubject): string {
       return campsiteDef(subject.id).name;
     case 'park':
       return [...state.parkRow, ...state.players.flatMap((p) => p.reserved)].find((p) => p.id === subject.id)?.name ?? 'Park';
-    case 'gear':
-      return state.gearRow.find((g) => g.id === subject.id)?.name ?? 'Gear';
+    case 'gear': {
+      const card = state.gearRow.find((g) => g.id === subject.id);
+      return card ? nameOf(card) : 'Gear';
+    }
   }
 }
 
@@ -122,9 +126,7 @@ function Body({ state, seats, subject }: { state: GameState; seats: PublicSeat[]
       return (
         <div className="info__item">
           <p className="info__line">
-            <span className="info__emoji" aria-hidden="true">
-              {card.icon}
-            </span>
+            <GearIcon card={card} className="info__emoji" />
             {card.text}
           </p>
           <p className="info__line">
