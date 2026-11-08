@@ -56,29 +56,22 @@ export function Shop({
   const buyable = new Set(kind === 'trail-end' ? affordableGear(state, shopper).map((g) => g.id) : []);
   const bison = bisonPark(state)?.id;
   const takesLead = !state.firstPlayerTokenClaimed;
+  // The chain-buy house rule: after a visit, only another visit or stopping is open.
+  const chain = kind === 'trail-end' && state.pending?.chain === true;
   const act = (option: Option, extra: { parkId?: string; gearId?: string } = {}) => onAction({ type: kind, option, ...extra } as GameAction);
 
   return (
     <div className={`shop${kind === 'trail-end' ? '' : ' shop--parks-only'}`}>
       <section className="shop__parks" aria-labelledby="shop-parks">
         <header className="shop__head">
-          <h2 id="shop-parks">Visit or reserve a park</h2>
-          {takesLead ? <span className="muted">The first reserve this season takes the first player token</span> : null}
+          <h2 id="shop-parks">{chain ? 'Visit another park' : 'Visit or reserve a park'}</h2>
+          {chain ? (
+            <span className="muted">Parks in a row: keep visiting while the pack covers one</span>
+          ) : takesLead ? (
+            <span className="muted">The first reserve this season takes the first player token</span>
+          ) : null}
         </header>
         <div className="shop__row">
-          {player.reserved.map((park) => (
-            <ShopPark
-              key={park.id}
-              park={park}
-              player={player}
-              state={state}
-              mine
-              holdProps={hold(() => onInfo({ kind: 'park', id: park.id }))}
-              canVisit={claimable.has(park.id)}
-              busy={busy}
-              onVisit={() => act('claim-park', { parkId: park.id })}
-            />
-          ))}
           {state.parkRow.map((park) => (
             <ShopPark
               key={park.id}
@@ -91,7 +84,7 @@ export function Shop({
               canReserve={reservable.has(park.id)}
               busy={busy}
               onVisit={() => act('claim-park', { parkId: park.id })}
-              onReserve={() => act('reserve-park', { parkId: park.id })}
+              onReserve={chain ? undefined : () => act('reserve-park', { parkId: park.id })}
             />
           ))}
           <article className="shop-park shop-park--deck" aria-label={`Park deck, ${parkDeckLeft(state)} cards`}>
@@ -107,7 +100,7 @@ export function Shop({
                     Visit the top card unseen
                   </button>
                 ) : null}
-                {canReserveTop(state) ? (
+                {canReserveTop(state) && !chain ? (
                   <button type="button" className="shop-btn" disabled={busy} onClick={() => act('reserve-top')}>
                     Reserve the top card
                   </button>
@@ -116,9 +109,31 @@ export function Shop({
             </div>
           </article>
         </div>
+        {player.reserved.length > 0 ? (
+          <>
+            <h3 className="shop__held-title">
+              Reserved <span className="muted">only {player.name} can visit these</span>
+            </h3>
+            <div className="shop__row">
+              {player.reserved.map((park) => (
+                <ShopPark
+                  key={park.id}
+                  park={park}
+                  player={player}
+                  state={state}
+                  mine
+                  holdProps={hold(() => onInfo({ kind: 'park', id: park.id }))}
+                  canVisit={claimable.has(park.id)}
+                  busy={busy}
+                  onVisit={() => act('claim-park', { parkId: park.id })}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
       </section>
 
-      {kind === 'trail-end' ? (
+      {kind === 'trail-end' && !chain ? (
         <section className="shop__gear" aria-labelledby="shop-gear">
           <header className="shop__head">
             <h2 id="shop-gear">Or buy gear</h2>
@@ -214,7 +229,7 @@ function ShopPark({
         <span className="shop-park__vp" aria-hidden="true">
           {park.vp}
         </span>
-        {mine ? <span className="shop-park__mine">Yours</span> : null}
+        {mine ? <span className="shop-park__mine">Reserved</span> : null}
         {bison ? (
           <span className="shop-park__bison" title="The bison is here: visiting offers a wildcard trade">
             🦬

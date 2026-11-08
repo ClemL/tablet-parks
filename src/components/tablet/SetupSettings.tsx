@@ -21,6 +21,7 @@ const RULES: { key: keyof HouseRules; label: string; hint: string }[] = [
   { key: 'rangerFirst', label: 'Ranger Station first', hint: 'Spring’s advanced site is the Ranger Station' },
   { key: 'deckGear', label: 'Gear from the deck', hint: 'With 3+ sun, buy the top gear card unseen, 1 sun off' },
   { key: 'startReserve', label: 'A park in hand', hint: 'Everyone starts with one park reserved, face down' },
+  { key: 'chainParks', label: 'Parks in a row', hint: 'After a visit at the Trail End, keep visiting while you can pay' },
 ];
 
 /**

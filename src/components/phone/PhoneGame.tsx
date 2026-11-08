@@ -127,7 +127,9 @@ export function PhoneGame({
       : state.phase === 'season-end'
         ? `${seasonName(state.season)} is over.`
         : shopping
-          ? 'Your turn — choose a park or gear, here or on the tablet.'
+          ? pending?.chain
+            ? 'Your turn — visit another park, or tap Done.'
+            : 'Your turn — choose a park or gear, here or on the tablet.'
           : yourTurn
             ? 'Your turn — make your move on the tablet.'
             : actor !== null
@@ -160,7 +162,7 @@ export function PhoneGame({
             {PANELS.map((p, i) => {
               // The panels this stop can be answered from are marked while it waits.
               const open =
-                (Boolean(shopping) && (p.id === 'parks' || (p.id === 'gear' && shopping === 'trail-end'))) ||
+                (Boolean(shopping) && (p.id === 'parks' || (p.id === 'gear' && shopping === 'trail-end' && !pending?.chain))) ||
                 (p.id === 'moves' && yourTurn && !shopping && state.phase === 'playing');
               return (
                 <button

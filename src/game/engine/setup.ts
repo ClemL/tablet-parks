@@ -59,7 +59,13 @@ export interface NewGameOptions {
 export const DEFAULT_EXPANSIONS: ExpansionFlags = { nightfall: true, wildlife: true };
 
 /** Reserving the deck's top card is the published rule, so it starts on. */
-export const DEFAULT_HOUSE_RULES: HouseRules = { blindReserve: true, rangerFirst: false, deckGear: false, startReserve: false };
+export const DEFAULT_HOUSE_RULES: HouseRules = {
+  blindReserve: true,
+  rangerFirst: false,
+  deckGear: false,
+  startReserve: false,
+  chainParks: false,
+};
 
 export function createGame(options: NewGameOptions = {}): GameState {
   const seed = options.seed ?? (Date.now() & 0x7fffffff);
@@ -240,6 +246,7 @@ export function hydrate(state: GameState): GameState {
   state.houseRules ??= { ...DEFAULT_HOUSE_RULES };
   state.houseRules.deckGear ??= false;
   state.houseRules.startReserve ??= false;
+  state.houseRules.chainParks ??= false;
   state.seasonPhotoOffered ??= false;
   return state;
 }

@@ -12,6 +12,7 @@ import {
   type GameAction,
   type GameState,
   type GearCard,
+  type PendingDecision,
   type Player,
   type Resource,
   type ResourceBag,
@@ -43,6 +44,7 @@ import {
   bisonPark,
   canBuyTopGear,
   campsiteDef,
+  canClaimChance,
   canReserveTop,
   claimableParks,
   copyableSites,
@@ -820,8 +822,10 @@ function resolveBison(state: GameState, give?: Resource): void {
   }
   moveBisonOn(state, player);
 
-  // A bison trade interrupts the stop that triggered it; carry on where we left off.
-  const resume = pending.resume ?? null;
+  // A bison trade interrupts the stop that triggered it; carry on where we left off
+  // — unless that was a chain of visits the trade has left nothing to continue.
+  let resume = pending.resume ?? null;
+  if (resume?.chain && !canVisitAnother(state, player)) resume = null;
   state.pending = resume;
   if (!resume) closeTurn(state, player, pending.siteIndex, pending.hikerId);
 }
@@ -962,15 +966,19 @@ function takeGear(state: GameState, player: Player, card: GearCard, cost: number
 }
 
 function resolveTrailEnd(state: GameState, action: Extract<GameAction, { type: 'trail-end' }>): void {
-  if (!state.pending || state.pending.kind !== 'trail-end') return;
-  const player = state.players[state.pending.player];
+  const pending = state.pending;
+  if (!pending || pending.kind !== 'trail-end') return;
+  const player = state.players[pending.player];
+  // Mid-chain, only another visit or stopping is on offer.
+  if (pending.chain && action.option !== 'claim-park' && action.option !== 'chance-park' && action.option !== 'skip') return;
 
+  let visited = false;
   switch (action.option) {
     case 'claim-park':
-      claimPark(state, player, action.parkId);
+      visited = claimPark(state, player, action.parkId);
       break;
     case 'chance-park':
-      claimChancePark(state, player);
+      visited = claimChancePark(state, player);
       break;
     case 'reserve-park':
       reservePark(state, player, action.parkId);
@@ -985,12 +993,29 @@ function resolveTrailEnd(state: GameState, action: Extract<GameAction, { type: '
       buyTopGear(state, player);
       break;
     default:
-      log(state, player.index, 'passed at the Trail End');
+      log(state, player.index, pending.chain ? 'stopped visiting parks' : 'passed at the Trail End');
       break;
+  }
+
+  // The chain-buy house rule: a visit keeps the Trail End open for another,
+  // after the bison's trade if this park had the bison.
+  if (visited && state.houseRules.chainParks && canVisitAnother(state, player)) {
+    const again: PendingDecision = { ...pending, chain: true, resume: undefined };
+    if (bisonInterrupted(state)) {
+      state.pending = { ...state.pending!, resume: again };
+      return;
+    }
+    state.pending = again;
+    return;
   }
 
   if (bisonInterrupted(state)) return;
   finishDecision(state);
+}
+
+/** Whether the pack still covers a park: one on offer, one reserved, or the deck's top in a Season of Chance. */
+function canVisitAnother(state: GameState, player: Player): boolean {
+  return claimableParks(state, player.index).length > 0 || canClaimChance(state, player.index);
 }
 
 /** True when a bison trade interrupted the action we were resolving. */
