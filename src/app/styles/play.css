@@ -349,6 +349,10 @@
 }
 
 .offer {
+  --poster-h: 112px;
+  --poster-name: 0.88rem;
+  --vp: 36px;
+  --visitor: 46px;
   display: flex;
   flex-direction: column;
   background: var(--card);
@@ -366,65 +370,19 @@
   border: 3px solid var(--focus);
 }
 
-.offer__art {
-  position: relative;
-  height: 64px;
-  background: #2c3c33;
-}
 
-.offer__art svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
 
-.offer__vp {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--gold);
-  color: var(--on-gold);
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-}
 
-.offer__mine {
-  position: absolute;
-  left: 5px;
-  top: 5px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--focus);
-  color: var(--on-gold);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 
-.offer__bison {
-  position: absolute;
-  left: 5px;
-  bottom: 3px;
-  font-size: 1.1rem;
-}
 
 .offer__body {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 7px 9px 9px;
+  padding: 15px 9px 9px;
 }
 
-.offer__body h3 {
-  font-size: 1rem;
-}
 
 .offer__place {
   font-size: 0.7rem;
@@ -498,66 +456,16 @@
   gap: 10px;
 }
 
-.gear-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 11px 11px;
-  border-radius: 12px;
-  background: var(--card-adv);
-  color: var(--ink);
-  border: 1px solid #b99a5b;
-  transition: opacity 160ms ease;
-}
 
-/* Short of sun: still readable, plainly out of reach. */
-.gear-offer--short {
-  opacity: 0.55;
-  filter: grayscale(0.55);
-}
 
-.gear-offer__icon {
-  font-size: 1.7rem;
-  line-height: 1;
-  flex: none;
-}
 
-.gear-offer__text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
 
-.gear-offer__text h3 {
-  font-size: 1rem;
-}
 
-.gear-offer__text p {
-  font-size: 0.8rem;
-  line-height: 1.3;
-  color: #4f4a3b;
-}
 
-.gear-offer__price {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 3px;
-  margin-top: 3px;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
 
-.gear-offer__price s {
-  font-weight: 400;
-  color: var(--card-muted);
-}
 
 .gear-offer__buy {
   flex: none;
-  width: 100%;
 }
 
 /* ------------------------------------------------------------ the menu */

@@ -15,12 +15,12 @@ import { parkDeckLeft } from '@/game/view';
 import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
 import type { GameAction, GameState, ParkCard, Player } from '@/game/types';
 import { RESOURCES } from '@/game/types';
-import { IllustratedParkArt } from '@/art/illustrated';
+import { ParkPoster } from '../ParkPoster';
 import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
 import { Token } from '../Token';
-import { parkPlace } from '../ParkCard';
 import { costCheck } from '../shopping';
+import { PriceSticker, PriceTag } from '../PriceTag';
 import { GearIcon, useGearName } from '../gearTheme';
 
 /** The park decision this phone's player stands at, if any. */
@@ -207,21 +207,12 @@ export function GearPanel({
           const owned = player.gear.some((g) => g.id === card.id);
           const short = sun < price;
           return (
-            <article
-              key={card.id}
-              className={`gear-offer${short ? ' gear-offer--short' : ''}`}
-              aria-label={`${nameOf(card)}, ${price} sun${short ? `, ${price - sun} sun short` : ''}`}
-            >
-              <GearIcon card={card} className="gear-offer__icon" />
-              <div className="gear-offer__text">
-                <h3>{nameOf(card)}</h3>
-                <p>{card.text}</p>
-                <span className="gear-offer__price">
-                  {price} <Token r="sun" size="xs" decorative /> sun
-                  {price !== card.cost ? <s> {card.cost}</s> : null}
-                  {owned ? ' · you have one' : short ? ` · ${price - sun} short` : ''}
-                </span>
-              </div>
+            <PriceTag key={card.id} className="gear-offer" short={short} aria-label={`${nameOf(card)}, ${price} sun${short ? `, ${price - sun} sun short` : ''}`}>
+              <PriceSticker price={price} printed={card.cost} />
+              <GearIcon card={card} className="tag__art" />
+              <h3 className="tag__name">{nameOf(card)}</h3>
+              <p className="tag__text">{card.text}</p>
+              {owned || short ? <span className="tag__note">{owned ? 'You have one' : `${price - sun} sun short`}</span> : null}
               {shopping === 'trail-end' ? (
                 <button
                   type="button"
@@ -232,22 +223,27 @@ export function GearPanel({
                   Buy
                 </button>
               ) : null}
-            </article>
+            </PriceTag>
           );
         })}
         {state.houseRules.deckGear ? (
-          <article className={`gear-offer gear-offer--deck${sun < DECK_GEAR_MIN_SUN ? ' gear-offer--short' : ''}`} aria-label={`Top of the gear deck, unseen, ${gearDeckCount(state)} left`}>
-            <span className="gear-offer__icon" aria-hidden="true">
-              <Icon name="deck" size={24} />
+          <PriceTag
+            className="gear-offer gear-offer--deck"
+            short={sun < DECK_GEAR_MIN_SUN}
+            aria-label={`Top of the gear deck, unseen, ${gearDeckCount(state)} left`}
+          >
+            <span className="tag__price tag__price--deck" aria-hidden="true">
+              <b>−1</b>
+              <Token r="sun" size="xs" decorative />
             </span>
-            <div className="gear-offer__text">
-              <h3>Top of the gear deck</h3>
-              <p>Unseen, {gearDeckCount(state)} left: its usual price less 1 sun.</p>
-              <span className="gear-offer__price">
-                Needs {DECK_GEAR_MIN_SUN} <Token r="sun" size="xs" decorative /> sun
-                {sun < DECK_GEAR_MIN_SUN ? ` · ${DECK_GEAR_MIN_SUN - sun} short` : ''}
-              </span>
-            </div>
+            <span className="tag__art tag__art--deck" aria-hidden="true">
+              <Icon name="deck" size={44} />
+            </span>
+            <h3 className="tag__name">Top of the gear deck</h3>
+            <p className="tag__text">
+              Unseen, {gearDeckCount(state)} left: its usual price less 1 sun. Needs {DECK_GEAR_MIN_SUN} sun.
+            </p>
+            {sun < DECK_GEAR_MIN_SUN ? <span className="tag__note">{DECK_GEAR_MIN_SUN - sun} sun short</span> : null}
             {shopping === 'trail-end' ? (
               <button
                 type="button"
@@ -259,7 +255,7 @@ export function GearPanel({
                 Buy unseen
               </button>
             ) : null}
-          </article>
+          </PriceTag>
         ) : null}
       </div>
     </div>
@@ -347,22 +343,10 @@ function Offer({
   const rows = costCheck(state, state.players[seat], park);
   return (
     <article className={`offer${mine ? ' offer--mine' : ''}${canVisit ? ' offer--can' : ''}`} aria-label={`${park.name}, ${park.vp} points${mine ? ', your reservation' : ''}`}>
-      <div className="offer__art">
-        <IllustratedParkArt park={park} />
-        <span className="offer__vp" aria-hidden="true">
-          {park.vp}
-        </span>
-        {mine ? <span className="offer__mine">Reserved</span> : null}
-        {bison ? (
-          <span className="offer__bison" title="The bison is here: visiting offers a wildcard trade">
-            🦬
-          </span>
-        ) : null}
-      </div>
+      <ParkPoster park={park} badge={mine ? 'Reserved' : undefined} bison={bison} />
       <div className="offer__body">
-        <h3>{park.name}</h3>
         <span className="offer__place">
-          {parkPlace(park)} · {park.tags.join(', ')}
+          {park.region} · {park.tags.join(', ')}
         </span>
         <ul className="offer__check">
           {rows.map(({ r, need, have, status }) => (
