@@ -139,6 +139,7 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
       rangerFirst: input?.houseRules?.rangerFirst === true,
       deckGear: input?.houseRules?.deckGear === true,
       startReserve: input?.houseRules?.startReserve === true,
+      chainParks: input?.houseRules?.chainParks === true,
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',

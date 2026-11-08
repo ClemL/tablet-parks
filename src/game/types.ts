@@ -232,6 +232,12 @@ export interface PendingDecision {
   copied?: boolean;
   /** Decision to return to once this one resolves (the bison interrupts a stop). */
   resume?: PendingDecision | null;
+  /**
+   * The chain-buy house rule: a Trail End where the player has just visited a
+   * park and may visit another while their pack covers one. Only visits and
+   * stopping are open; reserving and gear are not.
+   */
+  chain?: boolean;
 }
 
 /** Nightfall campsites: powerful alternates reached by pitching a tent. */
@@ -306,6 +312,11 @@ export interface HouseRules {
   deckGear: boolean;
   /** Every player starts the game holding one park, dealt face down from the deck into their reservations. */
   startReserve: boolean;
+  /**
+   * At the Trail End, visiting a park opens another visit, and another, as
+   * long as the pack covers one. A reserve or gear does not start the chain.
+   */
+  chainParks: boolean;
 }
 
 export interface LogEntry {

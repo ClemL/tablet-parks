@@ -168,9 +168,12 @@
 .shop__parks {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* With a reserved row under the row on offer, the column scrolls rather than squeezing both rows. */
+  overflow-y: auto;
 }
 
 .shop__gear {
@@ -198,10 +201,31 @@
 }
 
 .shop__row {
+  flex: none;
   display: flex;
   gap: 12px;
   overflow-x: auto;
   padding: 2px 2px 6px;
+}
+
+/* The shopper's own reservations, under the row on offer and the deck. */
+.shop__held-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--body);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--focus);
+}
+
+.shop__held-title .muted {
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .shop-park {

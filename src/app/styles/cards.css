@@ -212,3 +212,10 @@
 .gear-icon .pk__band {
   fill: #7fb685;
 }
+
+/* A drawn gear illustration takes the place of an emoji at the same text size, a little larger. */
+.gear-icon__item .gear-art {
+  display: block;
+  width: 1.35em;
+  height: 1.35em;
+}

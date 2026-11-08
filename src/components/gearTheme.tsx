@@ -4,6 +4,7 @@ import { createContext, useContext } from 'react';
 import type { GearCard } from '@/game/types';
 import type { Pokemon } from '@/room/names';
 import { PokemonHead } from '@/art/pokemon';
+import { GearArt, hasGearArt } from '@/art/gear';
 
 /*
  * REI's goods dressed as Pokémon gear, when the table leaves it on: each card
@@ -51,14 +52,15 @@ export function useGearName(): (card: Pick<GearCard, 'id' | 'name'>) => string {
 }
 
 /**
- * A gear card's picture: its icon, and with the theme on, the Pokémon using
- * it standing just beside.
+ * A gear card's picture: its drawn illustration (the card's emoji only for a
+ * card nobody has drawn yet), and with the theme on, the Pokémon using it
+ * standing just beside.
  */
 export function GearIcon({ card, className = '' }: { card: Pick<GearCard, 'id' | 'icon'>; className?: string }) {
   const themed = useContext(GearTheme);
   return (
     <span className={`gear-icon${themed ? ' gear-icon--pk' : ''}${className ? ` ${className}` : ''}`} aria-hidden="true">
-      <span className="gear-icon__item">{card.icon}</span>
+      <span className="gear-icon__item">{hasGearArt(card.id) ? <GearArt id={card.id} /> : card.icon}</span>
       {themed ? <PokemonHead name={gearPokemon(card)} className="gear-icon__pk" /> : null}
     </span>
   );

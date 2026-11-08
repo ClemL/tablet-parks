@@ -702,8 +702,22 @@ function outfitterDecision(state: GameState, player: Player): GameAction | null 
 
 /** The Trail End: one park action or gear, or pass when none is worth it. */
 function trailEndDecision(state: GameState, player: Player): GameAction {
+  if (state.pending?.chain) return chainDecision(state, player);
   const choice = parkOrGearChoice(state, player, true);
   return choice ? { ...choice, type: 'trail-end' } : { type: 'trail-end', option: 'skip' };
+}
+
+/**
+ * Mid-chain at the Trail End (the chain-buy house rule): a park is points, so
+ * visit the best one the pack still covers, and stop only when none is left.
+ */
+function chainDecision(state: GameState, player: Player): GameAction {
+  const best = claimableParks(state, player.index)
+    .map((p) => ({ p, score: p.vp + bonusSynergy(state, player, p) }))
+    .sort((a, b) => b.score - a.score)[0];
+  if (best) return { type: 'trail-end', option: 'claim-park', parkId: best.p.id };
+  if (canClaimChance(state, player.index)) return { type: 'trail-end', option: 'chance-park' };
+  return { type: 'trail-end', option: 'skip' };
 }
 
 /** Over the limit: hand back whatever this CPU values least. */

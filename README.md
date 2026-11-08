@@ -34,7 +34,10 @@ seat nobody scans into is played by the computer.
   Pokémon, ♂ and ♀. A blank name takes the Pokémon's name.
 - **REI sells Pokémon gear** unless the table turns it off (at setup or in the table menu):
   Squirtle’s Water Filter, Snorlax’s Sleeping Bag and the rest, each with its Pokémon beside it,
-  and Ditto for anything without an obvious owner. Looks only; the rules are the same.
+  and Ditto for anything without an obvious owner. Looks only; the rules are the same. Every item
+  is drawn (`src/art/gear.tsx`) rather than an emoji, so it looks the same on every device.
+- **Reserved parks sit in their own row**, marked Reserved, under the three parks and the deck,
+  on the phone and in the tablet's shop.
 - **The board moves.** A hiker walks from stop to stop along the trail to where it is going — on a
   long trip it may hop, skip or roll instead — a campfire spent to share a stop flares on that
   stop, and an emptied flask tips out and shows what it made. Tent sites carry a drawn tent. None
@@ -87,12 +90,14 @@ apply unchanged — the engine in `src/game/` is that repository's, with two cor
 porting: a view no longer carries the season cards and advanced sites still to come, and the log no
 longer names a park reserved face down from the deck.
 
-Four optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
+Five optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
 unseen top park; on by default), **Ranger Station first** (spring's advanced site is always the
 Ranger Station), **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
-card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it)
-and **A park in hand** (everyone starts holding one park, dealt face down into their
-reservations; it does not take the first player token).
+card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it),
+**A park in hand** (everyone starts holding one park, dealt face down into their
+reservations; it does not take the first player token) and **Parks in a row** (at the Trail
+End, a visit opens another visit, and another, while the pack covers one; a reserve or gear does
+not start the chain, and mid-chain only visiting or stopping is on offer).
 
 Two rules differ from parks-game: the **Outfitter Camp** lets the camper choose which card of the
 fresh gear row to take, as its text says, and a player's **armed flasks** fill themselves at the

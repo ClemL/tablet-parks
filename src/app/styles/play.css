@@ -1045,3 +1045,30 @@
     transform: translateX(0) scale(1);
   }
 }
+
+/* Parks this player reserved, in a row of their own under the cards on offer. */
+.offers-held {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.offers-held__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--body);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--focus);
+}
+
+.offers-held__title span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}

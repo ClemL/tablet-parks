@@ -512,6 +512,27 @@ test.describe('round the tablet', () => {
     await expect(reserved.locator('.mini-park')).toHaveCount(1);
     const name = (await reserved.locator('.mini-park__name').innerText()).trim();
     await expect(tablet.locator('body')).not.toContainText(name);
+
+    // On the Parks panel it sits in a row of its own under the three parks and the deck, marked Reserved.
+    await kris.getByRole('tab', { name: 'Parks' }).click();
+    const parks = kris.locator('#panel-parks');
+    await expect(parks.locator('.offers').first().locator('.offer')).toHaveCount(4);
+    const held = parks.locator('.offers-held');
+    await expect(held.getByRole('heading', { name: /Reserved/ })).toBeVisible();
+    await expect(held.locator('.offer')).toHaveCount(1);
+    await expect(held.locator('.offer__mine')).toHaveText('Reserved');
+    const rowBottom = (await parks.locator('.offers').first().boundingBox())!;
+    const heldTop = (await held.boundingBox())!;
+    expect(heldTop.y).toBeGreaterThanOrEqual(rowBottom.y + rowBottom.height - 1);
+  });
+
+  test('the setup offers parks in a row as a house rule, off to begin with', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await tablet.goto('/');
+    const chain = tablet.getByRole('switch', { name: 'Parks in a row' });
+    await expect(chain).toHaveAttribute('aria-checked', 'false');
+    await chain.click();
+    await expect(chain).toHaveAttribute('aria-checked', 'true');
   });
 
   test('REI sells Pokémon gear, and the table can turn it back to plain', async ({ browser }) => {

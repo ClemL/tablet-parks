@@ -411,6 +411,83 @@ describe('the log in numbers', () => {
   });
 });
 
+describe('the chain-buy house rule', () => {
+  /** Player 0 standing at the Trail End with `wild` wildcards to pay with. */
+  function atTrailEnd(chainParks: boolean, wild: number) {
+    const state = createGame({ seed: 49, expansions: { nightfall: false, wildlife: false }, houseRules: { chainParks } });
+    state.current = 0;
+    state.players[0].resources = { sun: 0, water: 0, forest: 0, mountain: 0, wild };
+    state.pending = { player: 0, hikerId: 'p0h0', siteIndex: state.trail.length - 1, kind: 'trail-end' };
+    return state;
+  }
+
+  it('keeps the Trail End open after a visit while the pack covers another park', () => {
+    let state = atTrailEnd(true, 30);
+    state = applyAction(state, { type: 'trail-end', option: 'claim-park', parkId: state.parkRow[0].id });
+    expect(state.players[0].parks).toHaveLength(1);
+    expect(state.pending).toMatchObject({ kind: 'trail-end', player: 0, chain: true });
+
+    // Mid-chain there is no reserving and no gear, only another visit or stopping.
+    expect(applyAction(state, { type: 'trail-end', option: 'reserve-park', parkId: state.parkRow[0].id })).toEqual(state);
+    expect(applyAction(state, { type: 'trail-end', option: 'buy-gear', gearId: state.gearRow[0].id })).toEqual(state);
+
+    state = applyAction(state, { type: 'trail-end', option: 'claim-park', parkId: state.parkRow[0].id });
+    expect(state.players[0].parks).toHaveLength(2);
+    const stopped = applyAction(state, { type: 'trail-end', option: 'skip' });
+    expect(stopped.pending?.kind).not.toBe('trail-end');
+    expect(stopped.log.at(-1)?.text ?? '').toMatch(/stopped visiting parks|over the/);
+  });
+
+  it('comes back to the chain after the bison’s trade', () => {
+    const state = createGame({ seed: 51, expansions: { nightfall: false, wildlife: true }, houseRules: { chainParks: true } });
+    state.current = 0;
+    state.players[0].resources = { sun: 0, water: 0, forest: 0, mountain: 0, wild: 30 };
+    state.pending = { player: 0, hikerId: 'p0h0', siteIndex: state.trail.length - 1, kind: 'trail-end' };
+    const onBison = bisonPark(state)!;
+    let next = applyAction(state, { type: 'trail-end', option: 'claim-park', parkId: onBison.id });
+    expect(next.pending).toMatchObject({ kind: 'bison', resume: { kind: 'trail-end', chain: true } });
+    next = applyAction(next, { type: 'bison' });
+    expect(next.pending).toMatchObject({ kind: 'trail-end', chain: true });
+  });
+
+  it('ends the turn as usual once nothing more is affordable', () => {
+    const state = atTrailEnd(true, 0);
+    const park = state.parkRow[0];
+    state.players[0].resources = { ...park.cost };
+    const next = applyAction(state, { type: 'trail-end', option: 'claim-park', parkId: park.id });
+    expect(next.players[0].parks).toHaveLength(1);
+    expect(next.pending).toBeNull();
+    expect(next.current).not.toBe(0);
+  });
+
+  it('is not started by a reserve, and is off unless the table turns it on', () => {
+    const start = atTrailEnd(true, 30);
+    const reserved = applyAction(start, { type: 'trail-end', option: 'reserve-park', parkId: start.parkRow[0].id });
+    expect(reserved.players[0].reserved).toHaveLength(1);
+    // Thirty wildcards are over the token limit, so a hand-back follows; but no second Trail End.
+    expect(reserved.pending?.kind).not.toBe('trail-end');
+    const plain = atTrailEnd(false, 30);
+    const visited = applyAction(plain, { type: 'trail-end', option: 'claim-park', parkId: plain.parkRow[0].id });
+    expect(visited.players[0].parks).toHaveLength(1);
+    expect(visited.pending?.kind === 'trail-end').toBe(false);
+    expect(createGame({ seed: 50 }).houseRules.chainParks).toBe(false);
+  });
+
+  it('lets a computer keep visiting while it can, then stop', () => {
+    let state = atTrailEnd(true, 30);
+    state.players[0].isHuman = false;
+    state.players[0].personality = 'collector';
+    state = applyAction(state, { type: 'trail-end', option: 'claim-park', parkId: state.parkRow[0].id });
+    for (let i = 0; i < 20 && state.pending?.kind === 'trail-end'; i++) {
+      const action = aiAction(state)!;
+      expect(['claim-park', 'chance-park', 'skip']).toContain((action as { option: string }).option);
+      state = applyAction(state, action);
+    }
+    expect(state.players[0].parks.length).toBeGreaterThan(1);
+    expect(state.pending?.kind).not.toBe('trail-end');
+  });
+});
+
 describe('the starting-reserve house rule', () => {
   it('deals every player one park face down, leaving the row as it would be', () => {
     const plain = createGame({ seed: 47 });

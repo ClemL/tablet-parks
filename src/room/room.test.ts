@@ -94,7 +94,7 @@ describe('settings', () => {
   it('keeps the deck-gear house rule off unless the tablet turns it on', () => {
     expect(normalizeSettings(undefined).houseRules.deckGear).toBe(false);
     expect(normalizeSettings({ houseRules: { deckGear: 'yes' } as never }).houseRules.deckGear).toBe(false);
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false } }), DB, T0, 3);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false } }), DB, T0, 3);
     startGame(room, T0);
     expect(room.state!.houseRules.deckGear).toBe(true);
   });
@@ -652,6 +652,32 @@ describe('taking a tap back', () => {
     expect(JSON.stringify(tablet)).not.toContain(room.state!.players[1 - actorOf(room.state!)!].reserved[0].id);
   });
 
+  it('turns parks in a row on only when asked, and lets a phone visit one park after another', () => {
+    expect(normalizeSettings(undefined).houseRules.chainParks).toBe(false);
+    expect(normalizeSettings({ houseRules: { chainParks: 1 } as never }).houseRules.chainParks).toBe(false);
+    // No Wildlife, so no bison trade comes between one visit and the next.
+    const settings = normalizeSettings({
+      seats: 2,
+      expansions: { nightfall: false, wildlife: false },
+      houseRules: { ...normalizeSettings(undefined).houseRules, chainParks: true },
+    });
+    const room = newRoom('ABCDE', settings, DB, T0, 7);
+    joinSeat(room, 0, 'a', 'Kris');
+    joinSeat(room, 1, 'b', 'Srini');
+    startGame(room, T0);
+    const seat = actorOf(room.state!)!;
+    room.state!.players[seat].resources = { sun: 0, water: 0, forest: 0, mountain: 0, wild: 30 };
+    room.state!.pending = { player: seat, hikerId: room.state!.players[seat].hikers[0].id, siteIndex: room.state!.trail.length - 1, kind: 'trail-end' };
+    playForPhone(room, seat, { type: 'trail-end', option: 'claim-park', parkId: room.state!.parkRow[0].id }, T0);
+    expect(room.state!.pending).toMatchObject({ kind: 'trail-end', chain: true });
+    playForPhone(room, seat, { type: 'trail-end', option: 'claim-park', parkId: room.state!.parkRow[1].id }, T0);
+    expect(room.state!.players[seat].parks).toHaveLength(2);
+    // A reserve mid-chain is refused as a move that changes nothing.
+    expect(() => playForPhone(room, seat, { type: 'trail-end', option: 'reserve-park', parkId: room.state!.parkRow[0].id }, T0)).toThrow(/not allowed/);
+    playForPhone(room, seat, { type: 'trail-end', option: 'skip' }, T0);
+    expect(room.state!.pending?.kind).not.toBe('trail-end');
+  });
+
   it('dresses REI as Pokémon gear unless the table turns it off, even mid-game', () => {
     expect(normalizeSettings(undefined).pokemonGear).toBe(true);
     expect(normalizeSettings({ pokemonGear: false }).pokemonGear).toBe(false);
@@ -734,7 +760,7 @@ describe('a phone at a park decision', () => {
   });
 
   it('buys the top of the gear deck from the phone when the house rule is on', () => {
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false } }), DB, T0, 42);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false } }), DB, T0, 42);
     joinSeat(room, 0, 'a', 'Kris');
     joinSeat(room, 1, 'b', 'Srini');
     startGame(room, T0);

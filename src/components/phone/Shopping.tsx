@@ -62,12 +62,16 @@ export function ParksPanel({
   const reservable = new Set(reservableParks(state).map((p) => p.id));
   const bison = bisonPark(state)?.id;
   const act = (option: Option, extra: { parkId?: string } = {}) => shopping && onChoose({ type: shopping, option, ...extra } as GameAction);
+  // The chain-buy house rule: after a visit, only another visit or stopping is open.
+  const chain = shopping === 'trail-end' && state.pending?.chain === true;
 
   return (
     <div className="shopping">
       {noteHidden ? null : (
         <Note title="Parks" onHide={onHideNote}>
-          {shopping ? (
+          {chain ? (
+            <p className="shopping__now">You visited a park: visit another while your pack covers one, or tap Done.</p>
+          ) : shopping ? (
             <p className="shopping__now">
               At {WHERE[shopping]}: visit or reserve one{shopping === 'trail-end' ? ', or buy gear at REI (swipe on)' : ''}.
               {!state.firstPlayerTokenClaimed ? ' A reserve takes the first player token.' : ''}
@@ -77,21 +81,8 @@ export function ParksPanel({
           )}
         </Note>
       )}
-      <ShoppingBar player={player} shopping={shopping} busy={busy} onPass={() => act('skip')} />
+      <ShoppingBar player={player} shopping={shopping} busy={busy} passLabel={chain ? 'Done' : 'Pass'} onPass={() => act('skip')} />
       <div className="offers">
-        {player.reserved.map((park) => (
-          <Offer
-            key={park.id}
-            park={park}
-            state={state}
-            seat={seat}
-            mine
-            shopping={shopping}
-            canVisit={claimable.has(park.id)}
-            busy={busy}
-            onVisit={() => act('claim-park', { parkId: park.id })}
-          />
-        ))}
         {state.parkRow.map((park) => (
           <Offer
             key={park.id}
@@ -104,7 +95,7 @@ export function ParksPanel({
             canReserve={reservable.has(park.id)}
             busy={busy}
             onVisit={() => act('claim-park', { parkId: park.id })}
-            onReserve={() => act('reserve-park', { parkId: park.id })}
+            onReserve={chain ? undefined : () => act('reserve-park', { parkId: park.id })}
           />
         ))}
         <article className="offer offer--deck" aria-label={`Park deck, ${parkDeckLeft(state)} cards`}>
@@ -121,7 +112,7 @@ export function ParksPanel({
                     Visit unseen
                   </button>
                 ) : null}
-                {canReserveTop(state) ? (
+                {canReserveTop(state) && !chain ? (
                   <button type="button" className="offer-btn" disabled={busy} onClick={() => act('reserve-top')}>
                     Reserve the top card
                   </button>
@@ -131,6 +122,28 @@ export function ParksPanel({
           </div>
         </article>
       </div>
+      {player.reserved.length > 0 ? (
+        <section className="offers-held" aria-labelledby="offers-held-title">
+          <h3 id="offers-held-title" className="offers-held__title">
+            Reserved <span>only you can visit these</span>
+          </h3>
+          <div className="offers">
+            {player.reserved.map((park) => (
+              <Offer
+                key={park.id}
+                park={park}
+                state={state}
+                seat={seat}
+                mine
+                shopping={shopping}
+                canVisit={claimable.has(park.id)}
+                busy={busy}
+                onVisit={() => act('claim-park', { parkId: park.id })}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -142,7 +155,7 @@ export function ParksPanel({
 export function GearPanel({
   state,
   seat,
-  shopping,
+  shopping: offered,
   busy,
   onChoose,
   noteHidden,
@@ -157,6 +170,9 @@ export function GearPanel({
   onHideNote: () => void;
 }) {
   const player = state.players[seat];
+  // Mid-chain at the Trail End (the chain-buy house rule), REI is closed: the stop was spent on parks.
+  const chain = offered === 'trail-end' && state.pending?.chain === true;
+  const shopping = chain ? null : offered;
   const buyable = new Set(shopping === 'trail-end' ? affordableGear(state, seat).map((g) => g.id) : []);
   const sun = player.resources.sun ?? 0;
   const nameOf = useGearName();
@@ -169,7 +185,11 @@ export function GearPanel({
             <p className="shopping__now">At the Trail End: buy one with sun, or visit a park instead.{discounts}</p>
           ) : (
             <p className="shopping__later">
-              {shopping === 'park-or-gear' ? 'The Ranger Station sells no gear: that is the Trail End’s.' : 'Gear is bought when one of your hikers reaches the Trail End.'}
+              {chain
+                ? 'You are visiting parks in a row: gear waits for your next Trail End.'
+                : shopping === 'park-or-gear'
+                  ? 'The Ranger Station sells no gear: that is the Trail End’s.'
+                  : 'Gear is bought when one of your hikers reaches the Trail End.'}
               {discounts}
             </p>
           )}
@@ -263,7 +283,19 @@ function Note({ title, onHide, children }: { title: string; onHide: () => void; 
  * The player's pack, token by token, so the cost on each card can be read
  * against it; and Pass, while they stand at a decision this panel answers.
  */
-function ShoppingBar({ player, shopping, busy, onPass }: { player: Player; shopping: Shopping; busy: boolean; onPass: () => void }) {
+function ShoppingBar({
+  player,
+  shopping,
+  busy,
+  passLabel = 'Pass',
+  onPass,
+}: {
+  player: Player;
+  shopping: Shopping;
+  busy: boolean;
+  passLabel?: string;
+  onPass: () => void;
+}) {
   return (
     <div className="shopping__bar">
       <span className="shopping__pack-label">Your pack</span>
@@ -280,7 +312,7 @@ function ShoppingBar({ player, shopping, busy, onPass }: { player: Player; shopp
       </ul>
       {shopping ? (
         <button type="button" className="offer-btn shopping__pass" disabled={busy} onClick={onPass}>
-          Pass
+          {passLabel}
         </button>
       ) : null}
     </div>
@@ -320,7 +352,7 @@ function Offer({
         <span className="offer__vp" aria-hidden="true">
           {park.vp}
         </span>
-        {mine ? <span className="offer__mine">Yours</span> : null}
+        {mine ? <span className="offer__mine">Reserved</span> : null}
         {bison ? (
           <span className="offer__bison" title="The bison is here: visiting offers a wildcard trade">
             🦬
