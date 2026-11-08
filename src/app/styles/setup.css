@@ -5,7 +5,7 @@
  */
 
 .basecamp {
-  min-height: 100dvh;
+  min-height: var(--full-h);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -17,7 +17,6 @@
   margin-right: max(28px, env(safe-area-inset-right));
 }
 
-.basecamp__notice,
 .basecamp__error {
   margin-top: 0;
   margin-bottom: 0;
@@ -28,7 +27,7 @@
 .panorama {
   position: relative;
   flex: none;
-  height: clamp(140px, 21dvh, 176px);
+  height: clamp(140px, calc(21dvh / var(--zoom)), 176px);
   overflow: hidden;
 }
 
@@ -120,6 +119,13 @@
   background: rgba(27, 36, 31, 0.86);
 }
 
+.panorama__notice {
+  max-width: 440px;
+  font-size: 0.92rem;
+  line-height: 1.3;
+  box-shadow: var(--shadow);
+}
+
 /* ---- who is hiking ---- */
 
 .hikers {
@@ -199,6 +205,22 @@
   position: relative;
   background: var(--seat);
   color: var(--on-seat);
+}
+
+/* A seated person's Pokémon fills the square their code stood in. */
+.seat-card__pk {
+  width: 78%;
+  height: 78%;
+}
+
+.seat-card__tag {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .seat-card__initial {

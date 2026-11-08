@@ -2,7 +2,7 @@ import { aiAction } from '@/game/ai';
 import { applyAction, createGame, CPU_SEATS, defaultDiscard, DEFAULT_EXPANSIONS, DEFAULT_HOUSE_RULES, hydrate, legalMoves } from '@/game/engine';
 import { MAX_PLAYERS, MIN_PLAYERS } from '@/game/data/sites';
 import { viewFor, type GameView } from '@/game/view';
-import { hikerNames, pickPokemon } from './names';
+import { asPokemon, hikerNames, pickPokemon } from './names';
 import type { AiPersonality, ExpansionFlags, GameAction, GameState, HouseRules } from '@/game/types';
 
 /**
@@ -33,6 +33,12 @@ export interface SeatRecord {
    */
   device: string | null;
   personality?: AiPersonality;
+  /**
+   * The Pokémon the seat's pawn wears, unique at the table. A person gets one
+   * when they join and may trade it for any unused one; a computer wears the
+   * one it is named after.
+   */
+  avatar?: string;
 }
 
 export interface RoomSettings {
@@ -197,6 +203,9 @@ export function renameSeat(room: Room, seat: number, name: unknown): void {
   room.undo = null;
   record.name = cleanName(name);
   if (!record.name && record.kind === 'human') record.name = defaultName(room, seat);
+  // Naming a seated person after a Pokémon dresses their pawn as it too, if nobody else wears it.
+  const named = asPokemon(record.name);
+  if (record.kind === 'human' && named && !avatarsBesides(room, seat).has(named)) record.avatar = named;
   if (room.state && record.kind !== 'cpu') room.state.players[seat].name = seatName(room, seat);
 }
 
@@ -225,6 +234,8 @@ export function joinSeat(room: Room, seat: number, device: string, name: unknown
     record.kind = 'human';
     delete record.personality;
   }
+  // A Pokémon name picks that pawn; otherwise a seat taken over keeps its pawn, pack and all.
+  record.avatar = freeAvatar(room, seat, asPokemon(record.name) ?? record.avatar);
   if (room.state) {
     const player = room.state.players[seat];
     player.isHuman = true;
@@ -242,6 +253,7 @@ export function leaveSeat(room: Room, seat: number): void {
   if (room.phase === 'lobby') {
     record.kind = 'open';
     record.name = '';
+    delete record.avatar;
   }
 }
 
@@ -254,6 +266,7 @@ export function freeSeat(room: Room, seat: number, now: number): void {
   if (room.phase === 'lobby') {
     record.kind = 'open';
     record.name = '';
+    delete record.avatar;
     return;
   }
   if (record.kind === 'cpu' || !room.state) return;
@@ -266,15 +279,60 @@ export function freeSeat(room: Room, seat: number, now: number): void {
   schedule(room, now);
 }
 
-/** A Pokémon name for a person who left theirs blank, unused by anyone else at the table. */
+/**
+ * A Pokémon name for a person who left theirs blank, unused by anyone else at
+ * the table as a name or a pawn — so the name and the pawn can match.
+ */
 function defaultName(room: Room, seat: number): string {
-  const taken = room.seats.flatMap((s, i) => (i === seat ? [] : [seatName(room, i)]));
+  const taken = room.seats.flatMap((s, i) => (i === seat ? [] : [seatName(room, i), s.avatar]));
+  const preferred = asPokemon(room.seats[seat]?.avatar);
+  if (preferred && !taken.some((t) => t?.toLowerCase() === preferred.toLowerCase())) return preferred;
   return pickPokemon(room.seed, seat, taken);
 }
 
-/** The next stock opponent whose name nobody at the table is using yet. */
+/** The Pokémon every other seat's pawn wears. */
+function avatarsBesides(room: Room, seat: number): Set<string> {
+  return new Set(room.seats.flatMap((s, i) => (i !== seat && s.avatar ? [s.avatar] : [])));
+}
+
+/**
+ * The pawn a seat should wear: `preferred` if it is a Pokémon nobody else
+ * wears, otherwise one picked from the seed among those still free.
+ */
+function freeAvatar(room: Room, seat: number, preferred: string | null | undefined): string {
+  const others = avatarsBesides(room, seat);
+  const wanted = asPokemon(preferred);
+  if (wanted && !others.has(wanted)) return wanted;
+  const names = room.seats.flatMap((s, i) => (i === seat || s.kind === 'open' ? [] : [seatName(room, i)]));
+  return pickPokemon(room.seed, seat + 7, [...others, ...names]);
+}
+
+/**
+ * A phone trading its seat's pawn for another Pokémon nobody else wears. A
+ * name that was the old Pokémon's follows it, so "Psyduck" does not end up
+ * wearing Gengar.
+ */
+export function setAvatar(room: Room, seat: number, avatar: unknown): void {
+  const record = room.seats[seat];
+  if (!record) throw new RoomError('No such seat', 404);
+  const wanted = asPokemon(typeof avatar === 'string' ? avatar : '');
+  if (!wanted) throw new RoomError('That is not one of the table’s Pokémon', 400);
+  if (avatarsBesides(room, seat).has(wanted)) throw new RoomError(`Someone at the table is already ${wanted}`, 409);
+  const old = record.avatar;
+  record.avatar = wanted;
+  if (old && record.name.trim().toLowerCase() === old.toLowerCase()) {
+    record.name = wanted;
+    if (room.state) {
+      // The snapshot holds the old name; a take-back would hand it back.
+      room.undo = null;
+      room.state.players[seat].name = wanted;
+    }
+  }
+}
+
+/** The next stock opponent whose name nobody at the table is using yet, as a name or a pawn. */
 function nextStockCpu(room: Room): { name: string; personality: AiPersonality } {
-  const taken = new Set(room.seats.map((_, i) => seatName(room, i)));
+  const taken = new Set(room.seats.flatMap((s, i) => (s.kind === 'cpu' || s.kind === 'human' ? [seatName(room, i), s.avatar] : [])));
   return CPU_SEATS.find((c) => !taken.has(c.name)) ?? CPU_SEATS[room.seats.length % CPU_SEATS.length];
 }
 
@@ -289,15 +347,17 @@ export function startGame(room: Room, now: number): void {
   });
   room.seats.forEach((record, seat) => {
     if (record.kind === 'human' && !record.name.trim()) record.name = defaultName(room, seat);
+    if (record.kind === 'human') record.avatar = freeAvatar(room, seat, record.avatar ?? asPokemon(record.name));
   });
-  for (const record of room.seats) {
+  room.seats.forEach((record, seat) => {
     if (record.kind !== 'human') {
       const stock = nextStockCpu(room);
       record.kind = 'cpu';
       record.name = stock.name;
       record.personality = stock.personality;
+      record.avatar = freeAvatar(room, seat, stock.name);
     }
-  }
+  });
   state = {
     ...state,
     players: state.players.map((player, index) => {
@@ -339,6 +399,7 @@ const ACTION_TYPES = new Set<GameAction['type']>([
   'copy-skip',
   'park-or-gear',
   'trail-end',
+  'outfitter',
   'end-season',
 ]);
 
@@ -409,16 +470,21 @@ export function playForPhone(room: Room, seat: number, action: GameAction, now: 
 /**
  * True when nothing face down came to light between two states of one game:
  * no card left a deck — a refilled park row or gear row shows the next card —
- * and no new season was dealt. Taking back a move after that would let the
- * table see a card and then pretend it had not.
+ * no row was dealt afresh (the Outfitter Camp turns the whole gear row over
+ * without shrinking the deck), and no new season was dealt. Taking back a
+ * move after that would let the table see a card and then pretend it had not.
  */
 export function revealsNothing(before: GameState, after: GameState): boolean {
+  const shown = (row: { id: string }[]) => new Set(row.map((c) => c.id));
+  const wasUp = (row: { id: string }[], earlier: Set<string>) => row.every((c) => earlier.has(c.id));
   return (
     before.season === after.season &&
     before.rng === after.rng &&
     before.parkDeck.length === after.parkDeck.length &&
     before.gearDeck.length === after.gearDeck.length &&
-    before.bottleDeck.length === after.bottleDeck.length
+    before.bottleDeck.length === after.bottleDeck.length &&
+    wasUp(after.gearRow, shown(before.gearRow)) &&
+    wasUp(after.parkRow, shown(before.parkRow))
   );
 }
 
@@ -518,6 +584,11 @@ function fallbackAction(state: GameState): GameAction | null {
       return { type: 'park-or-gear', option: 'skip' };
     case 'trail-end':
       return { type: 'trail-end', option: 'skip' };
+    case 'outfitter': {
+      const player = state.players[pending.player];
+      const free = state.gearRow.find((g) => !player.gear.some((o) => o.id === g.id));
+      return free ? { type: 'outfitter', gearId: free.id } : null;
+    }
   }
 }
 
@@ -570,6 +641,12 @@ export function hydrateRoom(room: Room): Room {
   room.undo ??= null;
   if (room.undo) room.undo.state = hydrate(room.undo.state);
   room.settings = normalizeSettings(room.settings);
+  // Games dealt before pawns wore Pokémon get theirs now, one per seat.
+  if (room.phase !== 'lobby') {
+    room.seats.forEach((record, seat) => {
+      if (!asPokemon(record.avatar)) record.avatar = freeAvatar(room, seat, asPokemon(record.name));
+    });
+  }
   return room;
 }
 
@@ -587,6 +664,8 @@ export interface PublicSeat {
   phone: boolean;
   /** What the seat's two hikers are called, in the order of the player's hikers. */
   hikers: [string, string];
+  /** The Pokémon the seat's pawn wears; null for a seat nobody has taken yet. */
+  avatar: string | null;
 }
 
 interface ViewBase {
@@ -632,7 +711,8 @@ function publicSeats(room: Room): PublicSeat[] {
     tag: tags[seat],
     color: SEAT_COLORS[seat],
     phone: record.device !== null,
-    hikers: hikerNames(names[seat], room.seed, seat),
+    hikers: hikerNames(record.avatar ?? names[seat], room.seed, seat),
+    avatar: asPokemon(record.avatar),
   }));
 }
 

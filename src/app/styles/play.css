@@ -1,7 +1,7 @@
 /* ------------------------------------- the phone held sideways, once dealt */
 
 .play {
-  height: 100dvh;
+  height: var(--full-h);
   overflow: hidden;
 }
 
@@ -10,7 +10,7 @@
 }
 
 .play__frame {
-  height: 100dvh;
+  height: var(--full-h);
   display: flex;
   flex-direction: column;
 }
@@ -19,7 +19,7 @@
 @media (orientation: portrait) {
   .play {
     height: auto;
-    min-height: 100dvh;
+    min-height: var(--full-h);
   }
 
   .play__frame {
@@ -28,7 +28,7 @@
 
   .rotate {
     display: flex;
-    min-height: 100dvh;
+    min-height: var(--full-h);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -160,6 +160,12 @@
   color: var(--on-accent);
 }
 
+.play__tabs button.play__tab-menu {
+  display: inline-grid;
+  place-items: center;
+  padding: 0 12px;
+}
+
 .play__dot {
   position: absolute;
   top: 6px;
@@ -212,9 +218,6 @@
   flex-wrap: nowrap;
 }
 
-.play__leave {
-  margin-left: auto;
-}
 
 /* The sheet's blocks side by side: the mat's own sections become the grid's items. */
 .sheet-grid {
@@ -248,10 +251,72 @@
 }
 
 .shopping__head {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  padding-right: 40px;
+}
+
+/* The ✕ in the note's upper right: closes the heading and its explanation for good. */
+.shopping__close {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* The pack, read against each card's cost, and Pass while a decision waits. */
+.shopping__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+
+.shopping__pack-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.pack-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.pack-strip__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.05rem;
+}
+
+.pack-strip__item.is-none {
+  opacity: 0.45;
+}
+
+.shopping__bar .shopping__pass {
+  margin-left: auto;
 }
 
 .shopping__head h2 {
@@ -381,16 +446,6 @@
   gap: 5px;
 }
 
-.offer__can {
-  margin-top: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #2f6b45;
-}
-
 .offer-btn {
   font: inherit;
   font-weight: 700;
@@ -404,7 +459,7 @@
   cursor: pointer;
 }
 
-.shopping__head .offer-btn {
+.shopping__bar .offer-btn {
   border-color: var(--line);
   background: var(--surface-3);
   color: var(--text);
@@ -436,31 +491,43 @@
   font-weight: 700;
 }
 
+/* Cards side by side, as the parks are: three, or four with the deck's top for sale. */
 .gear-offers {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
 .gear-offer {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 11px 11px;
   border-radius: 12px;
   background: var(--card-adv);
   color: var(--ink);
   border: 1px solid #b99a5b;
+  transition: opacity 160ms ease;
+}
+
+/* Short of sun: still readable, plainly out of reach. */
+.gear-offer--short {
+  opacity: 0.55;
+  filter: grayscale(0.55);
 }
 
 .gear-offer__icon {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
+  line-height: 1;
   flex: none;
 }
 
 .gear-offer__text {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .gear-offer__text h3 {
@@ -490,5 +557,44 @@
 
 .gear-offer__buy {
   flex: none;
-  min-width: 72px;
+  width: 100%;
+}
+
+/* ------------------------------------------------------------ the menu */
+
+/* The menu panel: settings in a column on the left, the rules beside them. */
+.menu-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 14px 22px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .menu-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.menu-panel__side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.menu-panel h2 {
+  font-size: 1.05rem;
+  color: var(--card);
+  margin-bottom: 6px;
+}
+
+.menu-panel__rules {
+  padding: 10px 14px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+}
+
+.menu-panel__rules h2 {
+  font-size: 1.2rem;
 }

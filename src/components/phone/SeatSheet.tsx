@@ -4,7 +4,7 @@ import { bonusCardById, bottleDef, canClaim, photoValue, tokenCount } from '@/ga
 import { TOKEN_LIMIT } from '@/game/data/sites';
 import { scoringView } from '@/game/scoring';
 import { HIDDEN_BONUS, reservedCount, sheetHidden } from '@/game/view';
-import type { BonusProgress, GameState } from '@/game/types';
+import type { BonusProgress, GameState, ParkCard } from '@/game/types';
 import { RESOURCES } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { RESOURCE_LABEL } from '../bits';
@@ -22,12 +22,15 @@ export function SeatSheet({
   mine,
   objectivesHidden,
   onToggleObjectives,
+  onPark,
 }: {
   state: GameState;
   seat: PublicSeat;
   mine: boolean;
   objectivesHidden: boolean;
   onToggleObjectives: () => void;
+  /** Tapping a visited park tells its story. */
+  onPark?: (park: ParkCard) => void;
 }) {
   const player = state.players[seat.seat];
   if (sheetHidden(state, seat.seat)) {
@@ -155,7 +158,13 @@ export function SeatSheet({
         ) : (
           <div className="mini-row">
             {player.parks.map((park) => (
-              <MiniPark key={park.id} name={park.name} vp={park.vp} art={<IllustratedParkArt park={park} />} />
+              <MiniPark
+                key={park.id}
+                name={park.name}
+                vp={park.vp}
+                art={<IllustratedParkArt park={park} />}
+                onOpen={onPark ? () => onPark(park) : undefined}
+              />
             ))}
           </div>
         )}
@@ -204,9 +213,25 @@ export function SeatSheet({
   );
 }
 
-function MiniPark({ name, vp, art, note }: { name: string; vp: number; art: React.ReactNode; note?: string }) {
+function MiniPark({ name, vp, art, note, onOpen }: { name: string; vp: number; art: React.ReactNode; note?: string; onOpen?: () => void }) {
+  const label = `${name}, ${vp} points${note ? `. ${note}` : ''}`;
+  if (onOpen) {
+    return (
+      <button type="button" className="mini-park mini-park--open" aria-label={`${label}. About this park`} onClick={onOpen}>
+        <MiniParkFace name={name} vp={vp} art={art} />
+      </button>
+    );
+  }
   return (
-    <article className={`mini-park${note ? ' mini-park--can' : ''}`} aria-label={`${name}, ${vp} points${note ? `. ${note}` : ''}`}>
+    <article className={`mini-park${note ? ' mini-park--can' : ''}`} aria-label={label}>
+      <MiniParkFace name={name} vp={vp} art={art} note={note} />
+    </article>
+  );
+}
+
+function MiniParkFace({ name, vp, art, note }: { name: string; vp: number; art: React.ReactNode; note?: string }) {
+  return (
+    <>
       <div className="mini-park__art">
         {art}
         <span className="mini-park__vp" aria-hidden="true">
@@ -220,7 +245,7 @@ function MiniPark({ name, vp, art, note }: { name: string; vp: number; art: Reac
           {note}
         </span>
       ) : null}
-    </article>
+    </>
   );
 }
 

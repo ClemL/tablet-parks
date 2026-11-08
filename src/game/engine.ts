@@ -110,6 +110,9 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     case 'trail-end':
       resolveTrailEnd(next, action);
       break;
+    case 'outfitter':
+      resolveOutfitter(next, action.gearId);
+      break;
     case 'end-season':
       startNextSeason(next);
       break;
@@ -359,22 +362,11 @@ function resolveTent(state: GameState, option: 'site' | 'camp', campsiteId?: str
       // Send the whole gear row to the bottom and deal a fresh one.
       state.gearDeck.push(...state.gearRow);
       state.gearRow = state.gearDeck.splice(0, GEAR_ROW_SIZE);
-      const free = state.gearRow.find((g) => !player.gear.some((o) => o.id === g.id));
-      if (free) {
-        player.gear.push(free);
-        if (free.effect.kind === 'extra-bottle') {
-          player.bottles.push({
-            id: `p${player.index}g${player.bottles.length}`,
-            kind: free.effect.bottle,
-            used: false,
-          });
-        }
-        if (free.effect.kind === 'season-campfire') player.campfires += 1;
-        const index = state.gearRow.findIndex((g) => g.id === free.id);
-        const replacement = state.gearDeck.shift();
-        if (replacement) state.gearRow[index] = replacement;
-        else state.gearRow.splice(index, 1);
-        gained.push(`${free.name} for free`);
+      // The card says "take one": the camper picks it from the fresh row.
+      if (state.gearRow.some((g) => !player.gear.some((o) => o.id === g.id))) {
+        log(state, player.index, `camped at ${def.name}, paid ${cost} sun and dealt a fresh gear row`);
+        state.pending = { ...pending, kind: 'outfitter' };
+        return;
       }
       break;
     }
@@ -387,6 +379,30 @@ function resolveTent(state: GameState, option: 'site' | 'camp', campsiteId?: str
       ? `camped at ${def.name}${gained.length ? ` and gained ${gained.join(', ')}` : ''}`
       : `camped at ${def.name} but could not pay for it`,
   );
+  finishDecision(state);
+}
+
+/** Outfitter Camp: the camper takes the gear card they chose from the fresh row, free. */
+function resolveOutfitter(state: GameState, gearId: string): void {
+  const pending = state.pending;
+  if (!pending || pending.kind !== 'outfitter') return;
+  const player = state.players[pending.player];
+  const index = state.gearRow.findIndex((g) => g.id === gearId);
+  const free = state.gearRow[index];
+  if (!free || player.gear.some((o) => o.id === free.id)) return;
+  player.gear.push(free);
+  if (free.effect.kind === 'extra-bottle') {
+    player.bottles.push({
+      id: `p${player.index}g${player.bottles.length}`,
+      kind: free.effect.bottle,
+      used: false,
+    });
+  }
+  if (free.effect.kind === 'season-campfire') player.campfires += 1;
+  const replacement = state.gearDeck.shift();
+  if (replacement) state.gearRow[index] = replacement;
+  else state.gearRow.splice(index, 1);
+  log(state, player.index, `took ${free.name} for free`);
   finishDecision(state);
 }
 

@@ -13,7 +13,8 @@ import {
 } from '@/game/engine';
 import { parkDeckLeft } from '@/game/view';
 import { DECK_GEAR_MIN_SUN } from '@/game/data/sites';
-import type { GameAction, GameState, ParkCard } from '@/game/types';
+import type { GameAction, GameState, ParkCard, Player } from '@/game/types';
+import { RESOURCES } from '@/game/types';
 import { IllustratedParkArt } from '@/art/illustrated';
 import { RESOURCE_LABEL } from '../bits';
 import { Icon } from '../Icon';
@@ -43,12 +44,17 @@ export function ParksPanel({
   shopping,
   busy,
   onChoose,
+  noteHidden,
+  onHideNote,
 }: {
   state: GameState;
   seat: number;
   shopping: Shopping;
   busy: boolean;
   onChoose: (action: GameAction) => void;
+  /** The heading and its explanation, closed with their ✕ (the menu brings them back). */
+  noteHidden: boolean;
+  onHideNote: () => void;
 }) {
   const player = state.players[seat];
   const claimable = new Set(claimableParks(state, seat).map((p) => p.id));
@@ -58,20 +64,19 @@ export function ParksPanel({
 
   return (
     <div className="shopping">
-      <header className="shopping__head">
-        <h2>Parks</h2>
-        {shopping ? (
-          <>
+      {noteHidden ? null : (
+        <Note title="Parks" onHide={onHideNote}>
+          {shopping ? (
             <p className="shopping__now">
-              At {WHERE[shopping]}: visit or reserve one{shopping === 'trail-end' ? ', or buy gear (swipe on)' : ''}.
+              At {WHERE[shopping]}: visit or reserve one{shopping === 'trail-end' ? ', or buy gear at REI (swipe on)' : ''}.
               {!state.firstPlayerTokenClaimed ? ' A reserve takes the first player token.' : ''}
             </p>
-            <PassButton busy={busy} onPass={() => act('skip')} />
-          </>
-        ) : (
-          <p className="shopping__later">Visit or reserve when one of your hikers stops at the Trail End or a Ranger Station.</p>
-        )}
-      </header>
+          ) : (
+            <p className="shopping__later">Visit or reserve when one of your hikers stops at the Trail End or a Ranger Station.</p>
+          )}
+        </Note>
+      )}
+      <ShoppingBar player={player} shopping={shopping} busy={busy} onPass={() => act('skip')} />
       <div className="offers">
         {player.reserved.map((park) => (
           <Offer
@@ -129,47 +134,62 @@ export function ParksPanel({
   );
 }
 
-/** The gear shop, with what each card costs this player now. Gear is bought at the Trail End only. */
+/**
+ * REI, the gear shop, with what each card costs this player now; a card they
+ * are short of sun for is greyed. Gear is bought at the Trail End only.
+ */
 export function GearPanel({
   state,
   seat,
   shopping,
   busy,
   onChoose,
+  noteHidden,
+  onHideNote,
 }: {
   state: GameState;
   seat: number;
   shopping: Shopping;
   busy: boolean;
   onChoose: (action: GameAction) => void;
+  noteHidden: boolean;
+  onHideNote: () => void;
 }) {
   const player = state.players[seat];
   const buyable = new Set(shopping === 'trail-end' ? affordableGear(state, seat).map((g) => g.id) : []);
   const sun = player.resources.sun ?? 0;
+  const discounts = state.gearDiscountsLeft > 0 ? ` ${state.gearDiscountsLeft} early-buyer discount${state.gearDiscountsLeft === 1 ? '' : 's'} left this season.` : '';
   return (
     <div className="shopping">
-      <header className="shopping__head">
-        <h2>Gear</h2>
-        {shopping === 'trail-end' ? (
-          <>
-            <p className="shopping__now">
-              At the Trail End: buy one with sun, or visit a park instead. You have {sun} <Token r="sun" size="xs" decorative /> sun.
+      {noteHidden ? null : (
+        <Note title="REI" onHide={onHideNote}>
+          {shopping === 'trail-end' ? (
+            <p className="shopping__now">At the Trail End: buy one with sun, or visit a park instead.{discounts}</p>
+          ) : (
+            <p className="shopping__later">
+              {shopping === 'park-or-gear' ? 'The Ranger Station sells no gear: that is the Trail End’s.' : 'Gear is bought when one of your hikers reaches the Trail End.'}
+              {discounts}
             </p>
-            <PassButton busy={busy} onPass={() => onChoose({ type: 'trail-end', option: 'skip' })} />
-          </>
-        ) : (
-          <p className="shopping__later">
-            {shopping === 'park-or-gear' ? 'The Ranger Station sells no gear: that is the Trail End’s.' : 'Gear is bought when one of your hikers reaches the Trail End.'}{' '}
-            {state.gearDiscountsLeft > 0 ? `${state.gearDiscountsLeft} early-buyer discount${state.gearDiscountsLeft === 1 ? '' : 's'} left this season.` : ''}
-          </p>
-        )}
-      </header>
+          )}
+        </Note>
+      )}
+      <ShoppingBar
+        player={player}
+        shopping={shopping === 'trail-end' ? shopping : null}
+        busy={busy}
+        onPass={() => onChoose({ type: 'trail-end', option: 'skip' })}
+      />
       <div className="gear-offers">
         {state.gearRow.map((card) => {
           const price = gearCost(state, card);
           const owned = player.gear.some((g) => g.id === card.id);
+          const short = sun < price;
           return (
-            <article key={card.id} className="gear-offer">
+            <article
+              key={card.id}
+              className={`gear-offer${short ? ' gear-offer--short' : ''}`}
+              aria-label={`${card.name}, ${price} sun${short ? `, ${price - sun} sun short` : ''}`}
+            >
               <span className="gear-offer__icon" aria-hidden="true">
                 {card.icon}
               </span>
@@ -179,7 +199,7 @@ export function GearPanel({
                 <span className="gear-offer__price">
                   {price} <Token r="sun" size="xs" decorative /> sun
                   {price !== card.cost ? <s> {card.cost}</s> : null}
-                  {owned ? ' · you have one' : sun < price ? ` · ${price - sun} short` : ''}
+                  {owned ? ' · you have one' : short ? ` · ${price - sun} short` : ''}
                 </span>
               </div>
               {shopping === 'trail-end' ? (
@@ -196,7 +216,7 @@ export function GearPanel({
           );
         })}
         {state.houseRules.deckGear ? (
-          <article className="gear-offer gear-offer--deck">
+          <article className={`gear-offer gear-offer--deck${sun < DECK_GEAR_MIN_SUN ? ' gear-offer--short' : ''}`} aria-label={`Top of the gear deck, unseen, ${gearDeckCount(state)} left`}>
             <span className="gear-offer__icon" aria-hidden="true">
               <Icon name="deck" size={24} />
             </span>
@@ -226,11 +246,44 @@ export function GearPanel({
   );
 }
 
-function PassButton({ busy, onPass }: { busy: boolean; onPass: () => void }) {
+/** A panel's heading and what it is for, with a ✕ in its upper right that closes it for good. */
+function Note({ title, onHide, children }: { title: string; onHide: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" className="offer-btn shopping__pass" disabled={busy} onClick={onPass}>
-      Pass
-    </button>
+    <header className="shopping__head">
+      <h2>{title}</h2>
+      {children}
+      <button type="button" className="shopping__close" aria-label={`Close the ${title} note`} onClick={onHide}>
+        <Icon name="x" size={16} />
+      </button>
+    </header>
+  );
+}
+
+/**
+ * The player's pack, token by token, so the cost on each card can be read
+ * against it; and Pass, while they stand at a decision this panel answers.
+ */
+function ShoppingBar({ player, shopping, busy, onPass }: { player: Player; shopping: Shopping; busy: boolean; onPass: () => void }) {
+  return (
+    <div className="shopping__bar">
+      <span className="shopping__pack-label">Your pack</span>
+      <ul className="pack-strip" aria-label="Your pack">
+        {RESOURCES.map((r) => {
+          const n = player.resources[r] ?? 0;
+          return (
+            <li key={r} className={`pack-strip__item${n === 0 ? ' is-none' : ''}`} aria-label={`${n} ${RESOURCE_LABEL[r]}`}>
+              <Token r={r} size="sm" decorative />
+              <b aria-hidden="true">{n}</b>
+            </li>
+          );
+        })}
+      </ul>
+      {shopping ? (
+        <button type="button" className="offer-btn shopping__pass" disabled={busy} onClick={onPass}>
+          Pass
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -301,10 +354,6 @@ function Offer({
               </button>
             ) : null}
           </div>
-        ) : canVisit ? (
-          <span className="offer__can">
-            <Icon name="check" size={13} /> Your pack covers it
-          </span>
         ) : null}
       </div>
     </article>

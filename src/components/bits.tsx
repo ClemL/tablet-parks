@@ -1,6 +1,7 @@
 import type { Resource, ResourceBag, SeasonCardDef } from '@/game/types';
 import { RESOURCES } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
+import { PokemonHead, isDrawnPokemon } from '@/art/pokemon';
 
 export const RESOURCE_LABEL: Record<Resource, string> = {
   sun: 'Sun',
@@ -35,9 +36,12 @@ export function bagSize(bag: ResourceBag): number {
 }
 
 /**
- * A seat's pawn: its colour and its letters. The letters carry the identity,
- * so the table never depends on telling two colours apart. Each seat has its
- * own ink: white letters on the light seat colours fall below 4.5:1.
+ * A seat's pawn: its Pokémon under a ranger's hat on the seat's colour, with
+ * the seat's letters on a tag (from the medium size up). The letters and the
+ * Pokémon — never worn twice at a table — carry the identity, so the table
+ * never depends on telling two colours apart. A seat nobody has taken yet
+ * shows its letters alone. Each seat has its own ink: white letters on the
+ * light seat colours fall below 4.5:1.
  */
 export function Pawn({
   seat,
@@ -45,22 +49,29 @@ export function Pawn({
   ring,
   hiker,
 }: {
-  seat: PublicSeat;
+  seat: Pick<PublicSeat, 'seat' | 'name' | 'tag'> & { avatar?: string | null };
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   ring?: boolean;
   /** Set when the pawn stands for one hiker rather than the whole seat: its name, and a corner mark. */
   hiker?: string;
 }) {
   const mark = hiker ? hikerMark(hiker) : null;
+  const avatar = isDrawnPokemon(seat.avatar) ? seat.avatar! : null;
+  const tagged = avatar && size !== 'xs' && size !== 'sm';
   return (
     <span
-      className={`pawn pawn--${size}${ring ? ' pawn--ring' : ''}${mark ? ' pawn--marked' : ''}`}
+      className={`pawn pawn--${size}${ring ? ' pawn--ring' : ''}${mark ? ' pawn--marked' : ''}${avatar ? ' pawn--pk' : ''}`}
       style={seatStyle(seat)}
-      aria-label={hiker ? `${hiker} (${seat.name})` : seat.name}
-      title={hiker}
+      aria-label={hiker ? `${hiker} (${seat.name})` : avatar && avatar !== seat.name ? `${seat.name} (${avatar})` : seat.name}
+      title={hiker ?? (avatar && avatar !== seat.name ? avatar : undefined)}
       role="img"
     >
-      {seat.tag}
+      {avatar ? <PokemonHead name={avatar} className="pawn__pk" /> : seat.tag}
+      {tagged ? (
+        <span className="pawn__tag" aria-hidden="true">
+          {seat.tag}
+        </span>
+      ) : null}
       {mark ? (
         <span className="pawn__mark" aria-hidden="true">
           {mark}

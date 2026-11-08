@@ -5,6 +5,7 @@ import { defaultEdges, SEAT_COLORS, type PublicSeat, type RoomSettings, type Tab
 import type { TableCommand } from '@/server/service';
 import { api, type Health } from '@/client/api';
 import { SiteArt } from '@/art/siteArt';
+import { PokemonHead, isDrawnPokemon } from '@/art/pokemon';
 import { Pawn, seatStyle } from '../bits';
 import { Icon } from '../Icon';
 import { QrCode } from '../QrCode';
@@ -69,6 +70,7 @@ export function DraftTable({
     color: SEAT_COLORS[seat],
     phone: false,
     hikers: ['Hiker 1', 'Hiker 2'],
+    avatar: null,
   }));
   const memory = health?.store === 'memory';
 
@@ -92,13 +94,15 @@ export function DraftTable({
             Trailside Seasons
           </h1>
         </div>
+        {/* In the scenery, not under it: the seat cards rise into the band's foot and would cover it. */}
+        {notice ? (
+          <div className="panorama__aside">
+            <p className="notice panorama__notice" role="status">
+              {notice}
+            </p>
+          </div>
+        ) : null}
       </Panorama>
-
-      {notice ? (
-        <p className="notice basecamp__notice" role="status">
-          {notice}
-        </p>
-      ) : null}
 
       <Hikers
         count={settings.seats}
@@ -308,7 +312,14 @@ function SeatCard({
         <div className={`seat-card__qr${here ? ' seat-card__qr--joined' : ' seat-card__qr--waiting'}`} aria-hidden="true">
           {here ? (
             <>
-              <span className="seat-card__initial">{seat.tag}</span>
+              {seat.avatar && isDrawnPokemon(seat.avatar) ? (
+                <>
+                  <PokemonHead name={seat.avatar} className="seat-card__pk" />
+                  <span className="seat-card__tag">{seat.tag}</span>
+                </>
+              ) : (
+                <span className="seat-card__initial">{seat.tag}</span>
+              )}
               <span className="seat-card__check">
                 <Icon name="check" size={22} />
               </span>

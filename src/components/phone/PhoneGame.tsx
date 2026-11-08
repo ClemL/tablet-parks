@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SEASONS, nextPlayer } from '@/game/engine';
-import type { GameAction } from '@/game/types';
+import type { GameAction, ParkCard } from '@/game/types';
 import type { SeatView } from '@/room/room';
 import { ApiError, api } from '@/client/api';
 import { HIDE_OBJECTIVES_KEY, local } from '@/client/storage';
+import { useHiddenNotes } from '@/client/notes';
 import { Pawn, seasonName, seatStyle } from '../bits';
 import { Icon } from '../Icon';
 import { Scoreboard } from '../Scoreboard';
@@ -13,20 +14,23 @@ import { SeatSheet } from './SeatSheet';
 import { TurnPreview } from './TurnPreview';
 import { Roster } from './Roster';
 import { GearPanel, ParksPanel, type Shopping } from './Shopping';
+import { MenuPanel } from './MenuPanel';
+import { ParkFactSheet } from '../ParkFactSheet';
 
 const PANELS = [
   { id: 'sheet', label: 'Sheet' },
   { id: 'moves', label: 'Moves' },
   { id: 'parks', label: 'Parks' },
-  { id: 'gear', label: 'Gear' },
+  { id: 'gear', label: 'REI' },
+  { id: 'menu', label: 'Menu' },
 ] as const;
 
 const panelIndex = (id: (typeof PANELS)[number]['id']) => PANELS.findIndex((p) => p.id === id);
 
 /**
- * A player's phone once the game is dealt: held sideways, with four panels a
- * swipe apart — their sheet, where their hikers can go, the parks, and the
- * gear shop. The phone still
+ * A player's phone once the game is dealt: held sideways, with five panels a
+ * swipe apart — their sheet, where their hikers can go, the parks, the gear
+ * shop (REI), and the menu. The phone still
  * walks no hikers; it answers its own player's park decisions — visit,
  * reserve, buy, or pass — and jumps to the parks when one comes up.
  */
@@ -50,6 +54,9 @@ export function PhoneGame({
   useTurnBuzz(yourTurn);
 
   const [tab, setTab] = useState(view.seat);
+  const notes = useHiddenNotes();
+  const [fact, setFact] = useState<{ park: ParkCard; visited: boolean } | null>(null);
+  useNewParks(state.players[view.seat].parks, (park) => setFact({ park, visited: true }));
   const [hidden, setHidden] = useState(false);
   useEffect(() => setHidden(local.get(HIDE_OBJECTIVES_KEY) === '1'), []);
   const toggle = () => {
@@ -128,7 +135,7 @@ export function PhoneGame({
           <div className="play__who">
             <h1>{me.name}</h1>
             <span>
-              {seasonName(state.season)} {state.season}/{SEASONS} · Table {view.id}
+              {seasonName(state.season)} {state.season}/{SEASONS}
             </span>
           </div>
           <p className={`play__turn${yourTurn ? ' play__turn--you' : ''}`} aria-live="polite">
@@ -150,10 +157,10 @@ export function PhoneGame({
                   aria-controls={`panel-${p.id}`}
                   aria-selected={panel === i}
                   aria-label={open ? `${p.label}, choose here` : p.label}
-                  className={panel === i ? 'is-on' : ''}
+                  className={`${panel === i ? 'is-on' : ''}${p.id === 'menu' ? ' play__tab-menu' : ''}`}
                   onClick={() => go(i)}
                 >
-                  {p.label}
+                  {p.id === 'menu' ? <Icon name="menu" size={20} /> : p.label}
                   {open ? <span className="play__dot" aria-hidden="true" /> : null}
                 </button>
               );
@@ -201,9 +208,6 @@ export function PhoneGame({
                   </button>
                 );
               })}
-              <button type="button" className="btn btn--ghost btn--sm play__leave" onClick={onLeave}>
-                Leave seat
-              </button>
             </nav>
             {state.phase === 'game-over' ? (
               <section className="phone__scores">
@@ -212,7 +216,14 @@ export function PhoneGame({
               </section>
             ) : null}
             <div className="sheet-grid">
-              <SeatSheet state={state} seat={shown} mine={tab === view.seat} objectivesHidden={hidden} onToggleObjectives={toggle} />
+              <SeatSheet
+                state={state}
+                seat={shown}
+                mine={tab === view.seat}
+                objectivesHidden={hidden}
+                onToggleObjectives={toggle}
+                onPark={(park) => setFact({ park, visited: false })}
+              />
             </div>
           </section>
           <section id="panel-moves" role="tabpanel" aria-labelledby="tab-moves" className="panel panel--moves">
@@ -230,15 +241,57 @@ export function PhoneGame({
             />
           </section>
           <section id="panel-parks" role="tabpanel" aria-labelledby="tab-parks" className="panel">
-            <ParksPanel state={state} seat={view.seat} shopping={shopping} busy={busy} onChoose={choose} />
+            <ParksPanel
+              state={state}
+              seat={view.seat}
+              shopping={shopping}
+              busy={busy}
+              onChoose={choose}
+              noteHidden={notes.hidden.has('parks')}
+              onHideNote={() => notes.hide('parks')}
+            />
           </section>
           <section id="panel-gear" role="tabpanel" aria-labelledby="tab-gear" className="panel">
-            <GearPanel state={state} seat={view.seat} shopping={shopping} busy={busy} onChoose={choose} />
+            <GearPanel
+              state={state}
+              seat={view.seat}
+              shopping={shopping}
+              busy={busy}
+              onChoose={choose}
+              noteHidden={notes.hidden.has('gear')}
+              onHideNote={() => notes.hide('gear')}
+            />
+          </section>
+          <section id="panel-menu" role="tabpanel" aria-labelledby="tab-menu" className="panel panel--menu">
+            <MenuPanel view={view} token={token} onView={onView} onLeave={onLeave} notesHidden={notes.hidden.size > 0} onShowNotes={notes.reset} />
           </section>
         </div>
       </div>
+      {fact ? <ParkFactSheet park={fact.park} eyebrow={fact.visited ? 'You visited' : 'About this park'} onClose={() => setFact(null)} /> : null}
     </main>
   );
+}
+
+/**
+ * Calls `onNew` with a park this seat has just visited — from this phone or
+ * the tablet — once. The parks already visited when the phone opens are taken
+ * as seen, so a reload does not replay them.
+ */
+function useNewParks(parks: readonly ParkCard[], onNew: (park: ParkCard) => void) {
+  const seen = useRef<Set<string> | null>(null);
+  const latest = useRef(onNew);
+  latest.current = onNew;
+  const key = parks.map((p) => p.id).join(',');
+  useEffect(() => {
+    if (seen.current === null) {
+      seen.current = new Set(parks.map((p) => p.id));
+      return;
+    }
+    const fresh = parks.find((p) => !seen.current!.has(p.id));
+    for (const park of parks) seen.current.add(park.id);
+    if (fresh) latest.current(fresh);
+    // Keyed on the ids: every poll hands over a new array with the same parks.
+  }, [key]);
 }
 
 /** Shown instead of the game while the phone is held upright. */
@@ -251,7 +304,7 @@ function RotatePrompt() {
         <Icon name="phone" size={56} />
       </span>
       <h2>Turn your phone sideways</h2>
-      <p>Once the game is dealt, it is played in landscape: your sheet, the parks and the gear sit side by side, a swipe apart.</p>
+      <p>Once the game is dealt, it is played in landscape: your sheet, your moves, the parks, REI and the menu sit side by side, a swipe apart.</p>
       {canTurn ? (
         <button type="button" className="btn btn--primary" onClick={() => void goSideways()}>
           Full screen, sideways

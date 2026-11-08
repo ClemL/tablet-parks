@@ -127,8 +127,9 @@ export function Shop({
           <div className="shop__gear-list">
             {state.gearRow.map((card) => {
               const price = gearCost(state, card);
+              const short = (player.resources.sun ?? 0) < price;
               return (
-                <article key={card.id} className="shop-gear">
+                <article key={card.id} className={`shop-gear${short ? ' shop-gear--short' : ''}`}>
                   <span className="shop-gear__icon" aria-hidden="true">
                     {card.icon}
                   </span>
@@ -151,7 +152,7 @@ export function Shop({
               );
             })}
             {state.houseRules.deckGear ? (
-              <article className="shop-gear shop-gear--deck">
+              <article className={`shop-gear shop-gear--deck${(player.resources.sun ?? 0) < DECK_GEAR_MIN_SUN ? ' shop-gear--short' : ''}`}>
                 <span className="shop-gear__icon" aria-hidden="true">
                   <Icon name="deck" size={26} />
                 </span>

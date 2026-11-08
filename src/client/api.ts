@@ -50,6 +50,8 @@ export const api = {
     call<TableView>('/api/games/move', { token: host, body: { seat, action } }),
   /** A phone answering its own seat's park decision. */
   choose: (seat: string, action: GameAction) => call<SeatView>('/api/games/choose', { token: seat, body: { action } }),
+  /** A phone trading its seat's Pokémon for another unused one. */
+  avatar: (seat: string, avatar: string) => call<SeatView>('/api/games/avatar', { token: seat, body: { avatar } }),
   control: (host: string, command: TableCommand) =>
     call<TableView>('/api/games/control', { token: host, body: { command } }),
   leave: (seat: string) => call<{ ok: true }>('/api/games/leave', { token: seat, body: {} }),

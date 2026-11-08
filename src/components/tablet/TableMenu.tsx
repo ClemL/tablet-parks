@@ -6,6 +6,7 @@ import type { TableCommand } from '@/server/service';
 import { Pawn } from '../bits';
 import { QrCode } from '../QrCode';
 import { DbLine } from './DbLine';
+import { DisplaySettings } from '../DisplaySettings';
 
 /**
  * The tablet's menu during play: how fast the computers move, what phones may
@@ -44,7 +45,6 @@ export function TableMenu({
       <div className="sheet sheet--bottom sheet--wide" role="dialog" aria-modal="true" aria-labelledby="menu-title">
         <header className="sheet__head">
           <div>
-            <p className="eyebrow">Table {view.id}</p>
             <h2 id="menu-title">Table menu</h2>
           </div>
           <button type="button" className="btn btn--icon" aria-label="Close the menu" onClick={onClose}>
@@ -112,6 +112,11 @@ export function TableMenu({
                   Every seat
                 </button>
               </div>
+            </section>
+
+            <section className="menu__group">
+              <h3>This tablet’s display</h3>
+              <DisplaySettings />
             </section>
 
             <section className="menu__group">

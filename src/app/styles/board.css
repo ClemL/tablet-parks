@@ -391,6 +391,12 @@
   padding: 12px;
 }
 
+/* Short of sun: greyed, the same as on the buyer's phone. */
+.shop-gear--short {
+  opacity: 0.55;
+  filter: grayscale(0.55);
+}
+
 .shop-gear__icon {
   width: 40px;
   height: 40px;

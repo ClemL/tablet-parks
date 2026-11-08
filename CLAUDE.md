@@ -42,7 +42,7 @@ src/server/        start-redis provisioning, REST client, store, sealing, servic
 src/app/           page.tsx (tablet), seat/page.tsx (phone), api/games/*, styles/ (one CSS file per area)
 src/client/        API client, polling hook, localStorage, the changelog parser
 src/components/    tablet/ (setup, board, trail, sheets, menu) · phone/ · shared cards, Footer
-src/art/           Park and site illustrations, drawn as SVG
+src/art/           Park and site illustrations and the Pokémon pawns, drawn as SVG
 scripts/           mock-upstash.mjs: start-redis and the REST API in front of a real redis-server
 e2e/               Playwright: a tablet and phones together, against the build
 public/updates.txt Changelog, oldest first
@@ -111,7 +111,18 @@ config under `out/` (gitignored) instead of editing `playwright.config.ts`.
 spelled `FVP8A` once failed a "no VP in the header" check.
 
 **A take-back cannot cross a revealed card.** `revealsNothing` in `room.ts` refuses an undo once
-any deck shrank or a season turned; a new deck or face-down pile must be added to that check.
+any deck shrank, a row showed a card it did not show before (the Outfitter Camp turns the gear row
+over without shrinking the deck), or a season turned; a new deck or face-down pile must be added
+to that check.
+
+**Full-screen lengths go through `var(--full-h)` / `var(--full-w)`, never `100dvh` / `100vw`.**
+The menus' scale setting is CSS `zoom` on the root, and a zoomed viewport unit grows with it, so
+the tokens divide by `--zoom`. Measure the board with `clientWidth`, not `getBoundingClientRect`,
+for the same reason.
+
+**A seat's Pokémon (`avatar`) is not its name.** Pawns and hiker names follow the avatar
+(`src/art/pokemon.tsx`, `names.ts`); it is unique at the table, and only a seat's own phone may
+change it (`/api/games/avatar`).
 
 **CI's push trigger names `main`, which this remote does not have.** CI still runs on every pull
 request; nothing runs on a merge.

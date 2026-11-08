@@ -70,6 +70,8 @@ export function decisionText(state: GameState): { title: string; note: string } 
     }
     case 'copy-site':
       return { title: 'Overlook', note: 'Pay 1 water to copy the action of any site holding a hiker. The copy does not take that site’s season token.' };
+    case 'outfitter':
+      return { title: 'Outfitter Camp', note: 'The gear row is fresh. Take any one card you do not own yet, free.' };
     default:
       return { title: siteDef(state.trail[pending.siteIndex]).name, note: '' };
   }
@@ -162,6 +164,20 @@ export function decisionChoices(state: GameState): Choice[] | null {
         }),
         { key: 'skip', label: 'Keep the water', icon: walkOn, action: { type: 'copy-skip' } },
       ];
+    case 'outfitter':
+      return state.gearRow
+        .filter((g) => !player.gear.some((o) => o.id === g.id))
+        .map((g) => ({
+          key: g.id,
+          label: g.name,
+          sub: g.text,
+          icon: (
+            <span className="choice__emoji" aria-hidden="true">
+              {g.icon}
+            </span>
+          ),
+          action: { type: 'outfitter', gearId: g.id } as GameAction,
+        }));
     default:
       return null;
   }
@@ -175,6 +191,7 @@ const THEN: Partial<Record<DecisionKind, string>> = {
   'wild-swap': 'then a trade for a wildcard',
   'copy-site': 'then a site to copy',
   bison: 'then the bison',
+  outfitter: 'then pick a gear card',
 };
 
 /**

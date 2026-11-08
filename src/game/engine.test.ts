@@ -1098,6 +1098,57 @@ describe('Nightfall expansion', () => {
     expect(next.players[0].resources.mountain).toBe(0);
     expect(next.players[0].resources.sun).toBe(5);
   });
+
+  it('deals the Outfitter Camp a fresh gear row and lets the camper choose the free card', () => {
+    const state = createGame({ seed: 87, expansions: { nightfall: true, wildlife: false } });
+    const index = state.tentSites[0];
+    state.campsites = [{ id: 'outfitter-camp', tents: [] }];
+    state.seasonCard = null;
+    state.siteTokens[index] = null;
+    state.current = 0;
+    state.players[0].resources = { sun: 2, water: 0, forest: 0, mountain: 0, wild: 0 };
+    const deckBefore = state.gearDeck.length;
+    const oldRow = state.gearRow.map((g) => g.id);
+
+    let next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: index });
+    next = applyAction(next, { type: 'tent', option: 'camp', campsiteId: 'outfitter-camp' });
+    // Paid, the row turned over, and nothing taken yet: the camper chooses.
+    expect(next.players[0].resources.sun).toBe(0);
+    expect(next.pending?.kind).toBe('outfitter');
+    expect(next.pending?.player).toBe(0);
+    expect(next.gearRow.map((g) => g.id)).not.toEqual(oldRow);
+    expect(next.gearDeck).toHaveLength(deckBefore);
+    expect(next.players[0].gear).toHaveLength(0);
+
+    // Any card in the fresh row, not just the first.
+    const pick = next.gearRow[next.gearRow.length - 1];
+    const took = applyAction(next, { type: 'outfitter', gearId: pick.id });
+    expect(took.players[0].gear.map((g) => g.id)).toEqual([pick.id]);
+    expect(took.gearRow.map((g) => g.id)).not.toContain(pick.id);
+    expect(took.gearDeck).toHaveLength(deckBefore - 1);
+    expect(took.pending).toBeNull();
+    // A card that is not in the row is refused.
+    expect(applyAction(next, { type: 'outfitter', gearId: oldRow[0] })).toEqual(next);
+  });
+
+  it('lets a computer at the Outfitter Camp take the card it values most', () => {
+    const state = createGame({ seed: 88, expansions: { nightfall: true, wildlife: false } });
+    const index = state.tentSites[0];
+    state.campsites = [{ id: 'outfitter-camp', tents: [] }];
+    state.seasonCard = null;
+    state.siteTokens[index] = null;
+    state.current = 0;
+    state.players[0].isHuman = false;
+    state.players[0].personality = 'collector';
+    state.players[0].resources = { sun: 3, water: 0, forest: 0, mountain: 0, wild: 0 };
+    let next = applyAction(state, { type: 'move', hikerId: 'p0h0', to: index });
+    next = applyAction(next, { type: 'tent', option: 'camp', campsiteId: 'outfitter-camp' });
+    const action = aiAction(next);
+    expect(action?.type).toBe('outfitter');
+    const after = applyAction(next, action!);
+    expect(after.players[0].gear).toHaveLength(1);
+    expect(after.pending?.kind).not.toBe('outfitter');
+  });
 });
 
 describe('Wildlife expansion', () => {

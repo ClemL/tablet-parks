@@ -229,9 +229,10 @@ function useSize<T extends HTMLElement>(): [(node: T | null) => void, { width: n
     observer.current?.disconnect();
     observer.current = null;
     if (!node) return;
+    // The board's own CSS pixels, not the screen's: under the menu's zoom the two differ.
     const measure = () => {
-      const rect = node.getBoundingClientRect();
-      setSize((old) => (Math.abs(old.width - rect.width) < 1 && Math.abs(old.height - rect.height) < 1 ? old : { width: rect.width, height: rect.height }));
+      const rect = { width: node.clientWidth, height: node.clientHeight };
+      setSize((old) => (Math.abs(old.width - rect.width) < 1 && Math.abs(old.height - rect.height) < 1 ? old : rect));
     };
     measure();
     observer.current = new ResizeObserver(measure);

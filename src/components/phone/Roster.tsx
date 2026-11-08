@@ -12,7 +12,8 @@ const seenKey = (view: SeatView) => `tablet-parks.roster.${view.id}.${view.seat}
 
 /**
  * Who is who, shown for a few seconds when the game is dealt: a handed-out
- * Pokémon name is easy to miss, and the pawns on the tablet carry only letters.
+ * Pokémon name is easy to miss, and each seat's pawn on the tablet is the
+ * Pokémon it wears, which may not match the name.
  * Once per seat per table, so a reload mid-game does not bring it back.
  */
 export function Roster({ view }: { view: SeatView }) {

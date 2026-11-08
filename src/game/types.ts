@@ -204,7 +204,9 @@ export type DecisionKind =
   /* Over the token limit at the end of a turn: choose what goes back */
   | 'discard'
   /* The season is over: whoever holds the camera may take one last photo */
-  | 'season-photo';
+  | 'season-photo'
+  /* Nightfall's Outfitter Camp: the gear row is fresh; take one card free */
+  | 'outfitter';
 
 export interface PendingDecision {
   player: number;
@@ -389,4 +391,6 @@ export type GameAction =
       parkId?: string;
       gearId?: string;
     }
+  /** Outfitter Camp: the free card chosen from the fresh gear row. */
+  | { type: 'outfitter'; gearId: string }
   | { type: 'end-season' };
