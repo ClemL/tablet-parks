@@ -23,12 +23,12 @@ export interface TrailLayout {
 
 /** Room above a stop for the hikers standing on it. */
 export const ABOVE = 34;
-/** Room under a stop for its name, what it pays and the walk-here chip. */
-export const BELOW = 106;
-/** Space between neighbouring stops' labels. */
-export const SIDE = 56;
+/** Room under a stop for what it pays and the walk-here chip; the name runs round the stop's rim. */
+export const BELOW = 76;
+/** Space between neighbouring stops, which their labels must fit within. */
+export const SIDE = 40;
 export const MIN_STOP = 84;
-export const MAX_STOP = 168;
+export const MAX_STOP = 212;
 
 export function trailLayout(count: number, width: number, height: number): TrailLayout {
   if (count <= 0 || width <= 0 || height <= 0) return { stop: MIN_STOP, rows: 1, places: [], path: '' };

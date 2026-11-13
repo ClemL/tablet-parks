@@ -63,6 +63,22 @@
   --tok-wild: #b58ad6;
   --tok-wild-ink: #2a123d;
 
+  /*
+   * Trail-stop rims (siteRim.ts): what a stop pays, or what kind of stop it
+   * is. The name runs round each in --card, at 4.97:1 or better; the gold
+   * rim takes dark lettering (8.26:1).
+   */
+  --rim-trail: #7f5230;
+  --rim-end: #2b3a55;
+  --rim-water: #2f6aa3;
+  --rim-forest: #2f6b45;
+  --rim-mountain: #5f666f;
+  --rim-sun: #e0b654;
+  --rim-sun-ink: #2a2206;
+  --rim-camera: #2c6466;
+  --rim-advanced: #3c5a7e;
+  --rim-wildlife: #6e4f99;
+
   --fire: #f3a56f;
   --rail: 68px;
 

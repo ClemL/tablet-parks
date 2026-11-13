@@ -233,9 +233,9 @@ test.describe('round the tablet', () => {
     await expect(kris.getByText('Your turn — make your move on the tablet.')).toBeVisible({ timeout: 10_000 });
     await expect(tablet.locator('.turnbar--acting')).toContainText('Walk a hiker');
 
-    // Both hikers start on the Trailhead, so the phone lists one group: the sites the tablet lit.
-    // Each tile's name leads with its step on the switchback.
-    const lit = (await tablet.locator('.site--target .site__name').allInnerTexts()).map((name) => name.replace(/^\d+\s*/, ''));
+    // Both hikers start on the Trailhead, so the phone lists one group: the sites the tablet lit,
+    // whose names run round their rims.
+    const lit = await tablet.locator('.site--target .site__rim-name').allTextContents();
     // The moves have their own panel, which comes up by itself when the turn does.
     await dismissRoster(kris);
     await expect(kris.getByRole('tab', { name: /^Hike/ })).toHaveAttribute('aria-selected', 'true', { timeout: 10_000 });
