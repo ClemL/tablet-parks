@@ -13,3 +13,4 @@
 2026-11-08T14:43:00Z - Park cards are now trail posters with the park's art, its state and the year it was established, a points medallion and a Pokémon visiting; REI's cards are price tags with the price on a sticker (the tablet's shop buys by tapping it); Pokémon gear at REI is now off unless the table turns it on
 2026-11-08T14:56:00Z - The Wildlife bison is now Tauros, on a drawn token big enough to spot on its park card from across the table; the trade, the trail and the log call it Tauros too
 2026-11-08T15:27:00Z - Tauros comes alive: when it trades, it stomps onto the stop and hands the wildcard over (and every phone's toast shows it passing it across); when it moves on, it walks across the park cards to its next park, on the tablet and on any phone showing its parks
+2026-11-13T06:36:00Z - The trail's stops are bigger enamel badges: the name runs round a rim coloured by what the stop pays, so the water, trees and sun read from across the table

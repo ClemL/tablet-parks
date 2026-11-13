@@ -6,7 +6,10 @@ seat nobody scans into is played by the computer.
 
 - **The tablet is the board**, read upright from one side. It draws the hiking trail as a path
   winding across the screen, a large round stop for each site, out along the top row and back
-  along the next to the Trail End. Hikers are walked here. The parks on offer, the gear shop and
+  along the next to the Trail End. Each stop is an enamel badge: the scene in a window, the name
+  round the rim, the step on a tab, and a rim in the colour of what the stop pays — blue for
+  water, green for trees, gold for sun, grey for stone — or of the kind of stop it is (purple for
+  Wildlife). Hikers are walked here. The parks on offer, the gear shop and
   the campsites wait in a drawer, closed until someone opens it: each phone shows them, and parks
   and gear are bought on the buyer's own phone or in that drawer.
 - **Each phone is one player's own sheet.** Resources, the camera, photos, campfires, bottles,

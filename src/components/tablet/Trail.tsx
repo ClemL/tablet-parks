@@ -10,6 +10,7 @@ import { Icon } from '../Icon';
 import { Token, TokenBag, TokenRow } from '../Token';
 import { useLongPress } from '@/client/useLongPress';
 import { trailLayout } from './trailLayout';
+import { siteRim } from './siteRim';
 import { Traveller, type BoardMotion } from './motion';
 import { TaurosToken } from '@/art/pokemon';
 import { TentArt } from '@/art/tent';
@@ -47,7 +48,8 @@ function pawnSize(crowd: number, pickable: boolean): 'md' | 'lg' | 'xl' {
 
 /**
  * The season's trail, drawn as a path winding across the board with a round
- * stop for each site, as big as the board allows. While a person is on the
+ * stop for each site, as big as the board allows: an enamel badge whose rim
+ * wears the colour of what the stop pays and carries its name. While a person is on the
  * clock the stops they can reach light up: tap one to walk there (the rear
  * hiker is picked to begin with; tap the other hiker to switch). A stop that
  * needs a campfire to share says so and asks first. Tapping any other stop,
@@ -113,7 +115,6 @@ export function Trail({
               const here = hikersAt(state, index);
               const target = targets.get(index);
               const from = selected?.position === index && canMove !== null;
-              const end = index === 0 || index === state.trail.length - 1;
               const label = `${def.name}: ${def.text}${token ? ` ${RESOURCE_LABEL[token]} token waiting.` : ''}${tent ? ' Tent site.' : ''}${
                 target ? (target.useCampfire ? ' Reachable by spending your campfire.' : ' Reachable.') : ''
               }`;
@@ -123,8 +124,6 @@ export function Trail({
                   style={{ left: place.x, top: place.y }}
                   className={[
                     'site',
-                    end ? 'site--end' : '',
-                    def.tier === 'advanced' ? 'site--advanced' : '',
                     target ? (target.useCampfire ? 'site--campfire' : 'site--target') : '',
                     from ? 'site--from' : '',
                     // A crowd of hikers at the board's edge lines up inward rather than off the board.
@@ -148,14 +147,22 @@ export function Trail({
                       else onMove(target);
                     }}
                   >
-                    <span className="site__disc">
-                      <SiteArt id={kind} className="site__art" />
-                    </span>
-                    <span className="site__name">
+                    {/* An enamel badge: the scene in a window, the name round the rim, the step on a tab. */}
+                    <span className={`site__disc site__disc--${siteRim(kind)}`}>
+                      <span className="site__window">
+                        <SiteArt id={kind} className="site__art" />
+                      </span>
+                      <svg className="site__rim" viewBox="0 0 100 100" aria-hidden="true">
+                        <path id={`site-arc-${index}`} d="M 3.6 50 A 46.4 46.4 0 0 0 96.4 50" fill="none" />
+                        <text className={`site__rim-name${def.name.length > 12 ? ' site__rim-name--long' : ''}`}>
+                          <textPath href={`#site-arc-${index}`} startOffset="50%" textAnchor="middle">
+                            {def.name}
+                          </textPath>
+                        </text>
+                      </svg>
                       <span className="site__step" aria-hidden="true">
                         {index + 1}
                       </span>
-                      {def.name}
                     </span>
                     <span className="site__does">{def.gain ? <TokenRow bag={def.gain} size="md" /> : SHORT[kind] ?? def.text}</span>
                     {target ? (

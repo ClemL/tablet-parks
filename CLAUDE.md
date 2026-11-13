@@ -78,7 +78,7 @@ public/updates.txt Changelog, oldest first
   `DEFAULT_HOUSE_RULES`, is normalized in `normalizeSettings` (unknown values read as off), and gets
   a switch in `SetupSettings`; `hydrate` fills it in for games saved before it existed.
 * **The trail's geometry is `trailLayout()`**, a pure function of the board's measured size with
-  its own test. Stops are 150–168 px on a 1280×800 tablet; keep them that easy to tap.
+  its own test. Stops are 165–212 px on a 1280×800 tablet; keep them that easy to tap.
 * **Verify UI work in a real browser.** Drive the built app in Chromium (tablet 1280×800, phone
   390×844 and sideways 844×390) before claiming a UI change works, and add the flow to `e2e/`.
 * **Motion and colour are accessibility surfaces.** `base.css` shortens every animation under

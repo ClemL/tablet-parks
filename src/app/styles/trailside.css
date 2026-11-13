@@ -264,11 +264,12 @@
   margin: calc(var(--stop) / -2) 0 0 calc(var(--stop) / -2);
 }
 
+/* The tap target: the badge and what hangs under it, kept inside the gap to its neighbours (SIDE). */
 .site__face {
   position: absolute;
-  left: -28px;
+  left: -18px;
   top: 0;
-  width: calc(var(--stop) + 56px);
+  width: calc(var(--stop) + 36px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -281,19 +282,66 @@
   text-align: center;
 }
 
+/*
+ * Each stop is an enamel badge: a rim in the colour of what it pays
+ * (siteRim.ts), the scene in a window with a cream keyline, the name set
+ * round the bottom of the rim, and the step on a tab at its left.
+ */
 .site__disc {
+  --rim: var(--rim-trail);
+  --rim-ink: var(--card);
   position: relative;
   width: var(--stop);
   height: var(--stop);
   flex: none;
   border-radius: 50%;
-  overflow: hidden;
-  background: var(--card);
-  border: 5px solid var(--card);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  background: var(--rim);
+  box-shadow:
+    0 0 0 2px rgba(246, 240, 224, 0.22),
+    0 6px 18px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.16);
   transition:
     box-shadow 160ms ease,
-    border-color 160ms ease;
+    outline-color 160ms ease;
+}
+
+.site__disc--trail {
+  --rim: var(--rim-trail);
+}
+.site__disc--end {
+  --rim: var(--rim-end);
+}
+.site__disc--water {
+  --rim: var(--rim-water);
+}
+.site__disc--forest {
+  --rim: var(--rim-forest);
+}
+.site__disc--mountain {
+  --rim: var(--rim-mountain);
+}
+.site__disc--sun {
+  --rim: var(--rim-sun);
+  --rim-ink: var(--rim-sun-ink);
+}
+.site__disc--camera {
+  --rim: var(--rim-camera);
+}
+.site__disc--advanced {
+  --rim: var(--rim-advanced);
+}
+.site__disc--wildlife {
+  --rim: var(--rim-wildlife);
+}
+
+/* The window is 73% of the badge, leaving the rim wide enough for the name. */
+.site__window {
+  position: absolute;
+  inset: 13.5%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--card);
 }
 
 .site__art {
@@ -308,42 +356,48 @@
   display: block;
 }
 
-.site--advanced .site__disc {
-  border-color: #b9c9e6;
+/* Sizes here are in the rim's own 100-unit box, so the name grows with the stop. */
+.site__rim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-.site--end .site__disc {
-  border-color: var(--card-2);
-}
-
-.site__name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  margin-top: 2px;
+.site__rim-name {
+  fill: var(--rim-ink);
   font-family: var(--display);
   font-weight: 700;
-  font-size: max(15px, calc(var(--stop) * 0.115));
-  line-height: 1.1;
-  color: var(--card);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  font-size: 8.6px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.site__rim-name--long {
+  font-size: 7.6px;
+  letter-spacing: 0.6px;
 }
 
 .site__step {
-  flex: none;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
-  border-radius: 999px;
-  display: inline-grid;
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  display: grid;
   place-items: center;
-  font-family: var(--body);
-  font-size: 0.78rem;
-  font-weight: 800;
-  background: var(--surface-3);
-  color: var(--muted);
-  text-shadow: none;
+  font-family: var(--display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--card);
+  color: var(--ink);
+  border: 3px solid var(--rim);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 
 .site__does {
@@ -376,16 +430,21 @@
   box-shadow: inset 0 0 0 1.5px var(--gold);
 }
 
+/* Lit for a move: a green ring outside the rim, which keeps its own colour. */
 .site--target .site__disc {
-  border-color: var(--accent);
   box-shadow:
-    0 0 0 5px rgba(127, 182, 133, 0.35),
+    0 0 0 4px var(--accent),
+    0 0 0 9px rgba(127, 182, 133, 0.35),
     0 0 30px rgba(127, 182, 133, 0.6);
 }
 
+.site--target .site__step {
+  background: var(--accent);
+}
+
 .site--campfire .site__disc {
-  border-color: var(--fire);
-  border-style: dashed;
+  outline: 4px dashed var(--fire);
+  outline-offset: 4px;
   box-shadow: 0 0 24px rgba(243, 165, 111, 0.45);
 }
 
@@ -394,7 +453,8 @@
 }
 
 .site--from .site__disc {
-  border-color: var(--gold);
+  outline: 4px solid var(--gold);
+  outline-offset: 3px;
 }
 
 /* The bonus token sitting on a stop, and a Nightfall tent: on the rim, where they read at a glance. */
@@ -519,7 +579,8 @@
 @media (hover: hover) and (pointer: fine) {
   .site--target .site__face:hover .site__disc {
     box-shadow:
-      0 0 0 8px rgba(127, 182, 133, 0.45),
+      0 0 0 4px var(--accent),
+      0 0 0 12px rgba(127, 182, 133, 0.45),
       0 0 34px rgba(127, 182, 133, 0.7);
   }
 }

@@ -20,7 +20,7 @@ describe('the drawn trail', () => {
   it('makes the stops large on a tablet, for every trail length the game deals', () => {
     for (let count = 8; count <= 12; count++) {
       const { stop } = trailLayout(count, TABLET.width, TABLET.height);
-      expect(stop, `${count} sites`).toBeGreaterThanOrEqual(130);
+      expect(stop, `${count} sites`).toBeGreaterThanOrEqual(165);
       expect(stop).toBeLessThanOrEqual(MAX_STOP);
     }
   });
