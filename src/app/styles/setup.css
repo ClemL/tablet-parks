@@ -119,6 +119,18 @@
   background: rgba(27, 36, 31, 0.86);
 }
 
+.panorama__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* On the scenery like the title's sign, so it reads against a bright sky. */
+.panorama__full {
+  background: rgba(27, 36, 31, 0.86);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+}
+
 .panorama__notice {
   max-width: 440px;
   font-size: 0.92rem;

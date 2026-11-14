@@ -76,7 +76,8 @@ seat nobody scans into is played by the computer.
    trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
    dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
    the house rules, the Pokémon theme and diorama stops, how fast the computers move, and whose
-   sheets a phone may open. The house rules sit on one card that names the ones switched on and
+   sheets a phone may open. A **Full screen** button in the scenery's corner hides the browser's
+   bars for the whole game; it stays until the tablet leaves full screen. The house rules sit on one card that names the ones switched on and
    opens all seven in a dialog of their own.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
    code** appears on every seat's card, so everyone can scan at once. The settings stay where they
@@ -106,8 +107,8 @@ seat nobody scans into is played by the computer.
    from the public log. After the last season the final scores — with every objective revealed —
    show each player's pawn along a points trail, and under it each journal as a scorecard.
 
-The table menu (☰) during play changes the pace and the peek rule, sets the tablet's text size and
-scale, shows any seat's code again for a late or replacement phone, hands a seat to the computer,
+The table menu (☰) during play changes the pace and the peek rule, puts the tablet full screen or
+takes it out, sets the tablet's text size and scale, shows any seat's code again for a late or replacement phone, hands a seat to the computer,
 and abandons the game.
 
 ### Rules
