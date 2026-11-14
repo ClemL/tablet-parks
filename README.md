@@ -75,8 +75,9 @@ seat nobody scans into is played by the computer.
 1. **Set the table.** The tablet opens on one screen that lasts until the deal: a band of the
    trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
    dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
-   six house rules, the Pokémon theme and diorama stops, how fast the computers move, and whose
-   sheets a phone may open.
+   the house rules, the Pokémon theme and diorama stops, how fast the computers move, and whose
+   sheets a phone may open. The house rules sit on one card that names the ones switched on and
+   opens all seven in a dialog of their own.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
    code** appears on every seat's card, so everyone can scan at once. The settings stay where they
    are, still editable, and **Start** takes Open's place. Names can be typed on the tablet or on
@@ -98,8 +99,12 @@ seat nobody scans into is played by the computer.
    - **Undo:** for eight seconds after a tap on the tablet, the turn bar offers to take it back,
      along with any computer moves since — unless a card has come to light in the meantime (a
      refilled park or gear row, a bottle, a new season).
-6. **Seasons and scoring.** The tablet turns the page between seasons. After winter, the final
-   scores — with every objective revealed — show on the tablet and every phone.
+6. **Seasons and scoring.** Between seasons night falls on the Trail End: everyone's pawn sits by
+   the fire, the tablet says what carries over (packs, relit campfires, refilled bottles, a new
+   stop and season card to come) and who leads next, and a button turns to how the season went
+   for each player — the parks they visited, what they collected and the photos they took, read
+   from the public log. After the last season the final scores — with every objective revealed —
+   show each player's pawn along a points trail, and under it each journal as a scorecard.
 
 The table menu (☰) during play changes the pace and the peek rule, sets the tablet's text size and
 scale, shows any seat's code again for a late or replacement phone, hands a seat to the computer,
@@ -112,8 +117,11 @@ apply unchanged — the engine in `src/game/` is that repository's, with two cor
 porting: a view no longer carries the season cards and advanced sites still to come, and the log no
 longer names a park reserved face down from the deck.
 
-Six optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
-unseen top park; on by default), **Ranger Station first** (spring's advanced site is always the
+Seven rules are chosen at setup. Two are published rules and start on: **Reserve from the deck**
+(a reserve may take the unseen top park) and **Last hiker goes home** (the rulebook's "last hiker
+on the trail": once only one hiker is still out, it walks straight to the Trail End and takes the
+Trail End's turn there; a game saved before this rule existed carries on without it). The rest are
+this table's own and start off: **Ranger Station first** (spring's advanced site is always the
 Ranger Station), **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
 card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it),
 **A park in hand** (everyone starts holding one park, dealt face down into their

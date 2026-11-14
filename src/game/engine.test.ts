@@ -1805,3 +1805,58 @@ describe('objective progress', () => {
     expect(card.progress(scoringView(player, false))).toEqual({ count: 2, goal: 3, unit: 'regions' });
   });
 });
+
+describe('the last hiker on the trail', () => {
+  /** Everyone home but player 0's first hiker on stop 1 and player 1's on stop 2. */
+  function twoLeft(lastHiker: boolean): GameState {
+    const state = createGame({ seed: 61, expansions: { nightfall: false, wildlife: false }, houseRules: { lastHiker } });
+    const end = state.trail.length - 1;
+    for (const player of state.players) {
+      for (const hiker of player.hikers) {
+        hiker.position = end;
+        hiker.finished = true;
+      }
+    }
+    Object.assign(state.players[0].hikers[0], { position: 1, finished: false });
+    Object.assign(state.players[1].hikers[0], { position: 2, finished: false });
+    return state;
+  }
+
+  it('is on by default, as the published rules have it', () => {
+    expect(createGame({ seed: 1 }).houseRules.lastHiker).toBe(true);
+  });
+
+  it('goes straight to the Trail End once it is the only hiker out, and takes the Trail End there', () => {
+    let next = arriveAtEnd(twoLeft(true));
+    next = applyAction(next, { type: 'trail-end', option: 'skip' });
+    const last = next.players[1].hikers[0];
+    expect(last.position).toBe(next.trail.length - 1);
+    expect(last.finished).toBe(true);
+    // Its owner stands at the Trail End's decision, as if they had walked there.
+    expect(next.current).toBe(1);
+    expect(next.pending).toMatchObject({ player: 1, kind: 'trail-end' });
+    expect(next.log.some((e) => e.player === 1 && e.text.includes('last hiker'))).toBe(true);
+
+    // Once it is done there, the season ends.
+    next = applyAction(next, { type: 'trail-end', option: 'skip' });
+    expect(['season-end', 'playing']).toContain(next.phase);
+    expect(next.players.every((p) => p.hikers.every((h) => h.finished))).toBe(true);
+  });
+
+  it('walks on stop by stop when the table turns the rule off', () => {
+    let next = arriveAtEnd(twoLeft(false));
+    next = applyAction(next, { type: 'trail-end', option: 'skip' });
+    expect(next.players[1].hikers[0].position).toBe(2);
+    expect(next.current).toBe(1);
+    expect(next.pending).toBeNull();
+  });
+
+  it('does not walk anyone while two hikers are still out', () => {
+    const state = twoLeft(true);
+    Object.assign(state.players[2].hikers[0], { position: 3, finished: false });
+    let next = arriveAtEnd(state);
+    next = applyAction(next, { type: 'trail-end', option: 'skip' });
+    expect(next.players[1].hikers[0].position).toBe(2);
+    expect(next.players[2].hikers[0].position).toBe(3);
+  });
+});

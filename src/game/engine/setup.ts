@@ -63,7 +63,7 @@ export interface NewGameOptions {
 
 export const DEFAULT_EXPANSIONS: ExpansionFlags = { nightfall: true, wildlife: true };
 
-/** Reserving the deck's top card is the published rule, so it starts on. */
+/** Reserving the deck's top card and the last hiker going home are published rules, so they start on. */
 export const DEFAULT_HOUSE_RULES: HouseRules = {
   blindReserve: true,
   rangerFirst: false,
@@ -71,6 +71,7 @@ export const DEFAULT_HOUSE_RULES: HouseRules = {
   startReserve: false,
   chainParks: false,
   shortGame: false,
+  lastHiker: true,
 };
 
 export function createGame(options: NewGameOptions = {}): GameState {
@@ -254,6 +255,8 @@ export function hydrate(state: GameState): GameState {
   state.houseRules.startReserve ??= false;
   state.houseRules.chainParks ??= false;
   state.houseRules.shortGame ??= false;
+  // A game dealt before the rule existed carries on as it began.
+  state.houseRules.lastHiker ??= false;
   state.seasonPhotoOffered ??= false;
   return state;
 }

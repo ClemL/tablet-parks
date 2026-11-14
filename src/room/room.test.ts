@@ -94,7 +94,7 @@ describe('settings', () => {
   it('keeps the deck-gear house rule off unless the tablet turns it on', () => {
     expect(normalizeSettings(undefined).houseRules.deckGear).toBe(false);
     expect(normalizeSettings({ houseRules: { deckGear: 'yes' } as never }).houseRules.deckGear).toBe(false);
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false } }), DB, T0, 3);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false, lastHiker: true } }), DB, T0, 3);
     startGame(room, T0);
     expect(room.state!.houseRules.deckGear).toBe(true);
   });
@@ -799,7 +799,7 @@ describe('a phone at a park decision', () => {
   });
 
   it('buys the top of the gear deck from the phone when the house rule is on', () => {
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false } }), DB, T0, 42);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false, lastHiker: true } }), DB, T0, 42);
     joinSeat(room, 0, 'a', 'Kris');
     joinSeat(room, 1, 'b', 'Srini');
     startGame(room, T0);

@@ -319,6 +319,8 @@
 .basecamp-settings__chips {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Dense, so the table options fill the column beside the tall house-rules card wherever it lands. */
+  grid-auto-flow: dense;
   gap: 8px;
 }
 
@@ -386,6 +388,65 @@
   font-size: 0.78rem;
   line-height: 1.25;
   color: var(--muted);
+}
+
+/* The house rules as one card: how many are on and which, opening the full list. */
+.setting-chip--rules {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.setting-chip__count {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.house-rules-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.house-rules-summary > span:not(.muted) {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  color: var(--text);
+}
+
+.house-rules-summary .muted {
+  font-size: 0.78rem;
+}
+
+.setting-chip__more {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* The dialog with every house rule in it. */
+.house-rules__head {
+  display: grid;
+  gap: 4px;
+}
+
+.house-rules__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.house-rules__done {
+  justify-self: end;
+  min-width: 160px;
 }
 
 .basecamp-settings__row {
