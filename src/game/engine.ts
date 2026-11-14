@@ -1072,8 +1072,28 @@ function endTurn(state: GameState): void {
     return;
   }
 
+  if (state.houseRules.lastHiker && walkLastHikerHome(state)) return;
+
   const next = nextPlayer(state);
   if (next !== null) state.current = next;
+}
+
+/**
+ * The published rule for the last hiker on the trail: once only one is left,
+ * it does not walk the trail alone stop by stop, collecting from every site
+ * with nobody in the way; it goes straight to the Trail End, where its owner
+ * takes the Trail End's action as usual. Returns whether it walked.
+ */
+function walkLastHikerHome(state: GameState): boolean {
+  const out = state.players.flatMap((p) => p.hikers.filter((h) => !h.finished).map((h) => ({ player: p, hiker: h })));
+  if (out.length !== 1) return false;
+  const { player, hiker } = out[0];
+  const end = state.trail.length - 1;
+  state.current = player.index;
+  state.pending = null;
+  log(state, player.index, 'has the last hiker on the trail, who heads straight for the Trail End');
+  move(state, hiker.id, end, false);
+  return hiker.position === end;
 }
 
 function startNextSeason(state: GameState): void {

@@ -40,12 +40,24 @@ async function openTable(
       if ((await toggle.getAttribute('aria-checked')) === 'true') await toggle.click();
     }
   }
-  if (options.deckGear) await page.getByRole('switch', { name: 'Gear from the deck' }).click();
-  if (options.parkInHand) await page.getByRole('switch', { name: 'A park in hand' }).click();
+  const rules = [
+    options.deckGear ? 'Gear from the deck' : null,
+    options.parkInHand ? 'A park in hand' : null,
+    options.shortGame ? 'Short game' : null,
+  ].filter((name): name is string => name !== null);
+  if (rules.length) await toggleHouseRules(page, rules);
   if (options.diorama) await page.getByRole('switch', { name: 'Diorama stops' }).click();
-  if (options.shortGame) await page.getByRole('switch', { name: 'Short game' }).click();
   await page.getByRole('button', { name: 'Open the table' }).click();
   await expect(page.getByRole('button', { name: 'Start the game' })).toBeVisible({ timeout: 30_000 });
+}
+
+/** House rules live in their own dialog on the setup: open it, flip each named rule, close it. */
+async function toggleHouseRules(page: Page, names: string[]): Promise<void> {
+  await page.getByRole('button', { name: /^House rules/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'House rules' });
+  for (const name of names) await dialog.getByRole('switch', { name }).click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(dialog).toHaveCount(0);
 }
 
 /** Steps the seat count to `seats` with the stepper on the settings tile. */
@@ -280,7 +292,7 @@ test.describe('round the tablet', () => {
   test('with the deck-gear house rule, the top of the gear deck is for sale unseen', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true, deckGear: true });
-    await expect(tablet.getByRole('switch', { name: 'Gear from the deck' })).toHaveAttribute('aria-checked', 'true');
+    await expect(tablet.getByRole('button', { name: /^House rules/ })).toHaveAccessibleName(/Gear from the deck/);
     const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
     await tablet.getByRole('button', { name: 'Start the game' }).click();
     await kris.setViewportSize(SIDEWAYS);
@@ -528,13 +540,22 @@ test.describe('round the tablet', () => {
     expect(heldTop.y).toBeGreaterThanOrEqual(rowBottom.y + rowBottom.height - 1);
   });
 
-  test('the setup offers chain park visits as a house rule, off to begin with', async ({ browser }) => {
+  test('the setup sums up the house rules, and opens every one of them in a dialog of their own', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await tablet.goto('/');
-    const chain = tablet.getByRole('switch', { name: 'Chain park visits' });
+    // The published rules start on; the table's own start off.
+    const card = tablet.getByRole('button', { name: /^House rules/ });
+    await expect(card).toHaveAccessibleName('House rules, 2 of 7 on: Reserve from the deck, Last hiker goes home');
+    await card.click();
+    const dialog = tablet.getByRole('dialog', { name: 'House rules' });
+    await expect(dialog.getByRole('switch')).toHaveCount(7);
+    const chain = dialog.getByRole('switch', { name: 'Chain park visits' });
     await expect(chain).toHaveAttribute('aria-checked', 'false');
     await chain.click();
     await expect(chain).toHaveAttribute('aria-checked', 'true');
+    await tablet.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(card).toHaveAccessibleName(/3 of 7 on: .*Chain park visits/);
   });
 
   test('REI sells Pokémon gear on price tags, and turning the Pokémon theme off plains REI and the parks', async ({ browser }) => {
@@ -605,7 +626,7 @@ test.describe('round the tablet', () => {
         async () => {
           if (!seen.trade) seen.trade = (await tablet.locator('.fx--tauros .fx__tauros svg').count()) > 0;
           if (!seen.walk) seen.walk = (await tablet.locator('.tauros-trip .tauros-walker svg').count()) > 0;
-          const breakBtn = tablet.getByRole('button', { name: /^(Next season|Start (the )?season)/ });
+          const breakBtn = tablet.getByRole('button', { name: /^(Begin |Next season|Start (the )?season)/ });
           if (await breakBtn.count()) await breakBtn.first().click().catch(() => {});
           return seen.trade && seen.walk;
         },
@@ -633,10 +654,48 @@ test.describe('round the tablet', () => {
   test('a short game counts two seasons, and the setup keeps it off to begin with', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await tablet.goto('/');
-    await expect(tablet.getByRole('switch', { name: 'Short game' })).toHaveAttribute('aria-checked', 'false');
+    await expect(tablet.getByRole('button', { name: /^House rules/ })).not.toHaveAccessibleName(/Short game/);
     await openTable(tablet, { seats: 2, brisk: true, shortGame: true });
     await tablet.getByRole('button', { name: 'Start the game' }).click();
     await expect(tablet.getByRole('img', { name: 'Season 1 of 2' })).toBeVisible();
+  });
+
+  test('spring ends in a night at the Trail End that can sum up the season, and the game on everyone’s journal', async ({ browser }) => {
+    test.setTimeout(240_000);
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, shortGame: true });
+    // One person seated, so the night waits for the table rather than turning on its own.
+    await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    const night = tablet.locator('.season-night');
+    const final = tablet.locator('.final');
+    const story = tablet.locator('.park-fact__ok');
+    const playUntil = async (done: () => Promise<boolean>) => {
+      for (let i = 0; i < 900 && !(await done()); i++) {
+        if (await story.count()) await story.click().catch(() => {});
+        else if (!(await playOnce(tablet).catch(() => false))) await tablet.waitForTimeout(150);
+      }
+    };
+
+    await playUntil(async () => (await night.count()) > 0);
+    await expect(night.getByRole('heading', { name: 'Spring is over' })).toBeVisible();
+    await expect(night).toContainText('Season 1 of 2');
+    await expect(night).toContainText('Packs stay packed.');
+    await night.getByRole('button', { name: 'How Spring went' }).click();
+    await expect(night.getByRole('heading', { name: 'How Spring went' })).toBeVisible();
+    await expect(night.locator('.season-recap__card')).toHaveCount(2);
+    await expect(night.locator('.season-recap__card').first()).toContainText('Kris');
+    await night.getByRole('button', { name: 'What carries over' }).click();
+    await expect(night.getByRole('heading', { name: 'Spring is over' })).toBeVisible();
+    await night.getByRole('button', { name: 'Begin Summer' }).click();
+    await expect(night).toHaveCount(0);
+
+    await playUntil(async () => (await final.count()) > 0);
+    await expect(final.getByRole('heading', { name: /^\S.* wins with \d+$/ })).toBeVisible();
+    await expect(final).toContainText('Two seasons walked');
+    await expect(tablet.getByRole('img', { name: /^The scores along a trail: .*Kris \d+/ })).toBeVisible();
+    await expect(final.locator('.scorecard')).toHaveCount(2);
+    await expect(final.locator('.scorecard--winner')).toHaveCount(1);
   });
 
   test('a hiker walks to its stop on the tablet, and every phone hears what it collected', async ({ browser }) => {

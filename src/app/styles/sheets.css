@@ -554,3 +554,492 @@
   display: block;
   font-size: 1.8rem;
 }
+
+/* ------------------------------------------------------------ season break */
+
+/*
+ * Night at the Trail End between seasons: the Trail End scene full-bleed,
+ * shaded on the left where the words sit, everyone's pawn by the fire.
+ */
+.season-night {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  background: #0f1418;
+  color: var(--card);
+  animation: fade-in 260ms ease-out;
+}
+
+.season-night__art,
+.season-night__shade {
+  position: absolute;
+  inset: 0;
+}
+
+.season-night__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.season-night__shade {
+  background:
+    linear-gradient(90deg, rgba(14, 16, 30, 0.94) 0%, rgba(14, 16, 30, 0.78) 40%, rgba(14, 16, 30, 0.12) 72%),
+    linear-gradient(0deg, rgba(10, 10, 18, 0.9) 0%, rgba(10, 10, 18, 0) 32%);
+}
+
+.season-night__camp {
+  position: absolute;
+  /* On the ground beside the fire, not over its flames. */
+  left: 69%;
+  bottom: 14%;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.season-night__camp .pawn {
+  box-shadow:
+    0 0 0 3px var(--card),
+    0 0 26px rgba(255, 179, 71, 0.5);
+}
+
+.season-night__camp .pawn:nth-child(even) {
+  margin-bottom: 14px;
+}
+
+.season-night__body {
+  position: absolute;
+  left: max(48px, env(safe-area-inset-left));
+  top: 44px;
+  width: min(500px, 42vw);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* The recap needs the width for a card per player; the shade goes darker under it. */
+.season-night__body--wide {
+  right: 48px;
+  width: auto;
+}
+
+.season-night__eyebrow {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f2b27a;
+}
+
+.season-night__body h2 {
+  font-size: clamp(2.2rem, 4.4vw, 3.4rem);
+  line-height: 1.02;
+}
+
+.season-night__lede {
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: #e6dcc8;
+}
+
+.season-night__list {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  color: #e6dcc8;
+}
+
+.season-night__list li {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.season-night__list b {
+  color: var(--card);
+}
+
+.season-night__icon {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  color: #f2b27a;
+}
+
+.season-night__mystery {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 5px solid var(--rim-advanced);
+  background: var(--card);
+  color: var(--rim-advanced);
+  font-family: var(--display);
+  font-weight: 700;
+}
+
+.season-night__foot {
+  position: absolute;
+  left: max(48px, env(safe-area-inset-left));
+  right: max(48px, env(safe-area-inset-right));
+  bottom: max(32px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+}
+
+.season-night__lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  color: #e6dcc8;
+}
+
+.season-night__lead b {
+  color: var(--card);
+}
+
+.season-night__lead .pawn {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+.season-night__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.season-night__actions .btn--ghost {
+  color: var(--card);
+  border-color: rgba(246, 240, 224, 0.5);
+}
+
+.season-night__auto {
+  color: #e6dcc8;
+}
+
+/* The season walked, a card per player. */
+.season-recap {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(var(--count, 4), minmax(0, 1fr));
+  gap: 12px;
+}
+
+.season-recap__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(20, 24, 32, 0.82);
+  border: 1px solid rgba(246, 240, 224, 0.16);
+  border-top: 4px solid var(--seat);
+}
+
+.season-recap__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 1.2rem;
+}
+
+.season-recap__label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a8b0c0;
+}
+
+.season-recap__parks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.season-recap__park {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: block;
+}
+
+.season-recap__park svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.season-recap__none {
+  min-height: 24px;
+  font-size: 0.9rem;
+  color: #a8b0c0;
+}
+
+.season-recap__foot {
+  margin-top: auto;
+  font-size: 0.92rem;
+  color: #d4ccbc;
+}
+
+/* ------------------------------------------------------------ final scores */
+
+/*
+ * The end of the game: the totals as hikers along a trail, then a scorecard
+ * per player, nearer the top the better they did.
+ */
+.final {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  /* Nearly opaque: the stops' names behind would otherwise read through the score trail. */
+  background: rgba(8, 12, 10, 0.95);
+  animation: fade-in 260ms ease-out;
+}
+
+.final__inner {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 26px max(40px, env(safe-area-inset-right)) 28px max(40px, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.final__eyebrow {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.final h2 {
+  font-size: clamp(2rem, 3.6vw, 2.8rem);
+  color: var(--card);
+}
+
+.final__margin {
+  color: #c7d6ca;
+}
+
+.final__new {
+  margin-top: 8px;
+}
+
+.score-trail {
+  position: relative;
+  width: min(1040px, 100%);
+  margin-top: 4px;
+}
+
+.score-trail__bed {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 26px;
+  height: 22px;
+  border-radius: 11px;
+  background: #33463b;
+  background-image: linear-gradient(90deg, rgba(246, 240, 224, 0.45) 50%, transparent 50%);
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+  background-position: 0 center;
+}
+
+.score-trail__tick {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--dim);
+}
+
+/* A pawn stands at its score; one too close to another steps up a row, on a longer stem. */
+.score-trail__hiker {
+  position: absolute;
+  bottom: calc(48px + var(--row) * 62px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.score-trail__total {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--card);
+}
+
+.score-trail__hiker .pawn {
+  box-shadow: 0 0 0 3px var(--card);
+}
+
+.score-trail__hiker.is-winner .score-trail__total {
+  font-size: 1.5rem;
+  color: var(--gold);
+}
+
+.score-trail__hiker.is-winner .pawn {
+  box-shadow:
+    0 0 0 3px var(--card),
+    0 0 0 7px var(--gold);
+}
+
+.score-trail__stem {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: calc(10px + var(--row) * 62px);
+  margin-left: -1px;
+  background: var(--seat);
+}
+
+.final__cards {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(var(--count, 4), minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.scorecard {
+  margin-top: calc(var(--rank) * 14px);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+}
+
+.scorecard--winner {
+  box-shadow:
+    0 0 0 4px var(--gold),
+    0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.scorecard__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--seat);
+  color: var(--on-seat);
+}
+
+.scorecard__head .pawn {
+  box-shadow: 0 0 0 3px #ffffff;
+}
+
+.scorecard__name {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.35rem;
+}
+
+.scorecard__rank {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scorecard__total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 16px 2px;
+  color: #5a5446;
+}
+
+.scorecard__total b {
+  font-family: var(--display);
+  font-size: 2.8rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.scorecard__row {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 16px;
+  padding: 7px 0 0;
+  border-top: 2px dashed #d8cdb0;
+  font-weight: 700;
+}
+
+.scorecard__row:last-child {
+  padding-bottom: 14px;
+}
+
+.scorecard__row--dim {
+  color: #6a6452;
+}
+
+.scorecard__parks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 16px 6px;
+}
+
+.scorecard__park {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: block;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.scorecard__park svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.scorecard__more {
+  align-self: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #5a5446;
+}
+
+.scorecard__note {
+  margin: 2px 16px 4px;
+  font-size: 0.86rem;
+  line-height: 1.3;
+  color: #4a4638;
+}
+
+.scorecard__note:last-child {
+  padding-bottom: 14px;
+}

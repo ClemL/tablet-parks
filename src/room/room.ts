@@ -148,6 +148,7 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
       startReserve: input?.houseRules?.startReserve === true,
       chainParks: input?.houseRules?.chainParks === true,
       shortGame: input?.houseRules?.shortGame === true,
+      lastHiker: input?.houseRules?.lastHiker !== false,
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',

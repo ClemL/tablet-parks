@@ -319,6 +319,11 @@ export interface HouseRules {
   chainParks: boolean;
   /** A short game: it ends after the second season (summer) instead of the fourth. */
   shortGame: boolean;
+  /**
+   * The published "last hiker on the trail" rule: once only one hiker is left
+   * out, it goes straight to the Trail End rather than walking on alone.
+   */
+  lastHiker: boolean;
 }
 
 export interface LogEntry {
