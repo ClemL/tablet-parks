@@ -20,6 +20,21 @@ body {
 body {
   /* Taps fire at once instead of waiting to see if a double-tap zoom was meant. */
   touch-action: manipulation;
+  /*
+   * Nothing on the table is there to be copied, and a long press that
+   * selects a word opens the phone's search panel over the game. The typing
+   * fields stay selectable.
+   */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 h1,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CPU_SEATS, SEASONS } from '@/game/engine';
+import { CPU_SEATS, seasonsIn } from '@/game/engine';
 import type { SeatView } from '@/room/room';
 import { isPokemon } from '@/room/names';
 import type { SeatPreview } from '@/server/service';
@@ -15,7 +15,8 @@ import { Icon } from '../Icon';
 import { Footer } from '../Footer';
 import { PhoneGame } from './PhoneGame';
 import { PokemonPicker } from './PokemonPicker';
-import { GearThemeProvider } from '../gearTheme';
+import { PokemonThemeProvider } from '../gearTheme';
+import { DioramaProvider } from '@/art/siteArt';
 
 function ticketFromHash(): string | null {
   const match = /(?:^#|&)t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
@@ -251,9 +252,11 @@ function Seat({
   const me = view.seats[view.seat];
   if (view.phase !== 'lobby' && view.game) {
     return (
-      <GearThemeProvider value={view.settings.pokemonGear === true}>
-        <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />
-      </GearThemeProvider>
+      <PokemonThemeProvider value={view.settings.pokemon !== false}>
+        <DioramaProvider value={view.settings.diorama === true}>
+          <PhoneGame view={view} token={token} offline={offline} onLeave={onLeave} onView={onView} />
+        </DioramaProvider>
+      </PokemonThemeProvider>
     );
   }
   return (
@@ -294,7 +297,7 @@ function PhoneHead({ view }: { view: SeatView }) {
         <h1>{me.name}</h1>
         <p className="muted">
           Seat {view.seat + 1}
-          {game ? ` · ${seasonName(game.season)}, ${game.season} of ${SEASONS}` : ''}
+          {game ? ` · ${seasonName(game.season)}, ${game.season} of ${seasonsIn(game)}` : ''}
         </p>
       </div>
     </header>

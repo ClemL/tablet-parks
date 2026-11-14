@@ -94,7 +94,7 @@ describe('settings', () => {
   it('keeps the deck-gear house rule off unless the tablet turns it on', () => {
     expect(normalizeSettings(undefined).houseRules.deckGear).toBe(false);
     expect(normalizeSettings({ houseRules: { deckGear: 'yes' } as never }).houseRules.deckGear).toBe(false);
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false } }), DB, T0, 3);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false } }), DB, T0, 3);
     startGame(room, T0);
     expect(room.state!.houseRules.deckGear).toBe(true);
   });
@@ -337,6 +337,17 @@ describe('the computer on the clock', () => {
     playFor(room, 0, { type: 'move', ...move }, T0 + 5);
     // Unless the move opened a decision, the computer is now due.
     if (actorOf(room.state!) === 1) expect(room.cpuDueAt).toBeGreaterThan(T0 + 5);
+  });
+
+  it('ends a short game after summer, scored as usual', () => {
+    expect(normalizeSettings(undefined).houseRules.shortGame).toBe(false);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 3, houseRules: { shortGame: true } as never }), DB, T0, 9);
+    startGame(room, T0);
+    const { room: done } = playOut(room);
+    expect(done.phase).toBe('over');
+    expect(done.state!.phase).toBe('game-over');
+    expect(done.state!.season).toBe(2);
+    expect(done.state!.finalScores).toHaveLength(3);
   });
 
   it('plays a table of computers through all four seasons on its own', () => {
@@ -673,7 +684,7 @@ describe('taking a tap back', () => {
     expect(JSON.stringify(tablet)).not.toContain(room.state!.players[1 - actorOf(room.state!)!].reserved[0].id);
   });
 
-  it('turns parks in a row on only when asked, and lets a phone visit one park after another', () => {
+  it('turns chain park visits on only when asked, and lets a phone visit one park after another', () => {
     expect(normalizeSettings(undefined).houseRules.chainParks).toBe(false);
     expect(normalizeSettings({ houseRules: { chainParks: 1 } as never }).houseRules.chainParks).toBe(false);
     // No Wildlife, so no bison trade comes between one visit and the next.
@@ -699,14 +710,20 @@ describe('taking a tap back', () => {
     expect(room.state!.pending?.kind).not.toBe('trail-end');
   });
 
-  it('keeps REI plain unless the table dresses it as Pokémon gear, even mid-game', () => {
-    expect(normalizeSettings(undefined).pokemonGear).toBe(false);
-    expect(normalizeSettings({ pokemonGear: 'yes' } as never).pokemonGear).toBe(false);
-    expect(normalizeSettings({ pokemonGear: true }).pokemonGear).toBe(true);
+  it('dresses the table in Pokémon unless it is turned off, and lets it and the diorama stops change mid-game', () => {
+    expect(normalizeSettings(undefined).pokemon).toBe(true);
+    expect(normalizeSettings({ pokemon: 'yes' } as never).pokemon).toBe(false);
+    expect(normalizeSettings({ pokemon: false }).pokemon).toBe(false);
+    // A table saved when the setting only dressed REI keeps what it chose.
+    expect(normalizeSettings({ pokemonGear: false } as never).pokemon).toBe(false);
+    expect(normalizeSettings({ pokemonGear: true } as never).pokemon).toBe(true);
+    expect(normalizeSettings(undefined).diorama).toBe(false);
+    expect(normalizeSettings({ diorama: 1 } as never).diorama).toBe(false);
     const room = lobby(2);
     startGame(room, T0);
-    changeSettings(room, { pokemonGear: true, seats: 5 });
-    expect(room.settings.pokemonGear).toBe(true);
+    changeSettings(room, { pokemon: false, diorama: true, seats: 5 });
+    expect(room.settings.pokemon).toBe(false);
+    expect(room.settings.diorama).toBe(true);
     expect(room.settings.seats).toBe(2);
   });
 
@@ -782,7 +799,7 @@ describe('a phone at a park decision', () => {
   });
 
   it('buys the top of the gear deck from the phone when the house rule is on', () => {
-    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false } }), DB, T0, 42);
+    const room = newRoom('ABCDE', normalizeSettings({ seats: 2, houseRules: { blindReserve: true, rangerFirst: false, deckGear: true, startReserve: false, chainParks: false, shortGame: false } }), DB, T0, 42);
     joinSeat(room, 0, 'a', 'Kris');
     joinSeat(room, 1, 'b', 'Srini');
     startGame(room, T0);

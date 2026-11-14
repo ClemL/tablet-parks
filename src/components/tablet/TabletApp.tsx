@@ -10,7 +10,8 @@ import { usePoll } from '@/client/usePoll';
 import { useDisplay } from '@/client/display';
 import { DraftTable, Lobby } from './Lobby';
 import { Board } from './Board';
-import { GearThemeProvider } from '../gearTheme';
+import { PokemonThemeProvider } from '../gearTheme';
+import { DioramaProvider } from '@/art/siteArt';
 
 const SETTINGS_KEY = 'tablet-parks.settings';
 
@@ -132,17 +133,19 @@ export function TabletApp() {
     );
   }
   return (
-    <GearThemeProvider value={view.settings.pokemonGear === true}>
-      <Board
-        view={view}
-        busy={busy}
-        error={error ?? (poll.error?.status === 0 ? poll.error.message : null)}
-        onAction={onAction}
-        onCommand={onCommand}
-        onAbandon={onAbandon}
-        onNewGame={() => forget(null)}
-      />
-    </GearThemeProvider>
+    <PokemonThemeProvider value={view.settings.pokemon !== false}>
+      <DioramaProvider value={view.settings.diorama === true}>
+        <Board
+          view={view}
+          busy={busy}
+          error={error ?? (poll.error?.status === 0 ? poll.error.message : null)}
+          onAction={onAction}
+          onCommand={onCommand}
+          onAbandon={onAbandon}
+          onNewGame={() => forget(null)}
+        />
+      </DioramaProvider>
+    </PokemonThemeProvider>
   );
 }
 

@@ -102,7 +102,7 @@ function Acting({
   let say: string;
   let sub: string;
   if (shopping === 'trail-end' && pending?.chain) {
-    say = 'Parks in a row: visit another park, or stop.';
+    say = 'Chain park visits: visit another park, or stop.';
     sub = seat.phone ? `Choose ${phone}, or ${here}. Or tap Done.` : `Choose ${here}. Or tap Done.`;
   } else if (shopping === 'trail-end') {
     say = 'At the Trail End: visit or reserve a park, or buy gear.';

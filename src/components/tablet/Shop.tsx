@@ -74,7 +74,7 @@ export function Shop({
         <header className="shop__head">
           <h2 id="shop-parks">{chain ? 'Visit another park' : 'Visit or reserve a park'}</h2>
           {chain ? (
-            <span className="muted">Parks in a row: keep visiting while the pack covers one</span>
+            <span className="muted">Chain park visits: keep visiting while the pack covers one</span>
           ) : takesLead ? (
             <span className="muted">The first reserve this season takes the first player token</span>
           ) : null}

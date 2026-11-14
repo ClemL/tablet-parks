@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SEASONS, nextPlayer } from '@/game/engine';
+import { nextPlayer, seasonsIn } from '@/game/engine';
 import type { GameAction, ParkCard } from '@/game/types';
 import type { SeatView } from '@/room/room';
 import { ApiError, api } from '@/client/api';
@@ -28,6 +28,12 @@ const PANELS = [
 ] as const;
 
 const panelIndex = (id: (typeof PANELS)[number]['id']) => PANELS.findIndex((p) => p.id === id);
+
+/** Whether this seat still stands at a park decision in `view`, as chained visits leave it. */
+function stillShopping(view: SeatView): boolean {
+  const pending = view.game?.pending;
+  return !!pending && pending.player === view.seat && (pending.kind === 'trail-end' || pending.kind === 'park-or-gear');
+}
 
 /**
  * A player's phone once the game is dealt: held sideways, with five panels a
@@ -112,8 +118,10 @@ export function PhoneGame({
     setBusy(true);
     setProblem(null);
     try {
-      onView(await api.choose(token, action));
-      go(0);
+      const next = await api.choose(token, action);
+      onView(next);
+      // Chained park visits leave the decision open: stay on the parks for the next one.
+      go(stillShopping(next) ? panelIndex('parks') : 0);
     } catch (err) {
       setProblem(err instanceof ApiError ? err.message : 'That did not go through');
     } finally {
@@ -151,7 +159,7 @@ export function PhoneGame({
           <div className="play__who">
             <h1>{me.name}</h1>
             <span>
-              {seasonName(state.season)} {state.season}/{SEASONS}
+              {seasonName(state.season)} {state.season}/{seasonsIn(state)}
             </span>
           </div>
           <p className={`play__turn${yourTurn ? ' play__turn--you' : ''}`} aria-live="polite">
@@ -273,7 +281,17 @@ export function PhoneGame({
           </section>
         </div>
       </div>
-      {fact ? <ParkFactSheet park={fact.park} eyebrow={fact.visited ? 'You visited' : 'About this park'} onClose={() => setFact(null)} /> : null}
+      {fact ? (
+        <ParkFactSheet
+          park={fact.park}
+          eyebrow={fact.visited ? 'You visited' : 'About this park'}
+          onClose={() => {
+            setFact(null);
+            // Back to the parks once the story is read, while another visit is still open.
+            if (shopping) go(panelIndex('parks'));
+          }}
+        />
+      ) : null}
       <FlaskReminder
         table={view.id}
         seat={view.seat}

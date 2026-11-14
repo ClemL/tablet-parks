@@ -115,19 +115,34 @@ export function TableMenu({
             </section>
 
             <section className="menu__group">
-              <h3>REI’s goods</h3>
-              <div className="segmented" role="radiogroup" aria-label="REI’s goods">
+              <h3>The table’s look</h3>
+              <div className="segmented" role="radiogroup" aria-label="Pokémon theme">
                 {([true, false] as const).map((on) => (
                   <button
                     key={String(on)}
                     type="button"
                     role="radio"
-                    aria-checked={view.settings.pokemonGear === on}
-                    className={view.settings.pokemonGear === on ? 'is-on' : ''}
+                    aria-checked={view.settings.pokemon === on}
+                    className={view.settings.pokemon === on ? 'is-on' : ''}
                     disabled={busy}
-                    onClick={() => onCommand({ type: 'settings', settings: { pokemonGear: on } })}
+                    onClick={() => onCommand({ type: 'settings', settings: { pokemon: on } })}
                   >
-                    {on ? 'Pokémon gear' : 'Plain gear'}
+                    {on ? 'Pokémon themed' : 'No Pokémon'}
+                  </button>
+                ))}
+              </div>
+              <div className="segmented" role="radiogroup" aria-label="Trail stops">
+                {([false, true] as const).map((on) => (
+                  <button
+                    key={String(on)}
+                    type="button"
+                    role="radio"
+                    aria-checked={view.settings.diorama === on}
+                    className={view.settings.diorama === on ? 'is-on' : ''}
+                    disabled={busy}
+                    onClick={() => onCommand({ type: 'settings', settings: { diorama: on } })}
+                  >
+                    {on ? 'Diorama stops' : 'Round stops'}
                   </button>
                 ))}
               </div>

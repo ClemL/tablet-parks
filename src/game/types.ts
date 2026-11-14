@@ -317,6 +317,8 @@ export interface HouseRules {
    * long as the pack covers one. A reserve or gear does not start the chain.
    */
   chainParks: boolean;
+  /** A short game: it ends after the second season (summer) instead of the fourth. */
+  shortGame: boolean;
 }
 
 export interface LogEntry {
