@@ -27,7 +27,7 @@ const newTablet = (browser: Browser) => device(browser, { viewport: TABLET });
 
 async function openTable(
   page: Page,
-  options: { seats?: number; brisk?: boolean; base?: boolean; deckGear?: boolean; parkInHand?: boolean } = {},
+  options: { seats?: number; brisk?: boolean; base?: boolean; deckGear?: boolean; parkInHand?: boolean; diorama?: boolean; shortGame?: boolean } = {},
 ): Promise<void> {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Trailside Seasons' })).toBeVisible();
@@ -42,6 +42,8 @@ async function openTable(
   }
   if (options.deckGear) await page.getByRole('switch', { name: 'Gear from the deck' }).click();
   if (options.parkInHand) await page.getByRole('switch', { name: 'A park in hand' }).click();
+  if (options.diorama) await page.getByRole('switch', { name: 'Diorama stops' }).click();
+  if (options.shortGame) await page.getByRole('switch', { name: 'Short game' }).click();
   await page.getByRole('button', { name: 'Open the table' }).click();
   await expect(page.getByRole('button', { name: 'Start the game' })).toBeVisible({ timeout: 30_000 });
 }
@@ -526,16 +528,16 @@ test.describe('round the tablet', () => {
     expect(heldTop.y).toBeGreaterThanOrEqual(rowBottom.y + rowBottom.height - 1);
   });
 
-  test('the setup offers parks in a row as a house rule, off to begin with', async ({ browser }) => {
+  test('the setup offers chain park visits as a house rule, off to begin with', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await tablet.goto('/');
-    const chain = tablet.getByRole('switch', { name: 'Parks in a row' });
+    const chain = tablet.getByRole('switch', { name: 'Chain park visits' });
     await expect(chain).toHaveAttribute('aria-checked', 'false');
     await chain.click();
     await expect(chain).toHaveAttribute('aria-checked', 'true');
   });
 
-  test('REI sells plain gear on price tags, and the table can dress it as Pokémon gear', async ({ browser }) => {
+  test('REI sells Pokémon gear on price tags, and turning the Pokémon theme off plains REI and the parks', async ({ browser }) => {
     const tablet = await newTablet(browser);
     await openTable(tablet, { seats: 2, brisk: true });
     const kris = await joinOnPhone(browser, await seatLink(tablet, 1), 'Kris');
@@ -549,14 +551,17 @@ test.describe('round the tablet', () => {
     await expect(tags.first().locator('.gear-art')).toBeVisible();
     await expect(tags.first().locator('.tag__hole')).toBeAttached();
     await expect(tags.first().locator('.tag__price')).toBeVisible();
+    // A new table is dressed in Pokémon: Squirtle’s Water Filter, and a Pokémon on every park card.
     const names = tags.locator('h3');
-    await expect(names.first()).not.toContainText('’s ');
-    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(0);
+    await expect(names.first()).toContainText('’s ');
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
+    await expect(kris.locator('#panel-parks .poster__visitor')).toHaveCount(3);
 
     await tablet.getByRole('button', { name: 'Table menu' }).click();
-    await tablet.getByRole('radio', { name: 'Pokémon gear' }).click();
-    await expect(names.first()).toContainText('’s ', { timeout: 10_000 });
-    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(3);
+    await tablet.getByRole('radio', { name: 'No Pokémon' }).click();
+    await expect(names.first()).not.toContainText('’s ', { timeout: 10_000 });
+    await expect(kris.locator('#panel-gear .gear-icon__pk')).toHaveCount(0);
+    await expect(kris.locator('#panel-parks .poster__visitor')).toHaveCount(0);
   });
 
   test('every park card is a trail poster with a Pokémon visiting, and Tauros marks the bison’s park', async ({ browser }) => {
@@ -609,6 +614,29 @@ test.describe('round the tablet', () => {
       .toBe(true);
     // The strip is passing: it takes no taps and sinks again once Tauros has arrived.
     await expect(tablet.locator('.tauros-trip')).toHaveCount(0, { timeout: 15_000 });
+  });
+
+  test('the table can draw its stops as diorama tiles, and go back to round scenes mid-game', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await openTable(tablet, { seats: 2, brisk: true, diorama: true });
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    const stops = tablet.locator('.site');
+    await expect(stops.first()).toBeVisible();
+    const count = await stops.count();
+    // Every stop's picture is its tile; the drawing's own label says so.
+    await expect(tablet.locator('.site .site__art svg[aria-label*="tile"]')).toHaveCount(count);
+    await tablet.getByRole('button', { name: 'Table menu' }).click();
+    await tablet.getByRole('radio', { name: 'Round stops' }).click();
+    await expect(tablet.locator('.site .site__art svg[aria-label*="tile"]')).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test('a short game counts two seasons, and the setup keeps it off to begin with', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    await tablet.goto('/');
+    await expect(tablet.getByRole('switch', { name: 'Short game' })).toHaveAttribute('aria-checked', 'false');
+    await openTable(tablet, { seats: 2, brisk: true, shortGame: true });
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await expect(tablet.getByRole('img', { name: 'Season 1 of 2' })).toBeVisible();
   });
 
   test('a hiker walks to its stop on the tablet, and every phone hears what it collected', async ({ browser }) => {

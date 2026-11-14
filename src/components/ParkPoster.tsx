@@ -3,12 +3,14 @@ import { parkFact } from '@/game/data/parkFacts';
 import type { Pokemon } from '@/room/names';
 import { IllustratedParkArt } from '@/art/illustrated';
 import { PokemonHead, TaurosToken } from '@/art/pokemon';
+import { usePokemonTheme } from './gearTheme';
 
 /*
  * The top of every park card, drawn as a trail poster: the park's own
  * illustration edge to edge, its name across a dark banner with the state and
  * the year it became a national park, a points medallion on the bottom edge,
- * and a Pokémon visiting from the bottom-left corner. The park the Wildlife
+ * and, on a table dressed in Pokémon, one visiting from the bottom-left
+ * corner. The park the Wildlife
  * expansion's bison stands on also carries its token, drawn as Tauros.
  */
 
@@ -43,7 +45,7 @@ export function parkVisitor(park: Pick<ParkCard, 'id' | 'tags'>): Pokemon {
 /** The poster art at the top of a park card. Its size comes from the card around it (`--poster-h`). */
 export function ParkPoster({ park, badge, bison = false }: { park: ParkCard; badge?: string; bison?: boolean }) {
   const fact = parkFact(park.id);
-  const visitor = parkVisitor(park);
+  const visitor = usePokemonTheme() ? parkVisitor(park) : null;
   return (
     <div className="poster">
       <div className="poster__art">
@@ -62,9 +64,11 @@ export function ParkPoster({ park, badge, bison = false }: { park: ParkCard; bad
         </span>
       ) : null}
       {badge ? <span className="poster__badge">{badge}</span> : null}
-      <span className="poster__visitor" title={`${visitor} is visiting`}>
-        <PokemonHead name={visitor} />
-      </span>
+      {visitor ? (
+        <span className="poster__visitor" title={`${visitor} is visiting`}>
+          <PokemonHead name={visitor} />
+        </span>
+      ) : null}
       <span className="poster__vp" aria-hidden="true">
         <b>{park.vp}</b>
         <small>VP</small>

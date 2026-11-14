@@ -21,7 +21,8 @@ const RULES: { key: keyof HouseRules; label: string; hint: string }[] = [
   { key: 'rangerFirst', label: 'Ranger Station first', hint: 'Spring’s advanced site is the Ranger Station' },
   { key: 'deckGear', label: 'Gear from the deck', hint: 'With 3+ sun, buy the top gear card unseen, 1 sun off' },
   { key: 'startReserve', label: 'A park in hand', hint: 'Everyone starts with one park reserved, face down' },
-  { key: 'chainParks', label: 'Parks in a row', hint: 'After a visit at the Trail End, keep visiting while you can pay' },
+  { key: 'chainParks', label: 'Chain park visits', hint: 'After a visit at the Trail End, keep visiting while you can pay' },
+  { key: 'shortGame', label: 'Short game', hint: 'Two seasons instead of four: it ends after summer' },
 ];
 
 /**
@@ -73,12 +74,20 @@ export function SetupSettings({
           />
         ))}
         <Chip
-          label="Pokémon at REI"
-          hint="Squirtle’s Water Filter and friends; looks only"
+          label="Pokémon themed"
+          hint="Pokémon visit the parks and lend REI their gear; looks only"
           kind="Table"
-          checked={value.pokemonGear}
+          checked={value.pokemon}
           disabled={disabled}
-          onChange={(pokemonGear) => set({ pokemonGear })}
+          onChange={(pokemon) => set({ pokemon })}
+        />
+        <Chip
+          label="Diorama stops"
+          hint="Each stop on the trail drawn as a little tile; looks only"
+          kind="Table"
+          checked={value.diorama}
+          disabled={disabled}
+          onChange={(diorama) => set({ diorama })}
         />
       </div>
       <div className="basecamp-settings__row">

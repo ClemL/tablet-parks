@@ -48,11 +48,13 @@ export interface RoomSettings {
   pace: Pace;
   peek: Peek;
   /**
-   * REI's goods dressed as Pokémon gear (Squirtle’s Water Filter, with Squirtle
-   * beside it). Looks only; off unless the table turns it on, since REI's price
-   * tags read best plain.
+   * The table dressed in Pokémon: one visiting every park card, and REI's
+   * goods as Pokémon gear (Squirtle’s Water Filter, with Squirtle beside it).
+   * Looks only; the seats' pawns are Pokémon either way.
    */
-  pokemonGear: boolean;
+  pokemon: boolean;
+  /** The trail's stops drawn as little diorama tiles instead of round scenes. Looks only. */
+  diorama: boolean;
 }
 
 /** Where the game's database came from, for the tablet to say. Never the credentials. */
@@ -116,7 +118,8 @@ export const DEFAULT_SETTINGS: RoomSettings = {
   houseRules: { ...DEFAULT_HOUSE_RULES },
   pace: 'normal',
   peek: 'cpu',
-  pokemonGear: false,
+  pokemon: true,
+  diorama: false,
 };
 
 /** Seat colours by index; the stylesheet defines them so a theme can restyle the table. */
@@ -144,10 +147,13 @@ export function normalizeSettings(input: Partial<RoomSettings> | undefined): Roo
       deckGear: input?.houseRules?.deckGear === true,
       startReserve: input?.houseRules?.startReserve === true,
       chainParks: input?.houseRules?.chainParks === true,
+      shortGame: input?.houseRules?.shortGame === true,
     },
     pace: input?.pace && input.pace in PACE_MS ? input.pace : DEFAULT_SETTINGS.pace,
     peek: input?.peek === 'all' ? 'all' : 'cpu',
-    pokemonGear: input?.pokemonGear === true,
+    // A table saved before the theme reached the parks called it Pokémon gear.
+    pokemon: (input?.pokemon ?? (input as { pokemonGear?: unknown } | undefined)?.pokemonGear ?? DEFAULT_SETTINGS.pokemon) === true,
+    diorama: input?.diorama === true,
   };
 }
 
@@ -193,7 +199,7 @@ export function changeSettings(room: Room, input: Partial<RoomSettings>): void {
   const next = normalizeSettings({ ...room.settings, ...input });
   if (room.phase !== 'lobby') {
     // Once dealt, only how the table runs and looks may change, never what was dealt.
-    room.settings = { ...room.settings, pace: next.pace, peek: next.peek, pokemonGear: next.pokemonGear };
+    room.settings = { ...room.settings, pace: next.pace, peek: next.peek, pokemon: next.pokemon, diorama: next.diorama };
     return;
   }
   if (next.seats !== room.seats.length) {

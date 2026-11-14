@@ -56,7 +56,7 @@ import {
   type MoveOption,
   usableCampsites,
 } from './engine/queries';
-import { buildTrail, GEAR_ROW_SIZE, seedSiteTokens, SEASONS, tentSitesFor } from './engine/setup';
+import { buildTrail, GEAR_ROW_SIZE, seedSiteTokens, seasonsIn, tentSitesFor } from './engine/setup';
 
 export * from './engine/primitives';
 export * from './engine/rules';
@@ -1065,7 +1065,7 @@ function endTurn(state: GameState): void {
     }
     state.phase = 'season-end';
     log(state, -1, `Season ${state.season} is over.`);
-    if (state.season >= SEASONS) {
+    if (state.season >= seasonsIn(state)) {
       state.phase = 'game-over';
       state.finalScores = scoreGame(state);
     }

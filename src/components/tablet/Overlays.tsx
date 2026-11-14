@@ -1,6 +1,6 @@
 'use client';
 
-import { SEASONS } from '@/game/engine';
+import { seasonsIn } from '@/game/engine';
 import type { GameState } from '@/game/types';
 import type { PublicSeat } from '@/room/room';
 import { Pawn, seasonName } from '../bits';
@@ -26,7 +26,7 @@ export function SeasonBreak({
     <div className="scrim" role="presentation">
       <div className="sheet sheet--bottom sheet--center" role="dialog" aria-modal="true" aria-labelledby="season-title">
         <p className="eyebrow">
-          Season {state.season} of {SEASONS}
+          Season {state.season} of {seasonsIn(state)}
         </p>
         <h2 id="season-title">{seasonName(state.season)} is over</h2>
         <p className="sheet__note">
@@ -61,7 +61,7 @@ export function FinalScores({
   return (
     <div className="scrim" role="presentation">
       <div className="sheet sheet--bottom sheet--wide" role="dialog" aria-modal="true" aria-labelledby="final-title">
-        <p className="eyebrow">Four seasons walked</p>
+        <p className="eyebrow">{seasonsIn(state) === 2 ? 'Two seasons walked' : 'Four seasons walked'}</p>
         <h2 id="final-title">{winner ? `${state.players[winner.player].name} wins with ${winner.total}` : 'Final scores'}</h2>
         <Scoreboard state={state} seats={seats} />
         <p className="muted">Every objective is revealed on the phones too. A new game gets a fresh database and new seat codes.</p>

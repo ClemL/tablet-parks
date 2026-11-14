@@ -7,7 +7,8 @@ import { PokemonHead } from '@/art/pokemon';
 import { GearArt, hasGearArt } from '@/art/gear';
 
 /*
- * REI's goods dressed as Pokémon gear, when the table leaves it on: each card
+ * The table's Pokémon theme. With it on, a Pokémon visits every park card
+ * (ParkPoster) and REI's goods are dressed as Pokémon gear: each card
  * gets the Pokémon it suits best and a name to match — Squirtle’s Water
  * Filter, Snorlax’s Sleeping Bag — and that Pokémon stands beside the card.
  * Gear with no natural owner goes to Ditto, who can be anything. Looks only:
@@ -29,10 +30,15 @@ export const GEAR_POKEMON: Record<string, { pokemon: Pokemon; name: string }> = 
   daypack: { pokemon: 'Psyduck', name: 'Psyduck’s Daypack' },
 };
 
-const GearTheme = createContext(false);
+const PokemonTheme = createContext(true);
 
-/** Set once per screen from the table's setting; every gear card below reads it. */
-export const GearThemeProvider = GearTheme.Provider;
+/** Set once per screen from the table's setting; every park card and gear card below reads it. */
+export const PokemonThemeProvider = PokemonTheme.Provider;
+
+/** Whether this table is dressed in Pokémon. */
+export function usePokemonTheme(): boolean {
+  return useContext(PokemonTheme);
+}
 
 /** The Pokémon a card goes to: its own, or Ditto for anything without one. */
 export function gearPokemon(card: Pick<GearCard, 'id'>): Pokemon {
@@ -47,7 +53,7 @@ export function gearName(card: Pick<GearCard, 'id' | 'name'>, themed: boolean): 
 
 /** The card's name as this table calls it, for any component under the provider. */
 export function useGearName(): (card: Pick<GearCard, 'id' | 'name'>) => string {
-  const themed = useContext(GearTheme);
+  const themed = useContext(PokemonTheme);
   return (card) => gearName(card, themed);
 }
 
@@ -57,7 +63,7 @@ export function useGearName(): (card: Pick<GearCard, 'id' | 'name'>) => string {
  * standing just beside.
  */
 export function GearIcon({ card, className = '' }: { card: Pick<GearCard, 'id' | 'icon'>; className?: string }) {
-  const themed = useContext(GearTheme);
+  const themed = useContext(PokemonTheme);
   return (
     <span className={`gear-icon${themed ? ' gear-icon--pk' : ''}${className ? ` ${className}` : ''}`} aria-hidden="true">
       <span className="gear-icon__item">{hasGearArt(card.id) ? <GearArt id={card.id} /> : card.icon}</span>

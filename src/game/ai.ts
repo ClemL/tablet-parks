@@ -21,6 +21,7 @@ import {
   photoCost,
   photoValue,
   reservableParks,
+  seasonsIn,
   siteDef,
   usableBottles,
 } from './engine';
@@ -500,7 +501,7 @@ export function bestMove(state: GameState): GameAction | null {
     }
     if (option.to === end) {
       const lost = Math.min(weightTotal, 4);
-      score -= lost * meanAhead * w.finishPenalty * (state.season === 4 ? 0.75 : 1);
+      score -= lost * meanAhead * w.finishPenalty * (state.season === seasonsIn(state) ? 0.75 : 1);
     }
 
     if (!best || score > best.score) {
@@ -522,7 +523,7 @@ function gearValue(
   values: Record<Resource, number>,
 ): number {
   const w = weightsFor(player);
-  const seasonsLeft = 5 - state.season;
+  const seasonsLeft = seasonsIn(state) + 1 - state.season;
   // Gear scores nothing itself: it is worth only what its effect earns.
   const keepValue = 0;
   switch (card.effect.kind) {
@@ -646,7 +647,7 @@ function parkOrGearChoice(state: GameState, player: Player, withGear: boolean): 
     .map((p) => ({ p, score: p.vp + bonusSynergy(state, player, p) }))
     .sort((a, b) => b.score - a.score)[0];
   if (claim) {
-    const lastChance = state.season >= 3;
+    const lastChance = state.season >= seasonsIn(state) - 1;
     const cost = bagTotal(effectiveCost(player, claim.p, state));
     if (lastChance || claim.score >= 2.5 || claim.score / Math.max(1, cost) >= 0.6) {
       options.push({ score: claim.score * w.parkClaim * 0.5, choice: { option: 'claim-park', parkId: claim.p.id } });
@@ -656,7 +657,7 @@ function parkOrGearChoice(state: GameState, player: Player, withGear: boolean): 
   const reserve = reservableParks(state)
     .map((p) => ({ p, score: p.vp + bonusSynergy(state, player, p) }))
     .sort((a, b) => b.score - a.score)[0];
-  if (reserve && player.reserved.length < 2 && state.season < 4) {
+  if (reserve && player.reserved.length < 2 && state.season < seasonsIn(state)) {
     const prize = state.firstPlayerTokenClaimed ? 0 : FIRST_PLAYER_VP + 1.2;
     options.push({
       score: (reserve.score * 0.42 + prize) * (w.reserve / 2.3),
@@ -664,7 +665,7 @@ function parkOrGearChoice(state: GameState, player: Player, withGear: boolean): 
     });
   }
 
-  if (canReserveTop(state) && player.reserved.length < 2 && state.season < 4) {
+  if (canReserveTop(state) && player.reserved.length < 2 && state.season < seasonsIn(state)) {
     options.push({ score: blindReserveScore(state, player), choice: { option: 'reserve-top' } });
   }
 

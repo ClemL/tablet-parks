@@ -37,18 +37,24 @@ seat nobody scans into is played by the computer.
   Pokémon, ♂ and ♀. A blank name takes the Pokémon's name.
 - **Park cards are trail posters** (`src/components/ParkPoster.tsx`): the park's illustration edge
   to edge, its name on a dark banner with the state and the year it became a national park, a
-  points medallion, and a Pokémon visiting from the corner — one suited to the park (water parks
-  get Squirtle or Psyduck, deserts Diglett or Vulpix), always the same one for the same park.
+  points medallion, and on a Pokémon-themed table, a Pokémon visiting from the corner — one suited
+  to the park (water parks get Squirtle or Psyduck, deserts Diglett or Vulpix), always the same one
+  for the same park.
   With Wildlife, the park the bison stands on carries its token, drawn as Tauros and sized to be
   spotted across the table; the trade and the cards call it Tauros too.
 - **REI's cards are price tags** (`src/components/PriceTag.tsx`): kraft card with a punched hole
   and string, the price on a round sticker (struck through when a discount applies), upright on
   the phone and in the drawer and on their side in the tablet's shop, where the sticker is the
-  buy button. The table can dress the gear as **Pokémon gear** (at setup or in the table menu):
-  Squirtle’s Water Filter, Snorlax’s Sleeping Bag and the rest, each with its Pokémon beside it,
-  and Ditto for anything without an obvious owner. It is off unless turned on; looks only, the
-  rules are the same. Every item is drawn (`src/art/gear.tsx`) rather than an emoji, so it looks
-  the same on every device.
+  buy button. On a **Pokémon-themed** table (the default; switch it at setup or in the table
+  menu) the gear is Pokémon gear — Squirtle’s Water Filter, Snorlax’s Sleeping Bag and the rest,
+  each with its Pokémon beside it, and Ditto for anything without an obvious owner — and a Pokémon
+  visits every park card. With the theme off, REI and the parks are plain; the pawns stay
+  Pokémon. Looks only, the rules are the same. Every item is drawn (`src/art/gear.tsx`) rather
+  than an emoji, so it looks the same on every device.
+- **Diorama stops** (a table setting, off to begin with, also in the table menu) draw every stop
+  on the trail as a little isometric tile with its landmark standing on it — the Trailhead's
+  signpost, the Valley's river spilling over the tile's edge, the Fire Lookout's tower — instead
+  of a round scene (`src/art/diorama.tsx`).
 - **Reserved parks sit in their own row**, marked Reserved, under the three parks and the deck,
   on the phone and in the tablet's shop.
 - **The board moves.** A hiker walks from stop to stop along the trail to where it is going — on a
@@ -69,8 +75,8 @@ seat nobody scans into is played by the computer.
 1. **Set the table.** The tablet opens on one screen that lasts until the deal: a band of the
    trail's scenery with the title, a **card for each seat** in one row — seats (2–5) are added and
    dropped beside it — and the settings under the cards: the Nightfall and Wildlife expansions,
-   four house rules, optional Pokémon gear at REI, how fast the computers move, and whose sheets
-   a phone may open.
+   six house rules, the Pokémon theme and diorama stops, how fast the computers move, and whose
+   sheets a phone may open.
 2. **Open the table.** The server provisions a new Upstash database for this game, and a **QR
    code** appears on every seat's card, so everyone can scan at once. The settings stay where they
    are, still editable, and **Start** takes Open's place. Names can be typed on the tablet or on
@@ -106,14 +112,16 @@ apply unchanged — the engine in `src/game/` is that repository's, with two cor
 porting: a view no longer carries the season cards and advanced sites still to come, and the log no
 longer names a park reserved face down from the deck.
 
-Five optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
+Six optional house rules are chosen at setup: **Reserve from the deck** (a reserve may take the
 unseen top park; on by default), **Ranger Station first** (spring's advanced site is always the
 Ranger Station), **Gear from the deck** (with 3 or more sun at the Trail End, buy the top gear
 card unseen for 1 sun less than its usual price; gear tops out at 4 sun, so 3 always covers it),
 **A park in hand** (everyone starts holding one park, dealt face down into their
-reservations; it does not take the first player token) and **Parks in a row** (at the Trail
+reservations; it does not take the first player token) and **Chain park visits** (at the Trail
 End, a visit opens another visit, and another, while the pack covers one; a reserve or gear does
-not start the chain, and mid-chain only visiting or stopping is on offer).
+not start the chain, and mid-chain only visiting or stopping is on offer; after each visit's
+story the phone and the tablet return to the parks) and **Short game** (the game ends after the
+second season, summer, and is scored then; the computers plan for two seasons).
 
 Two rules differ from parks-game: the **Outfitter Camp** lets the camper choose which card of the
 fresh gear row to take, as its text says, and a player's **armed flasks** fill themselves at the

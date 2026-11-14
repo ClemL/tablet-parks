@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SEASONS, nextPlayer, type MoveOption } from '@/game/engine';
+import { nextPlayer, seasonsIn, type MoveOption } from '@/game/engine';
 import type { GameAction, GameState, ParkCard } from '@/game/types';
 import type { TableView } from '@/room/room';
 import type { TableCommand } from '@/server/service';
@@ -129,7 +129,16 @@ export function Board({
       {info ? <InfoSheet state={state} seats={view.seats} subject={info} edge="bottom" upright onClose={() => setInfo(null)} /> : null}
       {menu ? <TableMenu view={view} busy={busy} onCommand={onCommand} onAbandon={onAbandon} onClose={() => setMenu(false)} /> : null}
       {visit.park ? (
-        <ParkFactSheet park={visit.park} eyebrow={`${state.players[visit.park.seat]?.name ?? 'A hiker'} visited`} closeAfterMs={FACT_MS} onClose={visit.dismiss} />
+        <ParkFactSheet
+          park={visit.park}
+          eyebrow={`${state.players[visit.park.seat]?.name ?? 'A hiker'} visited`}
+          closeAfterMs={FACT_MS}
+          onClose={() => {
+            visit.dismiss();
+            // Chain park visits: the next visit is chosen from the parks, so bring them back.
+            if (shopKind && state.pending?.chain) setDrawer(true);
+          }}
+        />
       ) : null}
     </main>
   );
@@ -148,8 +157,8 @@ function TopBar({ state, view, upNext, onMenu }: { state: GameState; view: Table
     <header className="topbar">
       <div className="topbar__season">
         <span className="topbar__name">{seasonName(state.season)}</span>
-        <span className="board__pips" role="img" aria-label={`Season ${state.season} of ${SEASONS}`}>
-          {Array.from({ length: SEASONS }, (_, i) => (
+        <span className="board__pips" role="img" aria-label={`Season ${state.season} of ${seasonsIn(state)}`}>
+          {Array.from({ length: seasonsIn(state) }, (_, i) => (
             <i key={i} className={i < state.season ? 'is-on' : ''} />
           ))}
         </span>

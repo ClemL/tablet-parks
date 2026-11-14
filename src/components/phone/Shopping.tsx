@@ -192,7 +192,7 @@ export function GearPanel({
           ) : (
             <p className="shopping__later">
               {chain
-                ? 'You are visiting parks in a row: gear waits for your next Trail End.'
+                ? 'You are chaining park visits: gear waits for your next Trail End.'
                 : shopping === 'park-or-gear'
                   ? 'The Ranger Station sells no gear: that is the Trail End’s.'
                   : 'Gear is bought when one of your hikers reaches the Trail End.'}

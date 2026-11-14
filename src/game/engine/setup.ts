@@ -30,6 +30,11 @@ import { shuffle } from '../rng';
 export const GEAR_ROW_SIZE = 3;
 export const SEASONS = 4;
 
+/** The seasons this game runs to: four, or two with the short-game house rule. */
+export function seasonsIn(state: Pick<GameState, 'houseRules'>): number {
+  return state.houseRules?.shortGame ? 2 : SEASONS;
+}
+
 /** Seat colours come from the active skin, so a theme can restyle the table
  *  (and the high-contrast skin can swap in a colour-blind-safe set). */
 const PLAYER_COLORS = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)'];
@@ -65,6 +70,7 @@ export const DEFAULT_HOUSE_RULES: HouseRules = {
   deckGear: false,
   startReserve: false,
   chainParks: false,
+  shortGame: false,
 };
 
 export function createGame(options: NewGameOptions = {}): GameState {
@@ -247,6 +253,7 @@ export function hydrate(state: GameState): GameState {
   state.houseRules.deckGear ??= false;
   state.houseRules.startReserve ??= false;
   state.houseRules.chainParks ??= false;
+  state.houseRules.shortGame ??= false;
   state.seasonPhotoOffered ??= false;
   return state;
 }
