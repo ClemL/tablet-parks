@@ -7,11 +7,13 @@ import { Pawn } from '../bits';
 import { QrCode } from '../QrCode';
 import { DbLine } from './DbLine';
 import { DisplaySettings } from '../DisplaySettings';
+import { FullscreenButton } from '../FullscreenButton';
 
 /**
  * The tablet's menu during play: how fast the computers move, what phones may
  * open, a seat's code for a phone joining late or replacing a flat one, giving
- * a seat to the computer, and walking away from the game.
+ * a seat to the computer, full screen and the display, and walking away from
+ * the game.
  */
 export function TableMenu({
   view,
@@ -150,6 +152,7 @@ export function TableMenu({
 
             <section className="menu__group">
               <h3>This tablet’s display</h3>
+              <FullscreenButton className="menu__full" />
               <DisplaySettings />
             </section>
 
