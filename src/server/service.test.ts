@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { legalMoves } from '@/game/engine';
 import { actorOf, newRoom, normalizeSettings, type SeatView, type TableView } from '@/room/room';
+import { POKEMON } from '@/room/names';
 import { startMockUpstash, type MockUpstash } from '../../scripts/mock-upstash.mjs';
 import { open, seal } from './seal';
 import { provisionDatabase } from './provision';
@@ -138,14 +139,17 @@ describe.skipIf(!redisAvailable)('a game round a tablet, each in its own databas
     const { host, view } = await createGame({ seats: 2 });
     const kris = await joinGame(view.tickets[0], 'Kris');
     const srini = await joinGame(view.tickets[1], 'Srini');
-    const taken = full(await readGame(srini.seat)).seats[1].avatar!;
-    const next = await chooseAvatar(kris.seat, 'Ditto');
-    expect(next.seats[0].avatar).toBe('Ditto');
+    const seats = full(await readGame(srini.seat)).seats;
+    const taken = seats[1].avatar!;
+    // Seats draw their Pokémon at random, so pick one nobody holds rather than a fixed name.
+    const free = POKEMON.find((p) => !seats.some((seat) => seat.avatar === p))!;
+    const next = await chooseAvatar(kris.seat, free);
+    expect(next.seats[0].avatar).toBe(free);
     // Another seat's Pokémon is refused, and the tablet and a QR code cannot trade at all.
     await rejects(chooseAvatar(kris.seat, taken), 409);
     await rejects(chooseAvatar(host, 'Mew'), 401);
     await rejects(chooseAvatar(view.tickets[0], 'Mew'), 401);
-    expect((full(await readGame(host)) as TableView).seats[0].avatar).toBe('Ditto');
+    expect((full(await readGame(host)) as TableView).seats[0].avatar).toBe(free);
   });
 
   it('lets only a seat\'s own phone arm its flasks', async () => {

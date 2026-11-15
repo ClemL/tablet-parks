@@ -10,6 +10,7 @@ import { Pawn, seatStyle } from '../bits';
 import { Icon } from '../Icon';
 import { QrCode } from '../QrCode';
 import { Footer } from '../Footer';
+import { FullscreenButton } from '../FullscreenButton';
 import { SetupSettings, SeatStepper } from './SetupSettings';
 import { DbLine } from './DbLine';
 
@@ -95,13 +96,14 @@ export function DraftTable({
           </h1>
         </div>
         {/* In the scenery, not under it: the seat cards rise into the band's foot and would cover it. */}
-        {notice ? (
-          <div className="panorama__aside">
+        <div className="panorama__aside">
+          <FullscreenButton className="btn--sm panorama__full" onlyToEnter />
+          {notice ? (
             <p className="notice panorama__notice" role="status">
               {notice}
             </p>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </Panorama>
 
       <Hikers
@@ -174,12 +176,16 @@ export function Lobby({
           </h1>
         </div>
         <div className="panorama__aside">
+          {/* One row, so the band keeps its height; Full screen holds the corner it has on the setup. */}
+          <div className="panorama__actions">
+            <button type="button" className="btn btn--ghost btn--danger btn--sm panorama__abandon" disabled={busy} onClick={onAbandon}>
+              Abandon table
+            </button>
+            <FullscreenButton className="btn--sm panorama__full" onlyToEnter />
+          </div>
           <span className="panorama__db">
             <DbLine db={view.db} />
           </span>
-          <button type="button" className="btn btn--ghost btn--danger btn--sm panorama__abandon" disabled={busy} onClick={onAbandon}>
-            Abandon table
-          </button>
         </div>
       </Panorama>
 

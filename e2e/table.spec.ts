@@ -660,6 +660,25 @@ test.describe('round the tablet', () => {
     await expect(tablet.getByRole('img', { name: 'Season 1 of 2' })).toBeVisible();
   });
 
+  test('the tablet goes full screen from the setup, stays so through the deal, and leaves it from the table menu', async ({ browser }) => {
+    const tablet = await newTablet(browser);
+    const full = () => tablet.evaluate(() => document.fullscreenElement !== null);
+    await tablet.goto('/');
+    await expect(tablet.getByRole('button', { name: 'Full screen', exact: true })).toBeVisible();
+    await openTable(tablet, { seats: 2, brisk: true });
+    await tablet.getByRole('button', { name: 'Full screen', exact: true }).click();
+    await expect.poll(full).toBe(true);
+    // Once the tablet is full screen, the setup's button steps aside.
+    await expect(tablet.getByRole('button', { name: 'Full screen', exact: true })).toHaveCount(0);
+    await tablet.getByRole('button', { name: 'Start the game' }).click();
+    await expect(tablet.locator('.trail')).toBeVisible();
+    expect(await full()).toBe(true);
+    await tablet.getByRole('button', { name: 'Table menu' }).click();
+    await tablet.getByRole('dialog', { name: 'Table menu' }).getByRole('button', { name: 'Leave full screen', exact: true }).click();
+    await expect.poll(full).toBe(false);
+    await expect(tablet.getByRole('dialog', { name: 'Table menu' }).getByRole('button', { name: 'Full screen', exact: true })).toBeVisible();
+  });
+
   test('spring ends in a night at the Trail End that can sum up the season, and the game on everyone’s journal', async ({ browser }) => {
     test.setTimeout(240_000);
     const tablet = await newTablet(browser);
