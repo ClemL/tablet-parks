@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type ElementHandle, type Page } from '@playwright/test';
 
 /**
  * The whole table in a real browser: one tablet page and a phone page per
@@ -619,13 +619,16 @@ test.describe('round the tablet', () => {
     // Four computers on the brisk clock reach the Trail End and Bison Meadow often; Wildlife is on by default.
     await openTable(tablet, { seats: 4, brisk: true });
     await tablet.getByRole('button', { name: 'Start the game' }).click();
-    const seen = { trade: false, walk: false };
+    const seen: { trade: boolean; walk: boolean; strip: ElementHandle | null } = { trade: false, walk: false, strip: null };
     // Each moment lasts a few seconds, so look often and remember what has shown.
     await expect
       .poll(
         async () => {
           if (!seen.trade) seen.trade = (await tablet.locator('.fx--tauros .fx__tauros svg').count()) > 0;
-          if (!seen.walk) seen.walk = (await tablet.locator('.tauros-trip .tauros-walker svg').count()) > 0;
+          if (!seen.walk) {
+            seen.strip = await tablet.locator('.tauros-trip:has(.tauros-walker svg)').first().elementHandle({ timeout: 50 }).catch(() => null);
+            seen.walk = seen.strip !== null;
+          }
           const breakBtn = tablet.getByRole('button', { name: /^(Begin |Next season|Start (the )?season)/ });
           if (await breakBtn.count()) await breakBtn.first().click().catch(() => {});
           return seen.trade && seen.walk;
@@ -633,8 +636,9 @@ test.describe('round the tablet', () => {
         { timeout: 220_000, intervals: [100] },
       )
       .toBe(true);
-    // The strip is passing: it takes no taps and sinks again once Tauros has arrived.
-    await expect(tablet.locator('.tauros-trip')).toHaveCount(0, { timeout: 15_000 });
+    // The strip is passing: it sinks again once Tauros has arrived. Four brisk computers can send
+    // Tauros on another walk meanwhile, which is a strip of its own, so wait for the one seen.
+    await seen.strip!.waitForElementState('hidden', { timeout: 15_000 });
   });
 
   test('the table can draw its stops as diorama tiles, and go back to round scenes mid-game', async ({ browser }) => {
